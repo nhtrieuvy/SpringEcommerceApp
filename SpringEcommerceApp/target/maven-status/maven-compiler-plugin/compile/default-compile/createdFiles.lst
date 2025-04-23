@@ -1,0 +1,6 @@
+com\ecommerce\configs\DispatcherServletInit.class
+com\ecommerce\configs\ThymeleafConfig.class
+com\ecommerce\controllers\HomeController.class
+com\ecommerce\springecommerceapp\resources\JakartaEE11Resource.class
+com\ecommerce\springecommerceapp\JakartaRestConfiguration.class
+com\ecommerce\configs\WebAppContextConfig.class
