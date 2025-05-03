@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Chi tiết sản phẩm</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <th:block th:replace="base.html :: bootstrap"></th:block>
+</head>
+<body>
+    <div th:replace="base.html :: navbar"></div>
+    <div class="container py-4">
+        <a th:href="@{/products}" class="btn btn-link mb-3">&lt; Quay lại danh sách</a>
+        <div class="row">
+            <div class="col-md-5">
+                <img th:src="${product.image}" class="img-fluid rounded shadow" alt="Ảnh sản phẩm" style="height:350px;object-fit:cover;" />
+            </div>
+            <div class="col-md-7">
+                <h2 th:text="${product.name}"></h2>
+                <p class="text-danger fw-bold fs-4" th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></p>
+                <p th:text="${product.description}"></p>
+                <!-- Có thể bổ sung nút mua hàng, đánh giá, bình luận ở đây -->
+            </div>
+        </div>
+        <a th:href="@{/}" class="btn btn-link mt-4">Về trang chủ</a>
+    </div>
+</body>
+</html>

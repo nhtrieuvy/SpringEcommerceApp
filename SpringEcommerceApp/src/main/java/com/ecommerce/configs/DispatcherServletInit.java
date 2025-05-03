@@ -4,6 +4,8 @@
  */
 package com.ecommerce.configs;
 
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletRegistration;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 /**
@@ -14,7 +16,12 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return null;
+        return new Class[]{
+            HibernateConfigs.class,
+            SpringSecurityConfigs.class,
+            JwtSecurityConfig.class,
+            ThymeleafConfig.class
+        };
     }
 
     @Override
@@ -29,6 +36,21 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
         return new String[] {"/"};
     }
 
-    
-    
+    // Thêm cấu hình multipart cho file upload
+    @Override
+    protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+        // Tạo thư mục tạm thời để lưu file upload
+        String location = "/";
+
+        
+        // Cấu hình các giá trị: vị trí lưu, kích thước tối đa file, kích thước tối đa request, ngưỡng kích thước lưu vào bộ nhớ
+        MultipartConfigElement multipartConfig = new MultipartConfigElement(
+                location, 
+                5 * 1024 * 1024,   // 5MB kích thước tối đa file
+                25 * 1024 * 1024,  // 25MB kích thước tối đa request
+                0                   // ngưỡng kích thước lưu vào bộ nhớ (0 = tất cả)
+        );
+        
+        registration.setMultipartConfig(multipartConfig);
+    }
 }
