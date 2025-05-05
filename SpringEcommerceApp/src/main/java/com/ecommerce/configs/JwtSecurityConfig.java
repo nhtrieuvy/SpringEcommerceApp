@@ -18,38 +18,57 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @Order(1) // Đảm bảo JwtSecurityConfig được áp dụng trước SpringSecurityConfigs
 public class JwtSecurityConfig {
+    private static final Logger logger = LoggerFactory.getLogger(JwtSecurityConfig.class);
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter();
-    }
-    
-    @Bean
     public SecurityFilterChain jwtFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .securityMatcher("/api/**") // Chỉ áp dụng cho các endpoint /api/**
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/login", "/api/register").permitAll() // Đã sửa bỏ dấu / ở cuối /api/login/
-                        .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // Sử dụng phương thức bean thay vì biến instance
-                .build();
+        logger.info("Configuring JWT security filter chain");
+        
+        http
+            .securityMatcher("/**") // Áp dụng cho tất cả URL
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers("/**/api/login", "/**/api/register").permitAll()
+                    .requestMatchers("/**/api/products/**").permitAll()
+                    .requestMatchers("/**/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/**/api/**").authenticated()
+                    .anyRequest().permitAll())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint((request, response, authException) -> {
+                        logger.error("Unauthorized error: {}", authException.getMessage());
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication failed: " 
+                                + authException.getMessage() + "\"}");
+                    })
+            );
+        
+        logger.info("JWT security filter chain configured successfully");
+        return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        logger.info("Configuring CORS");
+        
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -60,6 +79,8 @@ public class JwtSecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+        
+        logger.info("CORS configuration completed");
         return source;
     }
 

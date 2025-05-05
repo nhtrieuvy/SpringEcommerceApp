@@ -3,14 +3,20 @@ package com.ecommerce.controllers;
 import com.ecommerce.pojo.User;
 import com.ecommerce.services.UserService;
 import com.ecommerce.utils.JwtUtils;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Map;
 import java.util.List;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api")
@@ -33,6 +39,11 @@ public class ApiUserController {
             this.token = token;
             this.user = user;
         }
+    }
+    
+    public static class PasswordChangeRequest {
+        public String currentPassword;
+        public String newPassword;
     }
 
     @Autowired
@@ -115,5 +126,190 @@ public class ApiUserController {
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
         userService.delete(id);
+    }
+    
+    // API mới cho chức năng profile
+    
+    @GetMapping("/profile")
+    public ResponseEntity<?> getCurrentUserProfile() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = authentication.getName();
+            User currentUser = userService.findByUsername(currentUsername);
+            
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "success", false, 
+                    "message", "Not authenticated or user not found"
+                ));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "user", currentUser
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Failed to retrieve profile: " + e.getMessage()
+            ));
+        }
+    }
+    
+    @PutMapping("/profile")
+    @CrossOrigin
+    public ResponseEntity<?> updateProfile(
+            @RequestParam(required = false) Map<String, String> params,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
+            HttpServletRequest request
+    ) {
+        try {
+            // 1. Lấy và log thông tin request
+            System.out.println("Update profile request: " + request.getRequestURI());
+            System.out.println("Authorization header: " + request.getHeader("Authorization"));
+            
+            // 2. Tìm thông tin người dùng từ nhiều nguồn
+            User currentUser = findUserFromRequest(request);
+            
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại."
+                ));
+            }
+            
+            System.out.println("Found user: " + currentUser.getUsername());
+            
+            // 3. Cập nhật thông tin người dùng
+            updateUserInfo(params, avatar, currentUser);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Cập nhật thông tin thành công!",
+                "user", currentUser
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Lỗi cập nhật thông tin: " + e.getMessage()
+            ));
+        }
+    }
+    
+    // Phương thức riêng để cập nhật thông tin người dùng
+    private void updateUserInfo(Map<String, String> params, MultipartFile avatar, User currentUser) throws Exception {
+        // Cập nhật thông tin người dùng
+        if (params != null) {
+            if (params.containsKey("fullName")) {
+                currentUser.setUsername(params.get("fullName"));
+            }
+            
+            if (params.containsKey("email") && !params.get("email").equals(currentUser.getEmail())) {
+                // Kiểm tra email mới không trùng với người dùng khác
+                User existingUser = userService.findByEmail(params.get("email"));
+                if (existingUser != null && !existingUser.getId().equals(currentUser.getId())) {
+                    throw new RuntimeException("Email already exists");
+                }
+                currentUser.setEmail(params.get("email"));
+            }
+            
+            // if (params.containsKey("phone")) {
+            //     currentUser.set(params.get("phone"));
+            // }
+        }
+        
+        // Cập nhật avatar nếu có
+        if (avatar != null && !avatar.isEmpty()) {
+            userService.updateAvatar(currentUser, avatar);
+        }
+        
+        // Lưu thay đổi
+        userService.update(currentUser);
+    }
+    
+    @PutMapping("/profile/password")
+    @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true", 
+                 allowedHeaders = "*", methods = {RequestMethod.PUT, RequestMethod.OPTIONS, RequestMethod.POST})
+    public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request, HttpServletRequest httpRequest) {
+        try {
+            // 1. Log thông tin request
+            System.out.println("Change password request: " + httpRequest.getRequestURI());
+            System.out.println("Authorization header: " + httpRequest.getHeader("Authorization"));
+            
+            // 2. Tìm thông tin người dùng từ nhiều nguồn
+            User currentUser = findUserFromRequest(httpRequest);
+            
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại."
+                ));
+            }
+            
+            System.out.println("Found user for password change: " + currentUser.getUsername());
+            
+            // 3. Kiểm tra mật khẩu hiện tại
+            if (!userService.authenticate(currentUser.getUsername(), request.currentPassword)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "success", false,
+                    "message", "Mật khẩu hiện tại không chính xác"
+                ));
+            }
+            
+            // 4. Cập nhật mật khẩu mới
+            userService.changePassword(currentUser, request.newPassword);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đổi mật khẩu thành công!"
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "Lỗi đổi mật khẩu: " + e.getMessage()
+            ));
+        }
+    }
+    
+    // Phương thức trợ giúp mới để tìm thông tin người dùng từ nhiều nguồn
+    private User findUserFromRequest(HttpServletRequest request) {
+        // 1. Thử lấy từ Security Context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getName() != null) {
+            System.out.println("Getting user from SecurityContext: " + authentication.getName());
+            User user = userService.findByUsername(authentication.getName());
+            if (user != null) {
+                return user;
+            }
+        }
+        
+        // 2. Thử lấy từ request attribute (được thiết lập bởi JWT filter)
+        String jwtUsername = (String) request.getAttribute("jwt_username");
+        if (jwtUsername != null) {
+            System.out.println("Getting user from request attribute: " + jwtUsername);
+            User user = userService.findByUsername(jwtUsername);
+            if (user != null) {
+                return user;
+            }
+        }
+        
+        // 3. Thử lấy từ Authorization header
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            try {
+                String token = authHeader.substring(7);
+                String username = JwtUtils.extractUsername(token);
+                if (username != null) {
+                    System.out.println("Getting user from JWT token: " + username);
+                    return userService.findByUsername(username);
+                }
+            } catch (Exception e) {
+                System.out.println("Error extracting username from token: " + e.getMessage());
+            }
+        }
+        
+        return null;
     }
 }

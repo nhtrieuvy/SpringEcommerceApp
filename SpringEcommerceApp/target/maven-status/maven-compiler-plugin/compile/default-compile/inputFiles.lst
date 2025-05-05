@@ -1,3 +1,4 @@
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\CacheConfig.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\DispatcherServletInit.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\HibernateConfigs.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\JwtSecurityConfig.java
@@ -12,6 +13,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\TestController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\UserController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\filters\JwtAuthenticationFilter.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\filters\SimpleCorsFilter.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Category.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Comment.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Order.java

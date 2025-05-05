@@ -26,7 +26,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void delete(Long id) {
-        // Implement delete logic if needed
+        reviewRepository.delete(id);
     }
 
     @Override

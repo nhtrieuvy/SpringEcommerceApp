@@ -26,7 +26,7 @@ public class SellerServiceImpl implements SellerService {
 
     @Override
     public void delete(Long id) {
-        // Implement delete logic if needed
+        sellerRepository.delete(id);
     }
 
     @Override

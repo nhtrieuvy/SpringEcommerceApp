@@ -6,12 +6,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +27,7 @@ public class User {
 
     @Column(nullable = false, unique = true)
     private String email;
-
+    
     private String avatar;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -34,6 +36,7 @@ public class User {
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     private Set<Role> roles;
 
     public Long getId() {
