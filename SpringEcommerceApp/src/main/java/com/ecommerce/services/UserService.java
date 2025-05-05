@@ -17,6 +17,10 @@ public interface UserService extends UserDetailsService {
     User findByUsername(String username);
     User findByEmail(String email);
     
+    // Phương thức mới cho chức năng profile
+    void updateAvatar(User user, MultipartFile avatar);
+    void changePassword(User user, String newPassword);
+    
     @Override
     UserDetails loadUserByUsername(String username);
 }

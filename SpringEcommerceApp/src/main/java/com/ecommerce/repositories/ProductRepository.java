@@ -10,4 +10,7 @@ public interface ProductRepository {
     Product findById(Long id);
     List<Product> findAll();
     List<Product> findByName(String name);
+    List<Product> findByCategoryId(Long categoryId);
+    List<Product> findByPriceRange(Double minPrice, Double maxPrice);
+    List<Product> search(String keyword);
 }

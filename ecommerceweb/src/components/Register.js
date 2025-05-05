@@ -72,27 +72,36 @@ export default function Register() {
     if (avatar) formData.append("avatar", avatar);
 
     try {
-      console.log("Đang gửi request đăng ký đến:", `http://localhost:8080${endpoint.REGISTER}`);
+      // Import APIs để sử dụng axios đã được cấu hình đúng
+      import("../configs/Apis").then(async ({ default: API }) => {
+        console.log("Đang gửi request đăng ký đến:", `http://localhost:8080${endpoint.REGISTER}`);
 
-      const response = await fetch(`http://localhost:8080${endpoint.REGISTER}`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
+        try {
+          const response = await API.post(endpoint.REGISTER, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          const data = response.data;
+          console.log("Kết quả đăng ký:", data);
+
+          if (data.success) {
+            setMsg("Đăng ký thành công! Hãy đăng nhập.");
+            setTimeout(() => navigate("/login"), 1500);
+          } else {
+            setMsg(data.message || "Đăng ký thất bại");
+          }
+        } catch (error) {
+          console.error("Lỗi đăng ký:", error);
+          setMsg("Không thể kết nối đến server");
+        } finally {
+          setLoading(false);
+        }
       });
-
-      const data = await response.json();
-      console.log("Kết quả đăng ký:", data);
-
-      if (data.success) {
-        setMsg("Đăng ký thành công! Hãy đăng nhập.");
-        setTimeout(() => navigate("/login"), 1500);
-      } else {
-        setMsg(data.message || "Đăng ký thất bại");
-      }
     } catch (err) {
       console.error("Lỗi đăng ký:", err);
       setMsg("Không thể kết nối đến server");
-    } finally {
       setLoading(false);
     }
   };

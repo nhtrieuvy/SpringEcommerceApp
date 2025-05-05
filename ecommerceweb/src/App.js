@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import Profile from "./components/Profile";
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -36,6 +37,12 @@ const theme = createTheme({
 const ProtectedRoute = ({ children }) => {
   const [user] = React.useContext(MyUserContext);
   return user ? <Navigate to="/" /> : children;
+};
+
+// Component bảo vệ route cho người dùng chưa đăng nhập
+const AuthenticatedRoute = ({ children }) => {
+  const [user] = React.useContext(MyUserContext);
+  return user ? children : <Navigate to="/login" />;
 };
 
 const App = () => {
@@ -76,6 +83,11 @@ const App = () => {
               <ProtectedRoute>
                 <Register />
               </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <AuthenticatedRoute>
+                <Profile />
+              </AuthenticatedRoute>
             } />
           </Routes>
           <Footer />

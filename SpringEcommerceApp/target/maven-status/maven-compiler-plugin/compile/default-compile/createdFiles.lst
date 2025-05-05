@@ -12,7 +12,9 @@ com\ecommerce\services\impl\UserServiceImpl.class
 com\ecommerce\services\SellerService.class
 com\ecommerce\repositories\PaymentRepository.class
 com\ecommerce\services\impl\CategoryServiceImpl.class
+com\ecommerce\filters\SimpleCorsFilter.class
 com\ecommerce\services\impl\OrderDetailServiceImpl.class
+com\ecommerce\configs\CacheConfig.class
 com\ecommerce\services\CategoryService.class
 com\ecommerce\pojo\Comment.class
 com\ecommerce\repositories\UserRepository.class
@@ -27,6 +29,7 @@ com\ecommerce\springecommerceapp\resources\JakartaEE11Resource.class
 com\ecommerce\pojo\Payment.class
 com\ecommerce\services\impl\StoreServiceImpl.class
 com\ecommerce\services\impl\SellerServiceImpl.class
+com\ecommerce\controllers\ApiUserController$PasswordChangeRequest.class
 com\ecommerce\repositories\CategoryRepository.class
 com\ecommerce\services\impl\ReviewServiceImpl.class
 com\ecommerce\services\UserService.class

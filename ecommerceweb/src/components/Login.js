@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import { endpoint } from "../configs/Apis";
+import cookie from "react-cookies";
 import {
   Box,
   Button,
@@ -41,39 +42,43 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMsg("");
     setLoading(true);
+    setMsg("");
 
     try {
-      console.log("Đang gửi request đến:", `http://localhost:8080${endpoint.LOGIN}`);
-
-      const response = await fetch(`http://localhost:8080${endpoint.LOGIN}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-        credentials: 'include'
+      // Import APIs để sử dụng axios đã được cấu hình đúng
+      const { default: API } = await import("../configs/Apis");
+      
+      console.log("Đang gửi request đăng nhập đến:", `http://localhost:8080${endpoint.LOGIN}`);
+      
+      const response = await API.post(endpoint.LOGIN, {
+        username: username,
+        password: password
       });
+      
+      const data = response.data;
+      console.log("Kết quả đăng nhập:", data);
 
-      const data = await response.json();
-      console.log("Kết quả trả về:", data);
-
-      if (data && data.success) {
-        if (data.token) {
-          localStorage.setItem("token", data.token);
-        }
-        // Lưu thông tin user vào localStorage để khôi phục phiên làm việc
-        localStorage.setItem("user", JSON.stringify(data.user));
+      if (data.success && data.token) {
+        console.log("Lưu token:", data.token);
         
-        dispatch({ type: "LOGIN", payload: data.user });
+        // Lưu token vào cả cookie và localStorage để đảm bảo
+        cookie.save('token', data.token, {path: "/"});
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        dispatch({
+          "type": "LOGIN",
+          "payload": data.user
+        });
+        
         navigate("/");
       } else {
-        setMsg(data?.message || "Đăng nhập thất bại");
+        setMsg(data.message || "Đăng nhập thất bại");
       }
     } catch (err) {
       console.error("Lỗi đăng nhập:", err);
-      setMsg("Không thể kết nối đến server");
+      setMsg("Đăng nhập thất bại. Vui lòng kiểm tra lại tên đăng nhập và mật khẩu.");
     } finally {
       setLoading(false);
     }

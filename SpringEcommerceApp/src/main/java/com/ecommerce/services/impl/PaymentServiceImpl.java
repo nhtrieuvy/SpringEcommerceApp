@@ -26,7 +26,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public void delete(Long id) {
-        // Implement delete logic if needed
+        paymentRepository.delete(id);
     }
 
     @Override
