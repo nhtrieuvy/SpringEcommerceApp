@@ -166,15 +166,15 @@ const Header = () => {
                                 // Hiện thông tin user và menu dropdown khi đã đăng nhập
                                 <>
                                     <Typography variant="body1" sx={{ ml: 2 }}>
-                                        Xin chào, {user.username || 'Người dùng'}
+                                        Xin chào, {user.fullname || user.name || 'Người dùng ' + user.username}
                                     </Typography>
                                     <Tooltip title="Cài đặt tài khoản">
                                         <IconButton onClick={handleUserMenu} sx={{ p: 0, ml: 1 }}>
-                                            {user.avatar ? (
-                                                <Avatar alt={user.username} src={user.avatar} />
+                                            {user.avatar || user.picture ? (
+                                                <Avatar alt={user.username || user.name} src={user.avatar || user.picture} />
                                             ) : (
                                                 <Avatar>
-                                                    {user.username?.charAt(0)?.toUpperCase() || "U"}
+                                                    {(user.username || user.name || "U")?.charAt(0)?.toUpperCase()}
                                                 </Avatar>
                                             )}
                                         </IconButton>

@@ -1,2 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="/SpringEcommerceApp-1.0-SNAPSHOT"/>
+<Context path="/SpringEcommerceApp-1.0-SNAPSHOT">
+    <!-- Cấu hình HTTPS cho ứng dụng -->
+    <Parameter name="org.apache.tomcat.util.http.ServerCookie.SECURE" value="true"/>
+</Context>

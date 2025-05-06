@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -45,7 +46,7 @@ public class JwtSecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    .requestMatchers("/**/api/login", "/**/api/register").permitAll()
+                    .requestMatchers("/**/api/login", "/**/api/login/google", "/**/api/login/facebook", "/**/api/register").permitAll()
                     .requestMatchers("/**/api/products/**").permitAll()
                     .requestMatchers("/**/api/admin/**").hasRole("ADMIN")
                     .requestMatchers("/**/api/**").authenticated()
@@ -70,13 +71,18 @@ public class JwtSecurityConfig {
         logger.info("Configuring CORS");
         
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("https://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-
+        
+        // Thêm các headers liên quan đến Cross-Origin-Opener-Policy
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+        headers.add("Cross-Origin-Embedder-Policy", "require-corp");
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         

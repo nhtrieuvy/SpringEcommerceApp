@@ -66,42 +66,43 @@ export default function Register() {
     setMsg("");
     setLoading(true);
 
-    // Tạo FormData để gửi cả file và dữ liệu text
-    const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => formData.append(key, value));
-    if (avatar) formData.append("avatar", avatar);
+    // Kiểm tra dữ liệu đầu vào
+    if (!form.username || !form.email || !form.password) {
+      setMsg("Vui lòng điền đầy đủ thông tin cần thiết");
+      setLoading(false);
+      return;
+    }
 
     try {
       // Import APIs để sử dụng axios đã được cấu hình đúng
-      import("../configs/Apis").then(async ({ default: API }) => {
-        console.log("Đang gửi request đăng ký đến:", `http://localhost:8080${endpoint.REGISTER}`);
-
-        try {
-          const response = await API.post(endpoint.REGISTER, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-
-          const data = response.data;
-          console.log("Kết quả đăng ký:", data);
-
-          if (data.success) {
-            setMsg("Đăng ký thành công! Hãy đăng nhập.");
-            setTimeout(() => navigate("/login"), 1500);
-          } else {
-            setMsg(data.message || "Đăng ký thất bại");
-          }
-        } catch (error) {
-          console.error("Lỗi đăng ký:", error);
-          setMsg("Không thể kết nối đến server");
-        } finally {
-          setLoading(false);
-        }
+      const { default: API } = await import("../configs/Apis");
+      console.log("Đang gửi request đăng ký đến:", endpoint.REGISTER);
+      
+      // Gửi dữ liệu dưới dạng application/json thay vì form-data
+      const response = await API.post(endpoint.REGISTER, {
+        username: form.username,
+        email: form.email,
+        password: form.password
       });
-    } catch (err) {
-      console.error("Lỗi đăng ký:", err);
-      setMsg("Không thể kết nối đến server");
+
+      const data = response.data;
+      console.log("Kết quả đăng ký:", data);
+
+      if (data.success) {
+        setMsg("Đăng ký thành công! Hãy đăng nhập.");
+        setTimeout(() => navigate("/login"), 1500);
+      } else {
+        setMsg(data.message || "Đăng ký thất bại");
+      }
+    } catch (error) {
+      console.error("Lỗi đăng ký:", error);
+      if (error.response) {
+        console.error("Chi tiết lỗi:", error.response.data);
+        setMsg(`Đăng ký thất bại: ${error.response.data.message || error.response.statusText}`);
+      } else {
+        setMsg("Không thể kết nối đến server. Vui lòng thử lại sau.");
+      }
+    } finally {
       setLoading(false);
     }
   };

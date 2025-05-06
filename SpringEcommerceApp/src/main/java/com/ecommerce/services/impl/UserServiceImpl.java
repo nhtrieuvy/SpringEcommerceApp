@@ -23,6 +23,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
+import org.hibernate.Hibernate;
 
 @Service("userServiceImpl")
 @Transactional
@@ -33,6 +37,8 @@ public class UserServiceImpl implements UserService {
     private BCryptPasswordEncoder passwordEncoder;
     @Autowired
     private Cloudinary cloudinary;
+    @Autowired
+    private SessionFactory sessionFactory;
     
     // Cache đơn giản để lưu trữ thông tin UserDetails
     private final Map<String, UserDetails> userDetailsCache = new ConcurrentHashMap<>();
@@ -88,9 +94,33 @@ public class UserServiceImpl implements UserService {
             } else {
                 user.setAvatar(null);
             }
-
-            // Lưu user
-            return userRepository.addUser(user);
+            
+            user.setAuthProvider("LOCAL"); // Đặt auth provider là LOCAL cho đăng ký thông thường
+            
+            // Thiết lập role USER cho người dùng mới
+            Session session = sessionFactory.getCurrentSession();
+            Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
+            query.setParameter("name", "USER");
+            Role userRole = query.uniqueResult();
+            
+            if (userRole == null) {
+                // Nếu không tìm thấy, tạo role mới
+                userRole = new Role();
+                userRole.setName("USER");
+                session.persist(userRole);
+                session.flush(); // Đảm bảo role được lưu và có ID
+            }
+            
+            // Lưu user trước để có ID
+            User savedUser = userRepository.addUser(user);
+            
+            // Gán role cho user qua Hibernate
+            Set<Role> roles = new HashSet<>();
+            roles.add(userRole);
+            savedUser.setRoles(roles);
+            userRepository.update(savedUser); // Hibernate sẽ tự insert vào user_roles
+            
+            return savedUser;
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
@@ -115,13 +145,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = "users", key = "#id")
     public void delete(Long id) {
         User user = userRepository.findById(id);
         if (user != null) {
-            userDetailsCache.remove(user.getUsername());
+            try {
+                // Xóa cache trước
+                userDetailsCache.remove(user.getUsername());
+                
+                System.out.println("Xóa user với ID=" + id);
+                
+                // Xóa các bản ghi liên quan trong user_roles
+                Session session = sessionFactory.getCurrentSession();
+                int deleteCount = session.createNativeQuery("DELETE FROM user_roles WHERE user_id = :userId")
+                        .setParameter("userId", id)
+                        .executeUpdate();
+                System.out.println("Đã xóa " + deleteCount + " bản ghi từ user_roles");
+                
+                // Sau đó xóa user
+                userRepository.delete(id);
+                System.out.println("Đã xóa user thành công");
+            } catch (Exception e) {
+                System.err.println("Lỗi khi xóa user: " + e.getMessage());
+                e.printStackTrace();
+                throw e; // Re-throw để xử lý ở mức cao hơn
+            }
+        } else {
+            System.out.println("Không tìm thấy user với ID=" + id);
         }
-        userRepository.delete(id);
     }
 
     @Override
@@ -251,6 +303,74 @@ public class UserServiceImpl implements UserService {
         userDetailsCache.remove(user.getUsername());
     }
     
+    @Override
+    public User addUser(User user) {
+        try {
+            // Kiểm tra username và email
+            String username = user.getUsername();
+            String email = user.getEmail();
+            
+            if (username == null || username.trim().isEmpty() || 
+                email == null || email.trim().isEmpty()) {
+                throw new IllegalArgumentException("Username và email không được để trống");
+            }
+            
+            // Kiểm tra xem username và email đã tồn tại chưa
+            if (userRepository.findByUsername(username) != null) {
+                throw new IllegalArgumentException("Username đã tồn tại");
+            }
+            
+            if (userRepository.findByEmail(email) != null) {
+                throw new IllegalArgumentException("Email đã tồn tại");
+            }
+            
+            // Đảm bảo rằng password đã được mã hóa
+            if (user.getPassword() != null && !user.getPassword().startsWith("$2a$")) {
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+            }
+            
+            // Thiết lập auth provider nếu chưa có
+            if (user.getAuthProvider() == null) {
+                user.setAuthProvider("LOCAL");
+            }
+            
+            // Lưu user để có ID
+            User savedUser = userRepository.addUser(user);
+            
+            // Lấy hoặc tạo role USER
+            Session session = sessionFactory.getCurrentSession();
+            Role userRole = null;
+            
+            try {
+                Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
+                query.setParameter("name", "USER");
+                userRole = query.uniqueResult();
+                
+                if (userRole == null) {
+                    userRole = new Role();
+                    userRole.setName("USER");
+                    session.persist(userRole);
+                    session.flush();
+                }
+                
+                // Gán role cho user qua Hibernate
+                Set<Role> roles = new HashSet<>();
+                roles.add(userRole);
+                savedUser.setRoles(roles);
+                userRepository.update(savedUser); // Hibernate sẽ tự insert vào user_roles
+            } catch (Exception e) {
+                System.err.println("Lỗi khi xử lý role: " + e.getMessage());
+                e.printStackTrace();
+            }
+            
+            return savedUser;
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Không thể tạo người dùng: " + e.getMessage(), e);
+        }
+    }
+    
     // Phương thức trợ giúp để lấy public_id từ Cloudinary URL
     private String extractPublicIdFromUrl(String url) {
         try {
@@ -282,5 +402,60 @@ public class UserServiceImpl implements UserService {
             System.err.println("Failed to extract public_id: " + e.getMessage());
             return null;
         }
+    }
+
+    // Phương thức mới để thêm role mặc định cho user
+    private User addDefaultRole(User user) {
+        try {
+            // Sử dụng session hiện tại nếu có
+            Session session = sessionFactory.getCurrentSession();
+            
+            // Truy vấn tìm role USER
+            Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
+            query.setParameter("name", "USER");
+            Role userRole = query.uniqueResult();
+            
+            if (userRole == null) {
+                // Nếu không có role USER, tạo mới
+                userRole = new Role();
+                userRole.setName("USER");
+                session.persist(userRole);
+            }
+            
+            // Tạo set roles nếu chưa có
+            if (user.getRoles() == null) {
+                user.setRoles(new HashSet<>());
+            } else {
+                // Đảm bảo collection đã được khởi tạo
+                Hibernate.initialize(user.getRoles());
+            }
+            
+            // Thêm role vào user
+            user.getRoles().add(userRole);
+            System.out.println("Đã thêm role USER vào user: " + user.getUsername());
+            
+            return user;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi thêm role mặc định: " + e.getMessage());
+            e.printStackTrace();
+            return user; // Vẫn trả về user để tiếp tục quá trình
+        }
+    }
+    
+    @Override
+    public void addRoleToUser(User user, Role role) {
+        // Clear user cache to ensure updated roles are reflected
+        userDetailsCache.remove(user.getUsername());
+        
+        // Check if user already has this role
+        if (user.getRoles() == null) {
+            user.setRoles(new HashSet<>());
+        }
+        
+        // Add the role to the user's role set
+        user.getRoles().add(role);
+        
+        // Update the user in the database
+        userRepository.update(user);
     }
 }

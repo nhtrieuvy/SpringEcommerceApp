@@ -50,7 +50,7 @@ const Profile = () => {
   
   // Form states cho thông tin cá nhân
   const [profileData, setProfileData] = useState({
-    fullName: '',
+    fullname: '',
     email: '',
     phone: '',
     avatar: null
@@ -70,7 +70,7 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setProfileData({
-        fullName: user.fullName || '',
+        fullname: user.fullname || '',
         email: user.email || '',
         phone: user.phone || '',
         avatar: null
@@ -131,13 +131,13 @@ const Profile = () => {
       const formData = new FormData();
       
       // Thêm tất cả các trường vào formData với tên rõ ràng
-      formData.append('fullName', profileData.fullName || '');
+      formData.append('fullname', profileData.fullname || '');
       formData.append('email', profileData.email || '');
       formData.append('phone', profileData.phone || '');
       
       // Log xem có dữ liệu không
       console.log("FormData fields:", {
-        fullName: profileData.fullName,
+        fullname: profileData.fullname,
         email: profileData.email,
         phone: profileData.phone,
         hasAvatar: !!profileData.avatar
@@ -337,8 +337,8 @@ const Profile = () => {
                     <TextField
                       fullWidth
                       label="Họ và tên"
-                      name="fullName"
-                      value={profileData.fullName}
+                      name="fullname"
+                      value={profileData.fullname}
                       onChange={handleProfileChange}
                     />
                   </Grid>

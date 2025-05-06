@@ -28,11 +28,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
+        // Thêm CORS headers vào response
+        response.setHeader("Access-Control-Allow-Origin", "https://localhost:3000");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With");
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Max-Age", "3600");
+
         // 1. Cho phép request OPTIONS đi qua mà không kiểm tra JWT
         if (request.getMethod().equals("OPTIONS")) {
             System.out.println("OPTIONS request detected, skipping JWT authentication");
-            filterChain.doFilter(request, response);
-            return;
+            response.setStatus(HttpServletResponse.SC_OK);
+            return; // Chú ý: trả về ngay lập tức, không tiếp tục filter chain cho OPTIONS
         }
 
         System.out.println("JwtAuthenticationFilter processing request: " + request.getMethod() + " " + request.getRequestURI());

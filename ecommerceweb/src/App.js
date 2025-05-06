@@ -10,6 +10,10 @@ import Header from "./layout/Header";
 import { useReducer } from "react";
 import MyUserReducer from "./reducers/MyUserReducer";
 import { MyUserContext } from "./configs/MyContexts";
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+// Google OAuth Client ID - thay thế bằng ID của bạn khi đăng ký trên Google Cloud Platform
+const GOOGLE_CLIENT_ID = "618407643524-0nasoq3jc5dvturarl9truih021cofag.apps.googleusercontent.com";
 
 // Tạo theme cho Material UI
 const theme = createTheme({
@@ -68,31 +72,33 @@ const App = () => {
   
   return (
     <MyUserContext.Provider value={[user, dispatch]}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline /> {/* Reset CSS để đồng nhất trên các trình duyệt */}
-        <BrowserRouter>
-          <Header />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={
-              <ProtectedRoute>
-                <Login />
-              </ProtectedRoute>
-            } />
-            <Route path="/register" element={
-              <ProtectedRoute>
-                <Register />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <AuthenticatedRoute>
-                <Profile />
-              </AuthenticatedRoute>
-            } />
-          </Routes>
-          <Footer />
-        </BrowserRouter>
-      </ThemeProvider>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline /> {/* Reset CSS để đồng nhất trên các trình duyệt */}
+          <BrowserRouter>
+            <Header />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={
+                <ProtectedRoute>
+                  <Login />
+                </ProtectedRoute>
+              } />
+              <Route path="/register" element={
+                <ProtectedRoute>
+                  <Register />
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <AuthenticatedRoute>
+                  <Profile />
+                </AuthenticatedRoute>
+              } />
+            </Routes>
+            <Footer />
+          </BrowserRouter>
+        </ThemeProvider>
+      </GoogleOAuthProvider>
     </MyUserContext.Provider>
   );
 }

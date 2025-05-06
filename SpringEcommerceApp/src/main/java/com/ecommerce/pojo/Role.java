@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @NoArgsConstructor
@@ -20,6 +21,7 @@ public class Role {
     private String name;
 
     @ManyToMany(mappedBy = "roles")
+    @JsonBackReference
     private Set<User> users;
 
     @Override
@@ -50,9 +52,4 @@ public class Role {
     public void setUsers(Set<User> users) {
         this.users = users;
     }
-    
-    
-    
-    
- 
 }
