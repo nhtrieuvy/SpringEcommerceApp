@@ -1,16 +1,46 @@
 import axios from 'axios';
 import cookie from 'react-cookies';
 
-const SERVER = "http://localhost:8080";
-const SERVER_CONTEXT = "/SpringEcommerceApp-1.0-SNAPSHOT";
+// Trong React 19 với cấu hình proxy trong package.json,
+// chúng ta KHÔNG cần prefix BASE_URL nữa
+const BASE_URL = "/SpringEcommerceApp-1.0-SNAPSHOT";
+
+console.log(`Đang sử dụng API server: ${BASE_URL || "proxy qua package.json"}`);
+
+// Thêm interceptor để log mọi lỗi kết nối
+axios.interceptors.request.use(request => {
+    console.log('Đang gửi request đến:', request.url);
+    return request;
+});
+
+axios.interceptors.response.use(
+    response => {
+        console.log('Nhận response từ:', response.config.url);
+        return response;
+    },
+    error => {
+        console.error('Lỗi API:', error.message);
+        if (error.response) {
+            console.error('Status:', error.response.status);
+            console.error('Data:', error.response.data);
+        } else if (error.request) {
+            console.error('Không nhận được response. Chi tiết lỗi request:', error.request);
+        }
+        return Promise.reject(error);
+    }
+);
 
 export const endpoint = {
-    LOGIN: `${SERVER_CONTEXT}/api/login`,
-    REGISTER: `${SERVER_CONTEXT}/api/register`,
+    LOGIN: `/api/login`,
+    REGISTER: `/api/register`,
     
-    UPDATE_PROFILE: `${SERVER_CONTEXT}/api/profile`,
-    CHANGE_PASSWORD: `${SERVER_CONTEXT}/api/profile/password`,
-    GET_USER_INFO: `${SERVER_CONTEXT}/api/profile`,
+    // Thêm endpoints mới cho đăng nhập bằng mạng xã hội
+    GOOGLE_LOGIN: `/api/login/google`,
+    FACEBOOK_LOGIN: `/api/login/facebook`,
+    
+    UPDATE_PROFILE: `/api/profile`,
+    CHANGE_PASSWORD: `/api/profile/password`,
+    GET_USER_INFO: `/api/profile`,
 };
 
 // Hàm tạo instance axios với token xác thực
@@ -21,7 +51,7 @@ export const authApi = () => {
         token = localStorage.getItem('token');
     }
     
-    console.log("Token hiện tại:", token); // Log để kiểm tra token
+    console.log("Token hiện tại:", token);
     
     // Đảm bảo token có đúng định dạng
     const authHeader = token ? (
@@ -31,9 +61,10 @@ export const authApi = () => {
     console.log("Auth header:", authHeader);
     
     return axios.create({
-        baseURL: SERVER,
+        baseURL: BASE_URL, // Thêm baseURL cho các request có xác thực
         headers: {
             'Authorization': authHeader,
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
         },
         withCredentials: true,
@@ -41,11 +72,34 @@ export const authApi = () => {
 }
 
 // Instance axios mặc định không có xác thực
-export default axios.create({
-    baseURL: SERVER,
+const defaultApi = axios.create({
+    baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     },
-    withCredentials: true
+    withCredentials: true,
 });
+
+// Hàm lưu cookie với các thông số phù hợp cho HTTPS
+export const saveAuthCookie = (token, user) => {
+    // Đảm bảo token đúng định dạng
+    const tokenValue = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+    
+    // Lưu cookie với secure flag cho HTTPS
+    cookie.save('token', tokenValue, {
+        path: "/",
+        secure: window.location.protocol === 'https:', // Chỉ bật secure khi dùng HTTPS
+        sameSite: 'lax' // Điều chỉnh để hoạt động trong nhiều trường hợp hơn
+    });
+    
+    // Lưu vào localStorage như backup
+    localStorage.setItem('token', tokenValue);
+    if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+    }
+    
+    return tokenValue;
+};
+
+export default defaultApi;

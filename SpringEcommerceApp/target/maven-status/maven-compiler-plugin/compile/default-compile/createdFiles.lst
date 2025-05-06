@@ -10,6 +10,7 @@ com\ecommerce\pojo\OrderDetail.class
 com\ecommerce\repositories\OrderRepository.class
 com\ecommerce\services\impl\UserServiceImpl.class
 com\ecommerce\services\SellerService.class
+com\ecommerce\controllers\SocialLoginController$FacebookAuthRequest.class
 com\ecommerce\repositories\PaymentRepository.class
 com\ecommerce\services\impl\CategoryServiceImpl.class
 com\ecommerce\filters\SimpleCorsFilter.class
@@ -24,6 +25,8 @@ com\ecommerce\repositories\RoleRepository.class
 com\ecommerce\configs\WebAppContextConfig.class
 com\ecommerce\repositories\impl\SellerRepositoryImpl.class
 com\ecommerce\controllers\ApiUserController$LoginRequest.class
+com\ecommerce\controllers\SocialLoginController$SocialAuthResponse.class
+com\ecommerce\controllers\SocialLoginController.class
 com\ecommerce\pojo\Order.class
 com\ecommerce\springecommerceapp\resources\JakartaEE11Resource.class
 com\ecommerce\pojo\Payment.class
@@ -43,6 +46,7 @@ com\ecommerce\controllers\ApiHomeController.class
 com\ecommerce\pojo\Product.class
 com\ecommerce\repositories\SellerRepository.class
 com\ecommerce\repositories\OrderDetailRepository.class
+com\ecommerce\controllers\SocialLoginController$GoogleAuthRequest.class
 com\ecommerce\services\OrderService.class
 com\ecommerce\repositories\CommentRepository.class
 com\ecommerce\services\impl\PaymentServiceImpl.class

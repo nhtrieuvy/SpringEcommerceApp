@@ -20,7 +20,7 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true", maxAge = 3600)
+@CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", maxAge = 3600)
 public class ApiUserController {
 
     public static class LoginRequest {  
@@ -60,22 +60,53 @@ public class ApiUserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(
-            @RequestParam Map<String, String> params,
-            @RequestParam(value = "avatar", required = false) MultipartFile avatar
-    ) {
+    @CrossOrigin(origins = {"https://localhost:3000"}, allowCredentials = "true", allowedHeaders = "*")
+    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> params) {
         try {
+            System.out.println("=== REGISTER DEBUG ===");
+            System.out.println("Đã nhận request đăng ký dạng JSON");
+            System.out.println("Params: " + params);
+            
+            String username = params.get("username");
+            String email = params.get("email");
+            String password = params.get("password");
+            
+            // Kiểm tra dữ liệu đầu vào
+            if (username == null || username.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Username không được để trống"));
+            }
+            
+            if (email == null || email.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Email không được để trống"));
+            }
+            
+            if (password == null || password.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Password không được để trống"));
+            }
+            
             // Kiểm tra username/email đã tồn tại
-            if (userService.findByUsername(params.get("username")) != null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Username already exists"));
+            if (userService.findByUsername(username) != null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Username đã tồn tại"));
             }
-            if (userService.findByEmail(params.get("email")) != null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Email already exists"));
+            if (userService.findByEmail(email) != null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Email đã tồn tại"));
             }
-            User user = userService.addUser(params, avatar);
-            return ResponseEntity.ok(Map.of("success", true, "message", "Register success", "user", user));
+            
+            // Gọi service để tạo user mới (không có avatar)
+            User user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setPassword(password);  // Service sẽ mã hóa password
+            
+            User savedUser = userService.addUser(user);
+            
+            // Xóa password trước khi trả về
+//            savedUser.setPassword(null);
+            
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công", "user", savedUser));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "message", "Register failed: " + e.getMessage()));
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "message", "Lỗi đăng ký: " + e.getMessage()));
         }
     }
 
@@ -87,33 +118,62 @@ public class ApiUserController {
             @RequestBody(required = false) LoginRequest loginRequestBody
     ) {
         try {
+            System.out.println("=== LOGIN DEBUG ===");
             String loginUsername = username;
             String loginPassword = password;
             
             // Nếu body JSON được gửi, ưu tiên dùng nó
             if (loginRequestBody != null) {
+                System.out.println("Login với JSON body");
                 loginUsername = loginRequestBody.username;
                 loginPassword = loginRequestBody.password;
+            } else {
+                System.out.println("Login với form parameters");
             }
+            
+            System.out.println("Login attempt - Username: " + loginUsername);
             
             // Kiểm tra nếu cả hai cách đều không có dữ liệu
-            if (loginUsername == null && loginPassword == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new AuthResponse(false, "Missing username or password", null, null));
+            if (loginUsername == null || loginPassword == null) {
+                System.out.println("ERROR: Missing username or password");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new AuthResponse(false, "Tên đăng nhập hoặc mật khẩu không được để trống", null, null));
             }
             
-            User user = userService.findByUsername(loginUsername);
-            if (user == null)
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse(false, "User not found", null, null));
-            boolean authenticated = userService.authenticate(loginUsername, loginPassword);
-            if (!authenticated)
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new AuthResponse(false, "Invalid credentials", null, null));
-            
-            // Sử dụng phương thức static
-            String token = JwtUtils.generateToken(user.getUsername());
-            
-            return ResponseEntity.ok(new AuthResponse(true, "Login success", token, user));
+            // Thay đổi trình tự xác thực - gọi trực tiếp authenticate trước
+            try {
+                boolean authenticated = userService.authenticate(loginUsername, loginPassword);
+                if (!authenticated) {
+                    System.out.println("ERROR: Authentication failed for user: " + loginUsername);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(new AuthResponse(false, "Tên đăng nhập hoặc mật khẩu không chính xác", null, null));
+                }
+                
+                // Nếu xác thực thành công, lấy thông tin user
+                User user = userService.findByUsername(loginUsername);
+                if (user == null) {
+                    // Trường hợp rất hiếm - xác thực thành công nhưng không tìm thấy user
+                    System.out.println("ERROR: User authenticated but not found: " + loginUsername);
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(new AuthResponse(false, "Lỗi hệ thống: User không tồn tại sau khi xác thực", null, null));
+                }
+                
+                // Sử dụng phương thức static để tạo token
+                String token = JwtUtils.generateToken(user.getUsername());
+                
+                System.out.println("Login SUCCESS for user: " + loginUsername);
+                return ResponseEntity.ok(new AuthResponse(true, "Đăng nhập thành công", token, user));
+            } catch (Exception e) {
+                System.err.println("ERROR during authentication: " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new AuthResponse(false, "Lỗi xác thực: " + e.getMessage(), null, null));
+            }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new AuthResponse(false, "Login failed: " + e.getMessage(), null, null));
+            System.err.println("ERROR in login endpoint: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new AuthResponse(false, "Lỗi đăng nhập: " + e.getMessage(), null, null));
         }
     }
 
@@ -157,7 +217,8 @@ public class ApiUserController {
     }
     
     @PutMapping("/profile")
-    @CrossOrigin
+    @CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", 
+                 allowedHeaders = "*", methods = {RequestMethod.PUT, RequestMethod.OPTIONS})
     public ResponseEntity<?> updateProfile(
             @RequestParam(required = false) Map<String, String> params,
             @RequestParam(value = "avatar", required = false) MultipartFile avatar,
@@ -201,8 +262,8 @@ public class ApiUserController {
     private void updateUserInfo(Map<String, String> params, MultipartFile avatar, User currentUser) throws Exception {
         // Cập nhật thông tin người dùng
         if (params != null) {
-            if (params.containsKey("fullName")) {
-                currentUser.setUsername(params.get("fullName"));
+            if (params.containsKey("fullname")) {
+                currentUser.setFullname(params.get("fullname"));
             }
             
             if (params.containsKey("email") && !params.get("email").equals(currentUser.getEmail())) {
@@ -214,9 +275,9 @@ public class ApiUserController {
                 currentUser.setEmail(params.get("email"));
             }
             
-            // if (params.containsKey("phone")) {
-            //     currentUser.set(params.get("phone"));
-            // }
+            if (params.containsKey("phone")) {
+                currentUser.setPhone(params.get("phone"));
+            }
         }
         
         // Cập nhật avatar nếu có
@@ -229,7 +290,7 @@ public class ApiUserController {
     }
     
     @PutMapping("/profile/password")
-    @CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true", 
+    @CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", 
                  allowedHeaders = "*", methods = {RequestMethod.PUT, RequestMethod.OPTIONS, RequestMethod.POST})
     public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request, HttpServletRequest httpRequest) {
         try {

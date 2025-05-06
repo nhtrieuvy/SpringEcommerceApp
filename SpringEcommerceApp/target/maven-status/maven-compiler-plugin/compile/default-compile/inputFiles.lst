@@ -10,6 +10,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiUserController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\HomeController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ProductController.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\SocialLoginController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\TestController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\UserController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\filters\JwtAuthenticationFilter.java

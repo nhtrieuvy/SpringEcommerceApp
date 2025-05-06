@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @NoArgsConstructor
@@ -28,7 +29,26 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
     
+    @Column(name = "fullname")
+    private String fullname;
+    
+    @Column(name = "phone")
+    private String phone;
+    
+    @Column(length = 1024)
     private String avatar;
+
+    // Trường mới cho đăng nhập Google
+    @Column(name = "google_id")
+    private String googleId;
+    
+    // Trường mới cho đăng nhập Facebook
+    @Column(name = "facebook_id")
+    private String facebookId;
+    
+    // Trường để xác định đăng nhập từ đâu
+    @Column(name = "auth_provider")
+    private String authProvider;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -37,6 +57,7 @@ public class User {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    @JsonManagedReference
     private Set<Role> roles;
 
     public Long getId() {
@@ -71,12 +92,52 @@ public class User {
         this.email = email;
     }
 
+    public String getFullname() {
+        return fullname;
+    }
+
+    public void setFullname(String fullname) {
+        this.fullname = fullname;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
     public String getAvatar() {
         return avatar;
     }
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public String getFacebookId() {
+        return facebookId;
+    }
+
+    public void setFacebookId(String facebookId) {
+        this.facebookId = facebookId;
+    }
+
+    public String getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
     }
 
     public Set<Role> getRoles() {
@@ -86,6 +147,4 @@ public class User {
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
-
-    
 }
