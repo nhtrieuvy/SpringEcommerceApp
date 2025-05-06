@@ -15,11 +15,51 @@ import {
   Alert,
   CircularProgress,
   Tabs,
-  Tab
+  Tab,
+  Card,
+  IconButton,
+  InputAdornment,
+  Fade,
+  Chip,
+  Tooltip
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import BadgeIcon from '@mui/icons-material/Badge';
 import SaveIcon from '@mui/icons-material/Save';
 import LockIcon from '@mui/icons-material/Lock';
+import EmailIcon from '@mui/icons-material/Email';
+import PhoneIcon from '@mui/icons-material/Phone';
+import PersonIcon from '@mui/icons-material/Person';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import SecurityIcon from '@mui/icons-material/Security';
+import { styled } from '@mui/material/styles';
+
+// Styled component cho thẻ Tabs tùy chỉnh
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+  borderBottom: '1px solid #e8e8e8',
+  '& .MuiTabs-indicator': {
+    backgroundColor: 'var(--primary-main)',
+    height: 3,
+  },
+}));
+
+// Styled component cho thẻ Tab tùy chỉnh
+const StyledTab = styled(Tab)(({ theme }) => ({
+  textTransform: 'none',
+  fontWeight: 'bold',
+  fontSize: 16,
+  marginRight: theme.spacing(1),
+  color: 'var(--text-secondary)',
+  '&.Mui-selected': {
+    color: 'var(--primary-main)',
+  },
+  '&.Mui-focusVisible': {
+    backgroundColor: 'rgba(100, 95, 228, 0.32)',
+  },
+}));
 
 // TabPanel component để hiển thị nội dung của từng tab
 function TabPanel(props) {
@@ -34,13 +74,28 @@ function TabPanel(props) {
       {...other}
     >
       {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
+        <Fade in={value === index}>
+          <Box sx={{ p: { xs: 2, md: 3 } }}>
+            {children}
+          </Box>
+        </Fade>
       )}
     </div>
   );
 }
+
+// Styled component cho upload avatar
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
 
 const Profile = () => {
   const [user, dispatch] = useContext(MyUserContext);
@@ -62,6 +117,11 @@ const Profile = () => {
     newPassword: '',
     confirmPassword: ''
   });
+  
+  // States cho hiển thị/ẩn mật khẩu
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Preview cho avatar
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -100,6 +160,13 @@ const Profile = () => {
       ...passwordData,
       [name]: value
     });
+  };
+  
+  // Toggle hiện/ẩn mật khẩu
+  const handleTogglePasswordVisibility = (field) => {
+    if (field === 'current') setShowCurrentPassword(!showCurrentPassword);
+    else if (field === 'new') setShowNewPassword(!showNewPassword);
+    else if (field === 'confirm') setShowConfirmPassword(!showConfirmPassword);
   };
   
   // Handle avatar upload
@@ -255,91 +322,192 @@ const Profile = () => {
   }
   
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+    <Container maxWidth="md" sx={{ py: 4 }} className="fade-in">
+      <Card className="custom-card" sx={{ overflow: 'visible', borderRadius: 3 }}>
         {/* Header section */}
         <Box sx={{ 
-          p: 3, 
-          bgcolor: 'primary.main', 
+          p: { xs: 2, md: 3 }, 
+          background: 'var(--primary-gradient)',
           color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 2
+          borderRadius: '12px 12px 0 0',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <AccountCircleIcon fontSize="large" />
-          <Typography variant="h5" component="h1">Thông tin tài khoản</Typography>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm="auto">
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Avatar 
+                  src={avatarPreview || (user.avatar ? user.avatar : undefined)} 
+                  alt={user.username}
+                  className="avatar"
+                  sx={{ 
+                    width: 80, 
+                    height: 80,
+                    border: '3px solid white',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  {!avatarPreview && !user.avatar && user.username?.charAt(0).toUpperCase()}
+                </Avatar>
+                
+                {/* Nút thay đổi ảnh ngay trên avatar */}
+                <IconButton
+                  component="label"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    bgcolor: 'white',
+                    color: 'var(--primary-main)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                    width: 30,
+                    height: 30,
+                    '&:hover': {
+                      bgcolor: '#f0f0f0',
+                    }
+                  }}
+                >
+                  <PhotoCameraIcon fontSize="small" />
+                  <VisuallyHiddenInput
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                  />
+                </IconButton>
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12} sm>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                  <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
+                    {user.fullname || user.username}
+                  </Typography>
+                  
+                  {user.authProvider && (
+                    <Tooltip title={`Tài khoản đăng nhập qua ${user.authProvider}`}>
+                      <Chip 
+                        icon={<VerifiedUserIcon fontSize="small" />} 
+                        label={user.authProvider === 'GOOGLE' ? 'Google' : user.authProvider === 'FACEBOOK' ? 'Facebook' : user.authProvider}
+                        size="small"
+                        sx={{ 
+                          bgcolor: 'rgba(255,255,255,0.2)', 
+                          color: 'white',
+                          '& .MuiChip-icon': { color: 'white' } 
+                        }}
+                      />
+                    </Tooltip>
+                  )}
+                </Box>
+                
+                <Typography variant="body1" sx={{ mt: 0.5, opacity: 0.9 }}>
+                  {user.email}
+                </Typography>
+                
+                <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.8 }}>
+                  Thành viên từ: {user.createdDate ? new Date(user.createdDate).toLocaleDateString('vi-VN') : 'N/A'}
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+          
+          {/* Background pattern */}
+          <Box sx={{
+            position: 'absolute',
+            top: -100,
+            right: -100,
+            width: 300,
+            height: 300,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%)',
+            zIndex: 0
+          }} />
         </Box>
         
         {/* Tabs */}
-        <Tabs 
+        <StyledTabs 
           value={tabValue} 
           onChange={handleTabChange}
           aria-label="profile tabs"
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
+          variant="fullWidth"
         >
-          <Tab label="Thông tin cá nhân" />
-          <Tab label="Đổi mật khẩu" />
-        </Tabs>
+          <StyledTab 
+            icon={<PersonIcon />} 
+            iconPosition="start" 
+            label="Thông tin cá nhân" 
+          />
+          <StyledTab 
+            icon={<SecurityIcon />} 
+            iconPosition="start" 
+            label="Bảo mật" 
+          />
+        </StyledTabs>
         
         {/* Tab content */}
         <TabPanel value={tabValue} index={0}>
           {message.content && (
-            <Alert severity={message.type} sx={{ mb: 3 }}>
+            <Alert 
+              severity={message.type} 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 2,
+                '& .MuiAlert-icon': {
+                  color: message.type === 'success' ? 'var(--success)' : 'var(--error)'
+                }
+              }}
+            >
               {message.content}
             </Alert>
           )}
           
           <form onSubmit={handleProfileSubmit}>
             <Grid container spacing={3}>
-              {/* Avatar section */}
-              <Grid item xs={12} sm={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <Avatar 
-                  src={avatarPreview || (user.avatar ? user.avatar : undefined)} 
-                  sx={{ width: 120, height: 120, mb: 2 }}
-                >
-                  {!avatarPreview && !user.avatar && user.username.charAt(0).toUpperCase()}
-                </Avatar>
-                
-                <Button
-                  variant="outlined"
-                  component="label"
-                  size="small"
-                >
-                  Chọn ảnh đại diện
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                  />
-                </Button>
-                
-                <Typography variant="caption" sx={{ mt: 1, textAlign: 'center' }}>
-                  Định dạng: JPG, JPEG, PNG. <br />
-                  Kích thước tối đa: 5MB
-                </Typography>
-              </Grid>
-              
               {/* Info section */}
-              <Grid item xs={12} sm={8}>
+              <Grid item xs={12}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
-                      label="Tên người dùng"
+                      label="Tên đăng nhập"
                       value={user.username}
                       disabled
-                      variant="filled"
+                      variant="outlined"
+                      className="custom-input"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PersonIcon sx={{ color: 'var(--text-secondary)' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
                     />
                   </Grid>
                   
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
                     <TextField
                       fullWidth
                       label="Họ và tên"
                       name="fullname"
                       value={profileData.fullname}
                       onChange={handleProfileChange}
+                      className="custom-input"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <BadgeIcon sx={{ color: 'var(--primary-main)' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -351,6 +519,19 @@ const Profile = () => {
                       type="email"
                       value={profileData.email}
                       onChange={handleProfileChange}
+                      className="custom-input"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <EmailIcon sx={{ color: 'var(--primary-main)' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
                     />
                   </Grid>
                   
@@ -361,19 +542,39 @@ const Profile = () => {
                       name="phone"
                       value={profileData.phone}
                       onChange={handleProfileChange}
+                      className="custom-input"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PhoneIcon sx={{ color: 'var(--primary-main)' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                        }
+                      }}
                     />
                   </Grid>
                 </Grid>
               </Grid>
               
               <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 1 }} />
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
                     type="submit"
                     variant="contained"
                     startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                     disabled={loading}
+                    className="custom-btn btn-primary"
+                    sx={{ 
+                      mt: 1,
+                      borderRadius: 2,
+                      fontWeight: 'bold',
+                      px: 3
+                    }}
                   >
                     {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
                   </Button>
@@ -385,12 +586,21 @@ const Profile = () => {
         
         <TabPanel value={tabValue} index={1}>
           {message.content && (
-            <Alert severity={message.type} sx={{ mb: 3 }}>
+            <Alert 
+              severity={message.type} 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 2,
+                '& .MuiAlert-icon': {
+                  color: message.type === 'success' ? 'var(--success)' : 'var(--error)'
+                }
+              }}
+            >
               {message.content}
             </Alert>
           )}
           
-          <Box sx={{ maxWidth: 500, mx: 'auto' }}>
+          <Box sx={{ maxWidth: 600, mx: 'auto' }}>
             <form onSubmit={handlePasswordSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
@@ -398,10 +608,34 @@ const Profile = () => {
                     fullWidth
                     label="Mật khẩu hiện tại"
                     name="currentPassword"
-                    type="password"
+                    type={showCurrentPassword ? 'text' : 'password'}
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
                     required
+                    className="custom-input"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon sx={{ color: 'var(--primary-main)' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={() => handleTogglePasswordVisibility('current')}
+                            edge="end"
+                          >
+                            {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
                   />
                 </Grid>
                 
@@ -410,10 +644,34 @@ const Profile = () => {
                     fullWidth
                     label="Mật khẩu mới"
                     name="newPassword"
-                    type="password"
+                    type={showNewPassword ? 'text' : 'password'}
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     required
+                    className="custom-input"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon sx={{ color: 'var(--primary-main)' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={() => handleTogglePasswordVisibility('new')}
+                            edge="end"
+                          >
+                            {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
                   />
                 </Grid>
                 
@@ -422,24 +680,54 @@ const Profile = () => {
                     fullWidth
                     label="Xác nhận mật khẩu mới"
                     name="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={passwordData.confirmPassword}
                     onChange={handlePasswordChange}
                     required
                     error={passwordData.newPassword !== passwordData.confirmPassword && passwordData.confirmPassword !== ''}
                     helperText={passwordData.newPassword !== passwordData.confirmPassword && passwordData.confirmPassword !== '' ? 'Mật khẩu không khớp' : ''}
+                    className="custom-input"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon sx={{ color: 'var(--primary-main)' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={() => handleTogglePasswordVisibility('confirm')}
+                            edge="end"
+                          >
+                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
                   />
                 </Grid>
                 
                 <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <Divider sx={{ my: 1 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                     <Button
                       type="submit"
                       variant="contained"
                       color="primary"
                       startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LockIcon />}
                       disabled={loading}
+                      className="custom-btn btn-primary"
+                      sx={{ 
+                        borderRadius: 2,
+                        fontWeight: 'bold',
+                        px: 3
+                      }}
                     >
                       {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
                     </Button>
@@ -449,7 +737,7 @@ const Profile = () => {
             </form>
           </Box>
         </TabPanel>
-      </Paper>
+      </Card>
     </Container>
   );
 };
