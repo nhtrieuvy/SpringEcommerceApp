@@ -36,3 +36,229 @@
     transform: rotate(360deg);
   }
 }
+
+/* Custom theme với tông màu xanh lá */
+
+/* --- Variables màu sắc --- */
+:root {
+  --primary-light: #4caf50;
+  --primary-main: #2e7d32;
+  --primary-dark: #1b5e20;
+  --primary-gradient: linear-gradient(45deg, #2e7d32 30%, #43a047 90%);
+  
+  --secondary-light: #80cbc4;
+  --secondary-main: #009688;
+  --secondary-dark: #00796b;
+  --secondary-gradient: linear-gradient(45deg, #00796b 30%, #009688 90%);
+  
+  --background-default: #f8f9fa;
+  --background-paper: #ffffff;
+  
+  --success: #66bb6a;
+  --info: #29b6f6;
+  --warning: #ffa726;
+  --error: #ef5350;
+  
+  --text-primary: #263238;
+  --text-secondary: #546e7a;
+  
+  --border-radius: 8px;
+  --card-border-radius: 12px;
+  --transition-speed: 0.2s;
+}
+
+/* --- General styles --- */
+body {
+  background-color: var(--background-default);
+  color: var(--text-primary);
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+/* --- Hiệu ứng nút --- */
+.custom-btn {
+  border-radius: var(--border-radius);
+  padding: 8px 16px;
+  transition: all var(--transition-speed) ease-in-out;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.custom-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(46, 125, 50, 0.2);
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--secondary-gradient);
+  color: white;
+}
+
+/* --- Hiệu ứng Card --- */
+.custom-card {
+  border-radius: var(--card-border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform var(--transition-speed) ease-in-out, box-shadow var(--transition-speed) ease-in-out;
+  background-color: var(--background-paper);
+}
+
+.custom-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Header và Navigation --- */
+.app-header {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  background-color: var(--background-paper);
+}
+
+.nav-link {
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: color var(--transition-speed) ease-in-out;
+}
+
+.nav-link:hover {
+  color: var(--primary-main);
+}
+
+.nav-link.active {
+  color: var(--primary-main);
+  font-weight: 600;
+}
+
+/* --- Form elements --- */
+.custom-input {
+  transition: border-color var(--transition-speed) ease-in-out;
+}
+
+.custom-input:hover, .custom-input:focus {
+  border-color: var(--primary-main);
+}
+
+/* --- Animations --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* --- Page Transitions --- */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 400ms, transform 400ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* --- Loading Spinner --- */
+.custom-spinner {
+  color: var(--primary-main);
+}
+
+/* --- Hover Effects --- */
+.hover-scale {
+  transition: transform var(--transition-speed) ease-in-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-shadow {
+  transition: box-shadow var(--transition-speed) ease-in-out;
+}
+
+.hover-shadow:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Avatar Styles --- */
+.avatar {
+  border: 2px solid var(--primary-light);
+  transition: all var(--transition-speed) ease-in-out;
+}
+
+.avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Badge Styles --- */
+.custom-badge {
+  background-color: var(--primary-main);
+  color: white;
+  border-radius: 50%;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+}
+
+/* --- Product Card Styles --- */
+.product-card {
+  border-radius: var(--card-border-radius);
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all var(--transition-speed) ease-in-out;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.product-img {
+  transition: transform var(--transition-speed) ease-in-out;
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.05);
+}
+
+.product-price {
+  color: var(--primary-main);
+  font-weight: bold;
+}
+
+/* --- Footer styles --- */
+.footer {
+  background-color: var(--primary-dark);
+  color: white;
+  padding: 20px 0;
+}
+
+.footer-link {
+  color: var(--secondary-light);
+  transition: color var(--transition-speed) ease-in-out;
+}
+
+.footer-link:hover {
+  color: white;
+  text-decoration: none;
+}

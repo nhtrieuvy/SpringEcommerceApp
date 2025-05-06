@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useCallback } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
 import cookie from "react-cookies";
 import {
@@ -12,10 +12,20 @@ import {
   CircularProgress,
   Grid,
   Link as MuiLink,
-  Divider
+  Divider,
+  InputAdornment,
+  IconButton,
+  Card,
+  Grow,
+  useTheme
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import FacebookIcon from "@mui/icons-material/Facebook";
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { styled } from "@mui/system";
 import { MyUserContext } from "../configs/MyContexts";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
@@ -23,33 +33,59 @@ import { endpoint } from "../configs/Apis";
 import defaultApi from "../configs/Apis";
 import axios from 'axios';
 
-
-// Styled component cho icon
+// Styled component cho icon header
 const IconWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   marginBottom: theme.spacing(1),
+  width: 60,
+  height: 60,
+  borderRadius: '50%',
+  backgroundColor: 'var(--primary-light)',
   '& .MuiSvgIcon-root': {
-    fontSize: 40,
-    color: theme.palette.primary.main
+    fontSize: 30,
+    color: 'white'
+  }
+}));
+
+// Styled component cho form
+const StyledCard = styled(Card)(({ theme }) => ({
+  position: 'relative',
+  overflow: 'visible',
+  borderRadius: 16,
+  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+  padding: theme.spacing(4),
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '5px',
+    background: 'var(--primary-gradient)',
+    borderRadius: '16px 16px 0 0'
   }
 }));
 
 export default function Login() {
-  // Sử dụng destructuring trực tiếp để đảm bảo nhất quán với Header.js
+  const theme = useTheme();
   const [user, dispatch] = useContext(MyUserContext);
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [fbInitialized, setFbInitialized] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Facebook App ID - thay thế bằng ID của bạn khi đăng ký trên Facebook Developer
+  // Facebook App ID
   const FACEBOOK_APP_ID = "1092426749573331";
   const GOOGLE_CLIENT_ID = "618407643524-0nasoq3jc5dvturarl9truih021cofag.apps.googleusercontent.com";
+
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,7 +93,6 @@ export default function Login() {
     setMsg("");
 
     try {
-      // Sử dụng defaultApi và endpoint từ import tĩnh
       console.log("Đang gửi request đăng nhập:", {
         username: username,
         password: password
@@ -112,7 +147,6 @@ export default function Login() {
     try {
       console.log("Google response:", credentialResponse);
 
-      // Sử dụng defaultApi và endpoint từ import tĩnh
       const response = await defaultApi.post(endpoint.GOOGLE_LOGIN, {
         credential: credentialResponse.credential,
         clientId: GOOGLE_CLIENT_ID
@@ -276,96 +310,246 @@ export default function Login() {
   }
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Paper
-        elevation={3}
+    <Container component="main" maxWidth="xs" className="fade-in">
+      <Box
         sx={{
-          mt: 8,
-          p: 4,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          borderRadius: 2
+          justifyContent: 'center',
+          minHeight: '80vh',
         }}
       >
-        <IconWrapper>
-          <LockOutlinedIcon />
-        </IconWrapper>
-
-        <Typography component="h1" variant="h5" gutterBottom>
-          Đăng nhập
-        </Typography>
-
-        {msg && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{msg}</Alert>}
-
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="username"
-            label="Tên đăng nhập"
-            name="username"
-            autoComplete="username"
-            autoFocus
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Mật khẩu"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2, py: 1.5 }}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Đăng nhập'}
-          </Button>
-
-          <Divider sx={{ my: 2 }} />
-
-          <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <GoogleLogin
-              onSuccess={handleGoogleLogin}
-              onError={() => {
-                setMsg("Đăng nhập Google thất bại. Vui lòng thử lại sau.");
+        <Grow in={true} timeout={800}>
+          <StyledCard>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
               }}
-            />
-          </GoogleOAuthProvider>
+            >
+              <IconWrapper className="hover-scale">
+                <LockOutlinedIcon />
+              </IconWrapper>
 
-          <Button
-            onClick={handleFacebookLoginClick}
-            fullWidth
-            variant="contained"
-            color="primary"
-            startIcon={<FacebookIcon />}
-            sx={{ mt: 1, mb: 2, bgcolor: '#1877F2', '&:hover': { bgcolor: '#0e5a9e' } }}
-          >
-            Đăng nhập bằng Facebook
-          </Button>
+              <Typography 
+                component="h1" 
+                variant="h4" 
+                sx={{ 
+                  fontWeight: 'bold', 
+                  color: 'var(--primary-main)',
+                  my: 2 
+                }}
+              >
+                Đăng nhập
+              </Typography>
 
-          <Grid container justifyContent="center">
-            <Grid item>
-              <MuiLink component={Link} to="/register" variant="body2">
-                {"Chưa có tài khoản? Đăng ký ngay"}
-              </MuiLink>
-            </Grid>
-          </Grid>
-        </Box>
-      </Paper>
+              {msg && 
+                <Alert 
+                  severity="error" 
+                  sx={{ 
+                    width: '100%', 
+                    mb: 2,
+                    borderRadius: 2,
+                    '& .MuiAlert-icon': {
+                      color: 'var(--error)'
+                    }
+                  }}
+                >
+                  {msg}
+                </Alert>
+              }
+
+              <Box 
+                component="form" 
+                onSubmit={handleSubmit} 
+                noValidate 
+                sx={{ width: '100%' }}
+              >
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="username"
+                  label="Tên đăng nhập"
+                  name="username"
+                  autoComplete="username"
+                  autoFocus
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="custom-input"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonOutlineIcon sx={{ color: 'var(--primary-main)' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="password"
+                  label="Mật khẩu"
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="custom-input"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockIcon sx={{ color: 'var(--primary-main)' }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={handleClickShowPassword}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                  sx={{
+                    mb: 1,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                  <MuiLink 
+                    href="#" 
+                    variant="body2"
+                    sx={{ 
+                      color: 'var(--primary-main)',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
+                    }}
+                  >
+                    Quên mật khẩu?
+                  </MuiLink>
+                </Box>
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  disabled={loading}
+                  className="custom-btn btn-primary"
+                  sx={{ 
+                    py: 1.5,
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    fontSize: '1rem'
+                  }}
+                >
+                  {loading ? (
+                    <CircularProgress 
+                      size={24} 
+                      sx={{ color: 'white' }} 
+                      className="custom-spinner"
+                    />
+                  ) : (
+                    'Đăng nhập'
+                  )}
+                </Button>
+
+                <Box sx={{ position: 'relative', my: 3 }}>
+                  <Divider>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'text.secondary',
+                        px: 1
+                      }}
+                    >
+                      hoặc đăng nhập với
+                    </Typography>
+                  </Divider>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                    <GoogleLogin
+                      onSuccess={handleGoogleLogin}
+                      onError={() => {
+                        setMsg("Đăng nhập Google thất bại. Vui lòng thử lại sau.");
+                      }}
+                      theme="filled_blue"
+                      shape="circle"
+                      size="large"
+                      logo_alignment="center"
+                      width="280px"
+                    />
+                  </GoogleOAuthProvider>
+                </Box>
+
+                <Button
+                  onClick={handleFacebookLoginClick}
+                  fullWidth
+                  variant="contained"
+                  startIcon={<FacebookIcon />}
+                  className="custom-btn"
+                  sx={{ 
+                    mb: 3,
+                    bgcolor: '#1877F2', 
+                    '&:hover': { 
+                      bgcolor: '#0e5a9e' 
+                    },
+                    py: 1.5,
+                    borderRadius: 2,
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Đăng nhập bằng Facebook
+                </Button>
+
+                <Grid container justifyContent="center">
+                  <Grid item>
+                    <Typography variant="body2" sx={{ display: 'inline' }}>
+                      Chưa có tài khoản?
+                    </Typography>
+                    <MuiLink 
+                      component={Link} 
+                      to="/register" 
+                      variant="body2"
+                      sx={{ 
+                        ml: 1,
+                        color: 'var(--primary-main)',
+                        fontWeight: 'bold',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          textDecoration: 'underline'
+                        }
+                      }}
+                    >
+                      Đăng ký ngay
+                    </MuiLink>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Box>
+          </StyledCard>
+        </Grow>
+      </Box>
     </Container>
   );
 }
