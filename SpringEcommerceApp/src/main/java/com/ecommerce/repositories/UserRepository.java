@@ -22,4 +22,6 @@ public interface UserRepository {
     User findByEmail(String email);
     
     List<User> findByActiveStatus(boolean isActive);
+    
+    List<User> findByRole(String roleName);
 }

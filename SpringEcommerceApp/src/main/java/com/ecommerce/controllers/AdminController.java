@@ -134,18 +134,34 @@ public class AdminController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi cập nhật thông tin người dùng: " + e.getMessage()));
-        }
-    }
-
+        }    }    
+    
     // API để lấy danh sách tất cả các quyền
     @GetMapping("/roles")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<?> getAllRoles() {
         try {
             List<Role> roles = roleService.findAll();
             List<Map<String, Object>> roleDetails = new ArrayList<>();
+            
+            // Kiểm tra nếu người dùng hiện tại là STAFF
+            org.springframework.security.core.Authentication authentication = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            
+            boolean isStaff = false;
+            if (authentication != null) {
+                isStaff = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF")) &&
+                    !authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+            }
 
             for (Role role : roles) {
+                // Nếu là nhân viên (STAFF) thì không hiển thị quyền ADMIN
+                if (isStaff && "ADMIN".equals(role.getName())) {
+                    continue;
+                }
+                
                 Map<String, Object> roleMap = new HashMap<>();
                 roleMap.put("id", role.getId());
                 roleMap.put("name", role.getName());
@@ -159,11 +175,9 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy danh sách quyền: " + e.getMessage()));
         }
-    }
-
-    // API để cập nhật quyền cho người dùng
+    }    // API để cập nhật quyền cho người dùng
     @PutMapping("/users/{userId}/roles")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<?> updateUserRoles(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
         try {            
             User user = userService.findById(userId);
@@ -171,42 +185,71 @@ public class AdminController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "message", "Không tìm thấy người dùng với ID: " + userId));
             }
-              List<?> roleIdsObj = (List<?>) request.get("roleIds");
-            if (roleIdsObj == null || roleIdsObj.isEmpty()) {
+            
+            List<?> roleIdsObj = (List<?>) request.get("roleIds");            if (roleIdsObj == null || roleIdsObj.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "Danh sách quyền không được để trống"));
-            }            
+            }              
+            // Kiểm tra nếu người dùng hiện tại là STAFF và cố gắng cấp quyền ADMIN cho người khác
+            org.springframework.security.core.Authentication authentication = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             
+            // Nếu không có authentication, từ chối yêu cầu
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Yêu cầu xác thực"));
+            }
+            
+            boolean isStaff = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF")) &&
+                !authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+              if (isStaff) {
+                // Kiểm tra nếu người dùng đang chỉnh sửa có vai trò ADMIN
+                boolean userHasAdminRole = false;
+                if (user.getRoles() != null) {
+                    for (Role existingRole : user.getRoles()) {
+                        if ("ADMIN".equals(existingRole.getName())) {
+                            userHasAdminRole = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Nhân viên không được phép thao tác với người dùng có quyền ADMIN
+                if (userHasAdminRole) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("success", false, 
+                                      "message", "Nhân viên không có quyền thay đổi quyền của người dùng có quyền ADMIN"));
+                }
+                
+                // Kiểm tra xem danh sách quyền có chứa quyền ADMIN không
+                boolean containsAdminRole = false;
+                for (Object roleIdObj : roleIdsObj) {
+                    Long roleId = convertToLong(roleIdObj);
+                    if (roleId != null) {
+                        Role role = roleService.findById(roleId);
+                        if (role != null && "ADMIN".equals(role.getName())) {
+                            containsAdminRole = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Nhân viên không được phép thêm quyền ADMIN cho bất kỳ ai
+                if (containsAdminRole) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("success", false, 
+                                      "message", "Nhân viên không có quyền cấp quyền ADMIN cho người dùng"));
+                }
+            }
             
             // Xóa tất cả quyền hiện tại
             user.setRoles(new HashSet<>());            
             
             // Thêm quyền mới - chuyển đổi từng phần tử của danh sách sang Long
             for (Object roleIdObj : roleIdsObj) {
-                // Chuyển đổi an toàn từ Integer hoặc Long sang Long
-                Long roleId = null;
-                
-                try {
-                    if (roleIdObj instanceof Integer) {
-                        roleId = Long.valueOf(((Integer) roleIdObj).longValue());
-                    } else if (roleIdObj instanceof Long) {
-                        roleId = (Long) roleIdObj;
-                    } else if (roleIdObj instanceof String) {
-                        roleId = Long.parseLong((String) roleIdObj);
-                    } else if (roleIdObj instanceof Number) {
-                        roleId = ((Number) roleIdObj).longValue();
-                    } else {
-                        System.err.println("Không thể xác định kiểu dữ liệu của roleId: " + roleIdObj + " - loại: " + 
-                                         (roleIdObj != null ? roleIdObj.getClass().getName() : "null"));
-                        continue;
-                    }
-                } catch (NumberFormatException e) {
-                    System.err.println("Không thể chuyển đổi sang Long: " + roleIdObj);
-                    continue;
-                } catch (Exception e) {
-                    System.err.println("Lỗi khi xử lý roleId: " + e.getMessage());
-                    continue;
-                }
+                Long roleId = convertToLong(roleIdObj);
                 
                 if (roleId != null) {
                     Role role = roleService.findById(roleId);
@@ -241,11 +284,9 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", errorMsg));
         }
-    }
-
-    // Xóa quyền của người dùng
+    }    // Xóa quyền của người dùng
     @DeleteMapping("/users/{userId}/roles/{roleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<?> removeRoleFromUser(@PathVariable Long userId, @PathVariable Long roleId) {
         try {
             User user = userService.findById(userId);
@@ -258,6 +299,46 @@ public class AdminController {
             if (role == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "message", "Không tìm thấy quyền với ID: " + roleId));
+            }            // Kiểm tra nếu người dùng hiện tại là STAFF và cố gắng xóa quyền ADMIN
+            org.springframework.security.core.Authentication authentication = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            
+            // Nếu không có authentication, từ chối yêu cầu
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "Yêu cầu xác thực"));
+            }
+            
+            boolean isStaff = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF")) &&
+                !authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+              // Nếu là nhân viên, không được xóa quyền ADMIN và không được sửa người dùng có quyền ADMIN
+            if (isStaff) {
+                // Kiểm tra xem vai trò cần xóa có phải ADMIN không
+                if ("ADMIN".equals(role.getName())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("success", false, 
+                                        "message", "Nhân viên không có quyền xóa quyền ADMIN của người dùng"));
+                }
+                
+                // Kiểm tra xem người dùng có quyền ADMIN không
+                boolean userHasAdminRole = false;
+                if (user.getRoles() != null) {
+                    for (Role existingRole : user.getRoles()) {
+                        if ("ADMIN".equals(existingRole.getName())) {
+                            userHasAdminRole = true;
+                            break;
+                        }
+                    }
+                }
+                
+                // Nếu người dùng có quyền ADMIN, nhân viên không được phép sửa
+                if (userHasAdminRole) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("success", false, 
+                                        "message", "Nhân viên không có quyền chỉnh sửa quyền của người dùng có quyền ADMIN"));
+                }
             }
 
             // Xóa quyền
@@ -272,9 +353,7 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi xóa quyền: " + e.getMessage()));
         }
-    }
-
-    // Phương thức hỗ trợ
+    }    // Phương thức hỗ trợ
     private String getDescriptionForRole(String roleName) {
         switch (roleName) {
             case "ADMIN":
@@ -288,5 +367,60 @@ public class AdminController {
             default:
                 return "Vai trò không xác định";
         }
+    }
+      // API để lấy danh sách người dùng theo vai trò
+    @GetMapping("/users/role/{roleName}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<?> getUsersByRole(@PathVariable String roleName) {
+        try {
+            List<User> users = userService.findByRole(roleName);
+            
+            if (users.isEmpty()) {
+                return ResponseEntity.ok(
+                    Map.of(
+                        "success", true,
+                        "message", "Không có người dùng nào có vai trò " + roleName,
+                        "content", Collections.emptyList()
+                    )
+                );
+            }
+            
+            return ResponseEntity.ok(
+                Map.of(
+                    "success", true,
+                    "content", users
+                )
+            );
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)                .body(Map.of(
+                    "success", false, 
+                    "message", "Lỗi khi lấy danh sách người dùng theo vai trò: " + e.getMessage()
+                ));
+        }
+    }
+    
+    // Helper method to convert various types to Long
+    private Long convertToLong(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        
+        try {
+            if (obj instanceof Integer) {
+                return Long.valueOf(((Integer) obj).longValue());
+            } else if (obj instanceof Long) {
+                return (Long) obj;
+            } else if (obj instanceof String) {
+                return Long.parseLong((String) obj);
+            } else if (obj instanceof Number) {
+                return ((Number) obj).longValue();
+            }
+        } catch (Exception e) {
+            System.err.println("Error converting to Long: " + e.getMessage());
+        }
+        
+        return null;
     }
 }
