@@ -5,6 +5,7 @@ import Home from "./components/Home";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Profile from "./components/Profile";
+import Admin from "./components/Admin";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import Footer from "./layout/Footer";
@@ -156,6 +157,11 @@ const App = () => {
               <Route path="/profile" element={
                 <AuthenticatedRoute>
                   <Profile />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/admin" element={
+                <AuthenticatedRoute>
+                  <Admin />
                 </AuthenticatedRoute>
               } />
               <Route path="/forgot-password" element={

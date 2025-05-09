@@ -12,6 +12,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\HomeController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\PasswordResetController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ProductController.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\SellerController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\SocialLoginController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\TestController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\UserController.java
@@ -27,6 +28,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Produc
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Review.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Role.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Seller.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\SellerRequest.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Store.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\User.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\CategoryRepository.java
@@ -41,6 +43,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositorie
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\ReviewRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\RoleRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\SellerRepositoryImpl.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\SellerRequestRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\StoreRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\UserRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\OrderDetailRepository.java
@@ -51,6 +54,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositorie
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\ReviewRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\RoleRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\SellerRepository.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\SellerRequestRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\StoreRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\UserRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\CategoryService.java
@@ -66,6 +70,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\im
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\ProductServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\ReviewServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\RoleServiceImpl.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\SellerRequestServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\SellerServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\StoreServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\UserServiceImpl.java
@@ -76,6 +81,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\Pa
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\ProductService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\ReviewService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\RoleService.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\SellerRequestService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\SellerService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\StoreService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\UserService.java
