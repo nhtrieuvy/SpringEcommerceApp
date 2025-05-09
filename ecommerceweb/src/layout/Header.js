@@ -29,6 +29,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { MyUserContext } from '../configs/MyContexts';
 
 const Header = () => {
@@ -229,10 +230,24 @@ const Header = () => {
                                                     color: location.pathname === '/profile' ? 'var(--primary-main)' : 'inherit',
                                                     fontWeight: location.pathname === '/profile' ? 600 : 400
                                                 }}
-                                            >
-                                                <AccountCircleIcon fontSize="small" />
+                                            >                                                <AccountCircleIcon fontSize="small" />
                                                 Tài khoản
                                             </MenuItem>
+                                            {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
+                                                <MenuItem 
+                                                    component={RouterLink}
+                                                    to="/admin"
+                                                    onClick={handleClose}
+                                                    sx={{ 
+                                                        gap: 1,
+                                                        color: location.pathname === '/admin' ? 'var(--primary-main)' : 'inherit',
+                                                        fontWeight: location.pathname === '/admin' ? 600 : 400
+                                                    }}
+                                                >
+                                                    <AdminPanelSettingsIcon fontSize="small" />
+                                                    Quản trị
+                                                </MenuItem>
+                                            )}
                                             <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
                                                 <LogoutIcon fontSize="small" />
                                                 Đăng xuất
@@ -372,10 +387,23 @@ const Header = () => {
                                                         gap: 1,
                                                         color: location.pathname === '/profile' ? 'var(--primary-main)' : 'inherit'
                                                     }}
-                                                >
-                                                    <AccountCircleIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                >                                                    <AccountCircleIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
                                                     Tài khoản
                                                 </MenuItem>
+                                                {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
+                                                    <MenuItem 
+                                                        component={RouterLink} 
+                                                        to="/admin" 
+                                                        onClick={handleUserMenuClose}
+                                                        sx={{ 
+                                                            gap: 1,
+                                                            color: location.pathname === '/admin' ? 'var(--primary-main)' : 'inherit'
+                                                        }}
+                                                    >
+                                                        <AdminPanelSettingsIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                        Quản trị
+                                                    </MenuItem>
+                                                )}
                                                 <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
                                                     <LogoutIcon fontSize="small" sx={{ color: 'var(--error)' }} />
                                                     Đăng xuất

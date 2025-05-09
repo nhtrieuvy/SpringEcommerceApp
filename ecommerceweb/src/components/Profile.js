@@ -21,7 +21,22 @@ import {
   InputAdornment,
   Fade,
   Chip,
-  Tooltip
+  Tooltip,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Stepper,
+  Step,
+  StepLabel,
+  AlertTitle
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -35,6 +50,13 @@ import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import SecurityIcon from '@mui/icons-material/Security';
+import StoreIcon from '@mui/icons-material/Store';
+import BusinessIcon from '@mui/icons-material/Business';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import MoneyIcon from '@mui/icons-material/Money';
+import CheckIcon from '@mui/icons-material/Check';
+import SendIcon from '@mui/icons-material/Send';
 import { styled } from '@mui/material/styles';
 
 // Styled component cho thẻ Tabs tùy chỉnh
@@ -97,11 +119,15 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
-const Profile = () => {
-  const [user, dispatch] = useContext(MyUserContext);
+const Profile = () => {  const [user, dispatch] = useContext(MyUserContext);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', content: '' });
   const [tabValue, setTabValue] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [sellerRequestStatus, setSellerRequestStatus] = useState('');
+  const [requestMessage, setRequestMessage] = useState('');
+  const [activeStep, setActiveStep] = useState(0);
+  const [requestStatusChanged, setRequestStatusChanged] = useState(false);
   
   // Form states cho thông tin cá nhân
   const [profileData, setProfileData] = useState({
@@ -118,7 +144,25 @@ const Profile = () => {
     confirmPassword: ''
   });
   
-  // States cho hiển thị/ẩn mật khẩu
+  // Form states cho đăng ký seller
+  const [sellerData, setSellerData] = useState({
+    shopName: '',
+    description: '',
+    address: '',
+    taxNumber: '',
+    bankAccount: '',
+    bankName: '',
+    sellerType: 'individual',
+    idCardFront: null,
+    idCardBack: null,
+    businessLicense: null
+  });
+  
+  // Preview cho ảnh giấy tờ
+  const [idCardFrontPreview, setIdCardFrontPreview] = useState(null);
+  const [idCardBackPreview, setIdCardBackPreview] = useState(null);
+  const [businessLicensePreview, setBusinessLicensePreview] = useState(null);
+    // States cho hiển thị/ẩn mật khẩu
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -126,7 +170,44 @@ const Profile = () => {
   // Preview cho avatar
   const [avatarPreview, setAvatarPreview] = useState(null);
   
-  // Cập nhật form từ thông tin user hiện tại
+  // Các bước đăng ký seller
+  const sellerRegistrationSteps = [
+    'Thông tin cửa hàng',
+    'Thông tin thanh toán',
+    'Xác minh danh tính',
+    'Hoàn tất'
+  ];
+  // Chức năng kiểm tra phải hiển thị tab bán hàng không
+  const showSellerRegistrationTab = () => {
+    if (!user || !user.roles) return false;
+    
+    // Hiển thị tab đăng ký nếu là USER nhưng không phải SELLER, ADMIN hoặc STAFF
+    return user.roles.some(role => role.name === 'USER') && 
+           !user.roles.some(role => ['SELLER', 'ADMIN', 'STAFF'].includes(role.name));
+  };
+
+  // Lấy trạng thái đăng ký seller 
+  const fetchSellerRequestStatus = async () => {
+    try {
+      const { authApi } = require('../configs/Apis');
+      const response = await authApi().get(endpoint.SELLER_REQUEST_STATUS);
+      const data = response.data;
+      
+      if (data.success) {
+        if (data.status) {
+          setSellerRequestStatus(data.status);
+        }
+        
+        // Lưu lại thông tin lý do từ chối nếu có
+        if (data.rejectionReason) {
+          setRequestMessage(data.rejectionReason);
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy trạng thái đăng ký seller:', error);
+    }
+  };
+    // Cập nhật form từ thông tin user hiện tại
   useEffect(() => {
     if (user) {
       setProfileData({
@@ -135,10 +216,21 @@ const Profile = () => {
         phone: user.phone || '',
         avatar: null
       });
+      
+      // Thiết lập giá trị mặc định cho form đăng ký seller
+      setSellerData({
+        ...sellerData,
+        shopName: user.fullname ? `Cửa hàng của ${user.fullname}` : '',
+        email: user.email || ''
+      });
+      
+      // Kiểm tra trạng thái đăng ký seller nếu phù hợp
+      if (showSellerRegistrationTab()) {
+        fetchSellerRequestStatus();
+      }
     }
-  }, [user]);
-  
-  // Handle tab change
+  }, [user, requestStatusChanged]);
+    // Handle tab change
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
     setMessage({ type: '', content: '' });
@@ -162,7 +254,60 @@ const Profile = () => {
     });
   };
   
-  // Toggle hiện/ẩn mật khẩu
+  // Handle seller form change
+  const handleSellerChange = (e) => {
+    const { name, value } = e.target;
+    setSellerData({
+      ...sellerData,
+      [name]: value
+    });
+  };
+  
+  // Handle file upload cho đăng ký seller
+  const handleSellerFileChange = (e, fileType) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Tạo preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (fileType === 'idCardFront') {
+          setIdCardFrontPreview(reader.result);
+          setSellerData({ ...sellerData, idCardFront: file });
+        } else if (fileType === 'idCardBack') {
+          setIdCardBackPreview(reader.result);
+          setSellerData({ ...sellerData, idCardBack: file });
+        } else if (fileType === 'businessLicense') {
+          setBusinessLicensePreview(reader.result);
+          setSellerData({ ...sellerData, businessLicense: file });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Chuyển bước trong form đăng ký seller
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+  };
+  
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+  
+  const handleReset = () => {
+    setActiveStep(0);
+  };
+  
+  // Mở/đóng dialog xác nhận đăng ký seller
+  const handleOpenDialog = () => {
+    setDialogOpen(true);
+  };
+  
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+    // Toggle hiện/ẩn mật khẩu
   const handleTogglePasswordVisibility = (field) => {
     if (field === 'current') setShowCurrentPassword(!showCurrentPassword);
     else if (field === 'new') setShowNewPassword(!showNewPassword);
@@ -184,6 +329,77 @@ const Profile = () => {
         setAvatarPreview(reader.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+  
+  // Submit đăng ký seller
+  const handleSellerSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: '', content: '' });
+    
+    try {
+      // Tạo FormData để gửi dữ liệu
+      const formData = new FormData();
+      
+      // Thêm các trường vào formData
+      formData.append('shopName', sellerData.shopName);
+      formData.append('description', sellerData.description);
+      formData.append('address', sellerData.address);
+      formData.append('taxNumber', sellerData.taxNumber);
+      formData.append('bankAccount', sellerData.bankAccount);
+      formData.append('bankName', sellerData.bankName);
+      formData.append('sellerType', sellerData.sellerType);
+      
+      // Thêm files nếu có
+      if (sellerData.idCardFront) {
+        formData.append('idCardFront', sellerData.idCardFront);
+      }
+      
+      if (sellerData.idCardBack) {
+        formData.append('idCardBack', sellerData.idCardBack);
+      }
+      
+      if (sellerData.businessLicense) {
+        formData.append('businessLicense', sellerData.businessLicense);
+      }
+      
+      // Import authApi từ Apis.js
+      const { authApi } = require('../configs/Apis');
+      
+      console.log("Đang gửi yêu cầu đăng ký seller...");
+      
+      // Gửi yêu cầu
+      const response = await authApi().post(endpoint.REGISTER_SELLER, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log("Kết quả đăng ký seller:", response.data);
+      
+      const data = response.data;
+        if (data && data.success) {
+        setMessage({ type: 'success', content: 'Yêu cầu đăng ký đã được gửi đi! Cửa hàng của bạn đang chờ được phê duyệt.' });
+        setSellerRequestStatus('PENDING');
+        setRequestStatusChanged(!requestStatusChanged);
+        
+        // Đóng dialog nếu đang mở
+        handleCloseDialog();
+        
+        // Reset form
+        setActiveStep(0);
+      } else {
+        setMessage({ type: 'error', content: data?.message || 'Có lỗi xảy ra, vui lòng thử lại.' });
+      }
+    } catch (error) {
+      console.error('Lỗi đăng ký seller:', error);
+      setMessage({ 
+        type: 'error', 
+        content: error.response?.data?.message || 'Không thể kết nối đến máy chủ. Lỗi: ' + error.message
+      });
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -378,11 +594,38 @@ const Profile = () => {
             </Grid>
             
             <Grid item xs={12} sm>
-              <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+              <Box>                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                   <Typography variant="h5" component="h1" sx={{ fontWeight: 'bold' }}>
                     {user.fullname || user.username}
                   </Typography>
+                  
+                  {/* Hiển thị vai trò cao nhất của người dùng */}
+                  {user.roles && (
+                    <Tooltip title="Vai trò của bạn">
+                      <Chip 
+                        icon={<SecurityIcon fontSize="small" />} 
+                        label={user.roles.some(role => role.name === 'ADMIN') 
+                              ? 'Admin' 
+                              : user.roles.some(role => role.name === 'STAFF') 
+                              ? 'Nhân viên' 
+                              : user.roles.some(role => role.name === 'SELLER') 
+                              ? 'Người bán' 
+                              : 'Khách hàng'}
+                        size="small"
+                        sx={{ 
+                          bgcolor: user.roles.some(role => role.name === 'ADMIN') 
+                                 ? 'rgba(255,95,87,0.6)' 
+                                 : user.roles.some(role => role.name === 'STAFF')
+                                 ? 'rgba(255,160,0,0.6)'
+                                 : user.roles.some(role => role.name === 'SELLER')
+                                 ? 'rgba(65,176,110,0.6)'
+                                 : 'rgba(92,119,255,0.6)', 
+                          color: 'white',
+                          '& .MuiChip-icon': { color: 'white' } 
+                        }}
+                      />
+                    </Tooltip>
+                  )}
                   
                   {user.authProvider && (
                     <Tooltip title={`Tài khoản đăng nhập qua ${user.authProvider}`}>
@@ -429,9 +672,7 @@ const Profile = () => {
             zIndex: 0
           }} />
         </Box>
-        
-        {/* Tabs */}
-        <StyledTabs 
+          {/* Tabs */}        <StyledTabs 
           value={tabValue} 
           onChange={handleTabChange}
           aria-label="profile tabs"
@@ -447,6 +688,13 @@ const Profile = () => {
             iconPosition="start" 
             label="Bảo mật" 
           />
+          {showSellerRegistrationTab() && (
+            <StyledTab 
+              icon={<StoreIcon />} 
+              iconPosition="start" 
+              label="Đăng ký bán hàng" 
+            />
+          )}
         </StyledTabs>
         
         {/* Tab content */}
@@ -589,8 +837,7 @@ const Profile = () => {
             </Grid>
           </form>
         </TabPanel>
-        
-        <TabPanel value={tabValue} index={1}>
+          <TabPanel value={tabValue} index={1}>
           {message.content && (
             <Alert 
               severity={message.type} 
@@ -741,8 +988,561 @@ const Profile = () => {
                 </Grid>
               </Grid>
             </form>
+          </Box>        </TabPanel>
+        
+        {/* Tab đăng ký bán hàng */}
+        {showSellerRegistrationTab() && (
+        <TabPanel value={tabValue} index={2}>
+          {message.content && (
+            <Alert 
+              severity={message.type} 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 2,
+                '& .MuiAlert-icon': {
+                  color: message.type === 'success' ? 'var(--success)' : 'var(--error)'
+                }
+              }}
+            >
+              {message.content}
+            </Alert>
+          )}
+          
+          <Box sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Đăng ký trở thành người bán
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Mở rộng cơ hội kinh doanh của bạn bằng cách trở thành người bán trên nền tảng của chúng tôi. 
+              Hoàn thành biểu mẫu đăng ký dưới đây để bắt đầu.
+            </Typography>
+              {sellerRequestStatus === 'PENDING' ? (
+              <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
+                <AlertTitle>Yêu cầu đang được xử lý</AlertTitle>
+                Đăng ký bán hàng của bạn đã được gửi đi và đang trong quá trình xét duyệt. 
+                Chúng tôi sẽ thông báo kết quả qua email trong vòng 2-3 ngày làm việc.
+              </Alert>
+            ) : sellerRequestStatus === 'APPROVED' ? (
+              <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }}>
+                <AlertTitle>Đăng ký đã được phê duyệt</AlertTitle>
+                Chúc mừng! Đăng ký bán hàng của bạn đã được phê duyệt. Hãy làm mới trang để cập nhật quyền truy cập của bạn.
+                <Button 
+                  variant="contained" 
+                  color="success" 
+                  size="small" 
+                  sx={{ mt: 1, borderRadius: 2 }}
+                  onClick={() => window.location.reload()}
+                >
+                  Làm mới trang
+                </Button>
+              </Alert>
+            ) : sellerRequestStatus === 'REJECTED' ? (
+              <Alert severity="warning" sx={{ mt: 2, borderRadius: 2 }}>
+                <AlertTitle>Đăng ký bị từ chối</AlertTitle>
+                {requestMessage ? (
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    <strong>Lý do từ chối:</strong> {requestMessage}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    Rất tiếc, đăng ký bán hàng của bạn đã bị từ chối.
+                  </Typography>
+                )}
+                <Button 
+                  variant="contained" 
+                  color="warning" 
+                  size="small" 
+                  sx={{ mt: 1, borderRadius: 2 }}
+                  onClick={() => {
+                    setSellerRequestStatus('');
+                    setRequestStatusChanged(!requestStatusChanged);
+                  }}
+                >
+                  Đăng ký lại
+                </Button>
+              </Alert>
+            ) : (
+              <>
+                <Box sx={{ width: '100%', mt: 3 }}>
+                  <Stepper activeStep={activeStep} alternativeLabel>
+                    {sellerRegistrationSteps.map((label) => (
+                      <Step key={label}>
+                        <StepLabel>{label}</StepLabel>
+                      </Step>
+                    ))}
+                  </Stepper>
+                </Box>
+                
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (activeStep === sellerRegistrationSteps.length - 1) {
+                    handleOpenDialog();
+                  } else {
+                    handleNext();
+                  }
+                }}>
+                  <Box sx={{ mt: 4, minHeight: 320 }}>
+                    {activeStep === 0 && (
+                      <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            label="Tên cửa hàng"
+                            name="shopName"
+                            value={sellerData.shopName}
+                            onChange={handleSellerChange}
+                            required
+                            className="custom-input"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <StoreIcon sx={{ color: 'var(--primary-main)' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            label="Mô tả cửa hàng"
+                            name="description"
+                            value={sellerData.description}
+                            onChange={handleSellerChange}
+                            required
+                            multiline
+                            rows={4}
+                            className="custom-input"
+                            helperText="Mô tả ngắn gọn về cửa hàng và sản phẩm của bạn"
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            label="Địa chỉ cửa hàng"
+                            name="address"
+                            value={sellerData.address}
+                            onChange={handleSellerChange}
+                            required
+                            className="custom-input"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <LocationOnIcon sx={{ color: 'var(--primary-main)' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12}>
+                          <FormControl component="fieldset">
+                            <FormLabel component="legend">Loại hình kinh doanh</FormLabel>
+                            <RadioGroup
+                              row
+                              name="sellerType"
+                              value={sellerData.sellerType}
+                              onChange={handleSellerChange}
+                            >
+                              <FormControlLabel 
+                                value="individual" 
+                                control={<Radio />} 
+                                label="Cá nhân" 
+                              />
+                              <FormControlLabel 
+                                value="business" 
+                                control={<Radio />} 
+                                label="Doanh nghiệp" 
+                              />
+                            </RadioGroup>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+                    )}
+                    
+                    {activeStep === 1 && (
+                      <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            label="Mã số thuế"
+                            name="taxNumber"
+                            value={sellerData.taxNumber}
+                            onChange={handleSellerChange}
+                            required={sellerData.sellerType === 'business'}
+                            className="custom-input"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <BusinessIcon sx={{ color: 'var(--primary-main)' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Số tài khoản ngân hàng"
+                            name="bankAccount"
+                            value={sellerData.bankAccount}
+                            onChange={handleSellerChange}
+                            required
+                            className="custom-input"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <CreditCardIcon sx={{ color: 'var(--primary-main)' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              }
+                            }}
+                          />
+                        </Grid>
+                        
+                        <Grid item xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Tên ngân hàng"
+                            name="bankName"
+                            value={sellerData.bankName}
+                            onChange={handleSellerChange}
+                            required
+                            className="custom-input"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <MoneyIcon sx={{ color: 'var(--primary-main)' }} />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </Grid>
+                    )}
+                    
+                    {activeStep === 2 && (
+                      <Grid container spacing={3}>
+                        <Grid item xs={12}>
+                          <Typography variant="subtitle1" gutterBottom>
+                            Xác minh danh tính
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" paragraph>
+                            Vui lòng tải lên ảnh CMND/CCCD/Hộ chiếu hoặc giấy phép kinh doanh (nếu là doanh nghiệp)
+                          </Typography>
+                        </Grid>
+                        
+                        {sellerData.sellerType === 'individual' ? (
+                          <>
+                            <Grid item xs={12} sm={6}>
+                              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  CMND/CCCD mặt trước
+                                </Typography>
+                                <Box 
+                                  sx={{ 
+                                    border: '1px dashed #ccc', 
+                                    borderRadius: 2, 
+                                    p: 2,
+                                    height: 150,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    bgcolor: 'background.paper',
+                                    boxShadow: idCardFrontPreview ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                                  }}
+                                >
+                                  {idCardFrontPreview ? (
+                                    <img 
+                                      src={idCardFrontPreview} 
+                                      alt="CMND/CCCD mặt trước" 
+                                      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                                    />
+                                  ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                      Chưa có ảnh
+                                    </Typography>
+                                  )}
+                                </Box>
+                                <Button
+                                  component="label"
+                                  variant="outlined"
+                                  startIcon={<PhotoCameraIcon />}
+                                  sx={{ mt: 1, borderRadius: 2 }}
+                                >
+                                  Tải ảnh lên
+                                  <VisuallyHiddenInput 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={(e) => handleSellerFileChange(e, 'idCardFront')}
+                                    required={!idCardFrontPreview}
+                                  />
+                                </Button>
+                              </Box>
+                            </Grid>
+                            
+                            <Grid item xs={12} sm={6}>
+                              <Box sx={{ textAlign: 'center', mb: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  CMND/CCCD mặt sau
+                                </Typography>
+                                <Box 
+                                  sx={{ 
+                                    border: '1px dashed #ccc', 
+                                    borderRadius: 2, 
+                                    p: 2,
+                                    height: 150,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    bgcolor: 'background.paper',
+                                    boxShadow: idCardBackPreview ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                                  }}
+                                >
+                                  {idCardBackPreview ? (
+                                    <img 
+                                      src={idCardBackPreview} 
+                                      alt="CMND/CCCD mặt sau" 
+                                      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                                    />
+                                  ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                      Chưa có ảnh
+                                    </Typography>
+                                  )}
+                                </Box>
+                                <Button
+                                  component="label"
+                                  variant="outlined"
+                                  startIcon={<PhotoCameraIcon />}
+                                  sx={{ mt: 1, borderRadius: 2 }}
+                                >
+                                  Tải ảnh lên
+                                  <VisuallyHiddenInput 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={(e) => handleSellerFileChange(e, 'idCardBack')}
+                                    required={!idCardBackPreview}
+                                  />
+                                </Button>
+                              </Box>
+                            </Grid>
+                          </>
+                        ) : (
+                          <Grid item xs={12}>
+                            <Box sx={{ textAlign: 'center', mb: 2 }}>
+                              <Typography variant="subtitle2" gutterBottom>
+                                Giấy phép kinh doanh
+                              </Typography>
+                              <Box 
+                                sx={{ 
+                                  border: '1px dashed #ccc', 
+                                  borderRadius: 2, 
+                                  p: 2,
+                                  height: 200,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  position: 'relative',
+                                  overflow: 'hidden',
+                                  bgcolor: 'background.paper',
+                                  boxShadow: businessLicensePreview ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                                }}
+                              >
+                                {businessLicensePreview ? (
+                                  <img 
+                                    src={businessLicensePreview} 
+                                    alt="Giấy phép kinh doanh" 
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                                  />
+                                ) : (
+                                  <Typography variant="body2" color="text.secondary">
+                                    Chưa có ảnh
+                                  </Typography>
+                                )}
+                              </Box>
+                              <Button
+                                component="label"
+                                variant="outlined"
+                                startIcon={<PhotoCameraIcon />}
+                                sx={{ mt: 1, borderRadius: 2 }}
+                              >
+                                Tải ảnh lên
+                                <VisuallyHiddenInput 
+                                  type="file" 
+                                  accept="image/*"
+                                  onChange={(e) => handleSellerFileChange(e, 'businessLicense')}
+                                  required={!businessLicensePreview}
+                                />
+                              </Button>
+                            </Box>
+                          </Grid>
+                        )}
+                      </Grid>
+                    )}
+                      {activeStep === 3 && (
+                      <Box sx={{ p: 3 }}>
+                        <Box sx={{ textAlign: 'center', mb: 4 }}>
+                          <CheckIcon sx={{ fontSize: 60, color: 'var(--success)', mb: 2 }} />
+                          <Typography variant="h6" gutterBottom>
+                            Thông tin đã sẵn sàng
+                          </Typography>
+                          <Typography variant="body1">
+                            Vui lòng kiểm tra lại thông tin trước khi gửi đi. 
+                          </Typography>
+                        </Box>
+                        
+                        {/* Tóm tắt thông tin đăng ký */}
+                        <Paper elevation={0} variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+                          <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: 'primary.main' }}>
+                            Tóm tắt thông tin đăng ký
+                          </Typography>
+                          
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Tên cửa hàng</Typography>
+                              <Typography variant="body1" gutterBottom>{sellerData.shopName}</Typography>
+                            </Grid>
+                            
+                            <Grid item xs={12} sm={6}>
+                              <Typography variant="body2" color="text.secondary">Loại hình kinh doanh</Typography>
+                              <Typography variant="body1" gutterBottom>
+                                {sellerData.sellerType === 'individual' ? 'Cá nhân' : 'Doanh nghiệp'}
+                              </Typography>
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">Địa chỉ</Typography>
+                              <Typography variant="body1" gutterBottom>{sellerData.address}</Typography>
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">Thông tin thanh toán</Typography>
+                              <Typography variant="body1" gutterBottom>
+                                Ngân hàng {sellerData.bankName} - STK: {sellerData.bankAccount}
+                              </Typography>
+                            </Grid>
+                            
+                            {sellerData.taxNumber && (
+                              <Grid item xs={12}>
+                                <Typography variant="body2" color="text.secondary">Mã số thuế</Typography>
+                                <Typography variant="body1" gutterBottom>{sellerData.taxNumber}</Typography>
+                              </Grid>
+                            )}
+                            
+                            <Grid item xs={12}>
+                              <Typography variant="body2" color="text.secondary">Giấy tờ đã tải lên</Typography>
+                              <Typography variant="body1">
+                                {sellerData.sellerType === 'individual' 
+                                  ? 'CMND/CCCD mặt trước và mặt sau' 
+                                  : 'Giấy phép kinh doanh'}
+                              </Typography>
+                            </Grid>
+                          </Grid>
+                        </Paper>
+                        
+                        <Box sx={{ mt: 2, bgcolor: 'info.lighter', p: 2, borderRadius: 2, textAlign: 'center' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Sau khi gửi, yêu cầu của bạn sẽ được xem xét và phê duyệt bởi đội ngũ quản trị.
+                            Thời gian xét duyệt thông thường là 2-3 ngày làm việc.
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
+                    <Button
+                      color="inherit"
+                      disabled={activeStep === 0}
+                      onClick={handleBack}
+                      sx={{ mr: 1 }}
+                    >
+                      Quay lại
+                    </Button>
+                    <Box sx={{ flex: '1 1 auto' }} />
+                    <Button 
+                      variant="contained" 
+                      type="submit"
+                      disabled={(activeStep === 2 && (
+                        (sellerData.sellerType === 'individual' && (!sellerData.idCardFront || !sellerData.idCardBack)) || 
+                        (sellerData.sellerType === 'business' && !sellerData.businessLicense)
+                      )) || loading}
+                    >
+                      {activeStep === sellerRegistrationSteps.length - 1 ? 'Hoàn tất đăng ký' : 'Tiếp theo'}
+                    </Button>
+                  </Box>
+                </form>
+                
+                {/* Dialog xác nhận */}
+                <Dialog
+                  open={dialogOpen}
+                  onClose={handleCloseDialog}
+                  aria-labelledby="confirm-dialog-title"
+                  aria-describedby="confirm-dialog-description"
+                >
+                  <DialogTitle id="confirm-dialog-title">
+                    Xác nhận đăng ký trở thành người bán
+                  </DialogTitle>
+                  <DialogContent>
+                    <DialogContentText id="confirm-dialog-description">
+                      Bạn có chắc chắn muốn gửi đăng ký này không? Đảm bảo rằng tất cả thông tin bạn cung cấp là chính xác.
+                    </DialogContentText>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={handleCloseDialog} color="inherit">Hủy</Button>
+                    <Button 
+                      onClick={handleSellerSubmit} 
+                      variant="contained"
+                      color="primary"
+                      startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SendIcon />}
+                      disabled={loading}
+                    >
+                      {loading ? 'Đang xử lý...' : 'Xác nhận gửi'}
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+              </>
+            )}
           </Box>
         </TabPanel>
+        )}
       </Card>
     </Container>
   );
