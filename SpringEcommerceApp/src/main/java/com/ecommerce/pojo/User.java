@@ -10,6 +10,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @NoArgsConstructor
@@ -50,8 +51,7 @@ public class User {
     // Trường để xác định đăng nhập từ đâu
     @Column(name = "auth_provider")
     private String authProvider;
-    
-    // Trường lưu thời gian tạo tài khoản
+      // Trường lưu thời gian tạo tài khoản
     @Column(name = "created_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
@@ -60,6 +60,10 @@ public class User {
     @Column(name = "last_login")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastLogin;
+      // Trường xác định trạng thái hoạt động của tài khoản
+    @Column(name = "is_active")
+    @JsonProperty("active")
+    private boolean isActive = true;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -165,6 +169,36 @@ public class User {
 
     public void setLastLogin(Date lastLogin) {
         this.lastLogin = lastLogin;
+    }    // Sử dụng get/set prefix để đảm bảo Jackson đọc đúng thuộc tính
+    // @JsonProperty("isActive")
+    // public boolean getIsActive() {
+    //     return isActive;
+    // }
+
+    // @JsonProperty("isActive")
+    // public void setIsActive(boolean active) {
+    //     isActive = active;
+    // }
+      // Giữ phương thức isActive để tương thích với các phần khác của code
+    @JsonProperty("isActive")
+    public boolean isActive() {
+        return isActive;
+    }
+    
+    @JsonProperty("isActive")
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+    // Add standard getter/setter with different names to ensure proper JSON serialization
+    @JsonProperty("active")
+    public boolean getActive() {
+        return isActive;
+    }
+    
+    @JsonProperty("active")
+    public void setIsActive(boolean active) {
+        isActive = active;
     }
 
     public Set<Role> getRoles() {

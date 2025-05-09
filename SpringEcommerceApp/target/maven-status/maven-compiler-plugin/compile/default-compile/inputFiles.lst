@@ -6,6 +6,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\Mai
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\SpringSecurityConfigs.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\ThymeleafConfig.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\WebAppContextConfig.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\AdminController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiHomeController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiProductController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiUserController.java

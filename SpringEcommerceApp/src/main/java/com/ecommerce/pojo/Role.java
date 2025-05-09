@@ -19,6 +19,9 @@ public class Role {
 
     @Column(nullable = false, unique = true)
     private String name;
+    
+    @Column(length = 1024)
+    private String description;
 
     @ManyToMany(mappedBy = "roles")
     @JsonBackReference
@@ -43,6 +46,14 @@ public class Role {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Set<User> getUsers() {

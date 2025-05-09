@@ -46,15 +46,26 @@ export const endpoint = {
     FORGOT_PASSWORD: `/api/password/forgot`,
     VALIDATE_RESET_TOKEN: `/api/password/reset/validate`,
     RESET_PASSWORD: `/api/password/reset`,
-      // Endpoints cho đăng ký và quản lý seller
+    
+    // Endpoints cho đăng ký và quản lý seller
     REGISTER_SELLER: `/api/seller/register`,
-    SELLER_REQUEST_STATUS: `/api/seller/request-status`,
-    SELLER_REQUESTS: `/api/seller/requests`,
+    SELLER_REQUEST_STATUS: `/api/seller/request-status`,    SELLER_REQUESTS: `/api/seller/requests`,
     APPROVE_SELLER_REQUEST: (id) => `/api/seller/requests/${id}/approve`,
     REJECT_SELLER_REQUEST: (id) => `/api/seller/requests/${id}/reject`,
     
     // Endpoint lấy thông tin người dùng hiện tại
     USER_CURRENT: `/api/user/current`,
+
+    // Endpoints cho quản lý người dùng
+    USERS: `/api/admin/users`,
+    USER_DETAIL: (id) => `/api/admin/users/${id}`,
+    USER_UPDATE: (id) => `/api/admin/users/${id}`,
+    USER_DELETE: (id) => `/api/admin/users/${id}`,
+    
+    // Endpoints cho phân quyền
+    ROLES: `/api/admin/roles`,
+    ASSIGN_ROLE: (userId) => `/api/admin/users/${userId}/roles`,
+    REMOVE_ROLE: (userId, roleId) => `/api/admin/users/${userId}/roles/${roleId}`,
 };
 
 // Hàm tạo instance axios với token xác thực
