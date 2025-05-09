@@ -39,11 +39,19 @@ public class UserRepositoryImpl implements UserRepository {
         }
         
         return user;
-    }
-
-    @Override
+    }    @Override
     public void update(User user) {
         Session session = sessionFactory.getCurrentSession();
+        
+        // Check if we need to preserve password
+        if (user.getId() != null && user.getPassword() == null) {
+            User existingUser = this.findById(user.getId());
+            if (existingUser != null && existingUser.getPassword() != null) {
+                user.setPassword(existingUser.getPassword());
+                System.out.println("Password preserved for user: " + user.getUsername());
+            }
+        }
+        
         session.merge(user);
         
         // Update cache
@@ -191,5 +199,19 @@ public class UserRepositoryImpl implements UserRepository {
         }
         
         return passwordEncoder.matches(password, user.getPassword());
+    }
+
+    @Override
+    public List<User> findByActiveStatus(boolean isActive) {
+        Session session = sessionFactory.getCurrentSession();
+        
+        try {
+            Query<User> query = session.createQuery("FROM User u WHERE u.isActive = :active", User.class);
+            query.setParameter("active", isActive);
+            return query.getResultList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
     }
 }

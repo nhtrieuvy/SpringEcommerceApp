@@ -35,7 +35,9 @@ import {
   TablePagination,
   Collapse,
   Badge,
-  Tooltip
+  Tooltip,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import PersonIcon from '@mui/icons-material/Person';
@@ -118,7 +120,24 @@ const Admin = () => {
   // Lọc yêu cầu
   const [filter, setFilter] = useState('ALL'); // 'ALL', 'PENDING', 'APPROVED', 'REJECTED'
   
-  useEffect(() => {
+  // State cho trang quản lý người dùng
+  const [users, setUsers] = useState([]);
+  const [userPage, setUserPage] = useState(0);
+  const [userRowsPerPage, setUserRowsPerPage] = useState(10);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [userDialogType, setUserDialogType] = useState('');
+  const [userFilter, setUserFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'INACTIVE'
+  
+  // State cho trang phân quyền
+  const [roles, setRoles] = useState([]);
+  const [userForRole, setUserForRole] = useState(null);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [availableRoles, setAvailableRoles] = useState([]);
+  const [roleReload, setRoleReload] = useState(false);
+    useEffect(() => {
     // Kiểm tra quyền truy cập
     if (user && !(user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF'))) {
       navigate('/', { replace: true });
@@ -127,7 +146,17 @@ const Admin = () => {
     
     // Lấy danh sách yêu cầu đăng ký seller
     fetchSellerRequests();
-  }, [user, navigate, page, rowsPerPage, filter, reload]);
+
+    // Khi chuyển sang tab quản lý người dùng
+    if (tabValue === 1) {
+      fetchUsers();
+    }
+
+    // Khi chuyển sang tab phân quyền
+    if (tabValue === 2) {
+      fetchRoles();
+    }
+  }, [user, navigate, page, rowsPerPage, filter, reload, tabValue, userPage, userRowsPerPage, userFilter, roleReload]);
   
   const fetchSellerRequests = async () => {
     setLoading(true);
@@ -254,6 +283,185 @@ const Admin = () => {
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Lấy danh sách người dùng
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const { authApi } = require('../configs/Apis');
+      
+      // Sử dụng query params để phân trang và lọc
+      const response = await authApi().get(`${endpoint.USERS}?page=${userPage}&size=${userRowsPerPage}&status=${userFilter}`);
+      
+      const data = response.data;
+      if (data.success) {
+        setUsers(data.content);
+        setTotalUsers(data.totalElements);
+      } else {
+        setMessage({ type: 'error', content: data.message || 'Không thể lấy danh sách người dùng' });
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách người dùng:', error);
+      setMessage({ 
+        type: 'error', 
+        content: error.response?.data?.message || 'Không thể kết nối đến máy chủ'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Lấy chi tiết người dùng
+  const fetchUserDetail = async (userId) => {
+    setLoading(true);
+    try {
+      const { authApi } = require('../configs/Apis');
+      
+      const response = await authApi().get(endpoint.USER_DETAIL(userId));
+      
+      const data = response.data;
+      if (data.success) {
+        setSelectedUser(data.user);
+        return data.user;
+      } else {
+        setMessage({ type: 'error', content: data.message || 'Không thể lấy thông tin người dùng' });
+        return null;
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
+      setMessage({ 
+        type: 'error', 
+        content: error.response?.data?.message || 'Không thể kết nối đến máy chủ'
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Cập nhật trạng thái người dùng (khóa/mở khóa)
+  const updateUserStatus = async (userId, isActive) => {
+    setLoading(true);
+    try {
+      const { authApi } = require('../configs/Apis');
+        const response = await authApi().put(endpoint.USER_UPDATE(userId), {
+        isActive: isActive,
+        active: isActive // Include both property names for better compatibility
+      });
+      
+      const data = response.data;
+      if (data.success) {
+        setMessage({ 
+          type: 'success', 
+          content: isActive 
+            ? 'Đã kích hoạt tài khoản người dùng thành công!' 
+            : 'Đã khóa tài khoản người dùng thành công!' 
+        });
+        
+        // Refresh danh sách người dùng
+        fetchUsers();
+      } else {
+        setMessage({ 
+          type: 'error', 
+          content: data.message || 'Không thể cập nhật trạng thái người dùng' 
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi khi cập nhật trạng thái người dùng:', error);
+      setMessage({ 
+        type: 'error', 
+        content: error.response?.data?.message || 'Không thể kết nối đến máy chủ'
+      });
+    } finally {
+      setLoading(false);
+      setUserDialogOpen(false);
+    }
+  };
+  
+  // Lấy danh sách quyền
+  const fetchRoles = async () => {
+    setLoading(true);
+    try {
+      const { authApi } = require('../configs/Apis');
+      
+      const response = await authApi().get(endpoint.ROLES);
+      
+      const data = response.data;
+      if (data.success) {
+        setRoles(data.roles);
+      } else {
+        setMessage({ type: 'error', content: data.message || 'Không thể lấy danh sách quyền' });
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách quyền:', error);
+      setMessage({ 
+        type: 'error', 
+        content: error.response?.data?.message || 'Không thể kết nối đến máy chủ'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Mở dialog phân quyền
+  const openRoleDialog = async (user) => {
+    const userData = await fetchUserDetail(user.id);
+    if (userData) {
+      setUserForRole(userData);
+      
+      // Lấy danh sách quyền hiện có của người dùng
+      const userRoles = userData.roles.map(role => role.id);
+      setSelectedRoles(userRoles);
+      
+      // Lấy danh sách tất cả quyền
+      if (roles.length === 0) {
+        await fetchRoles();
+      }
+      
+      // Hiển thị dialog
+      setRoleDialogOpen(true);
+    }
+  };
+  
+  // Cập nhật quyền cho người dùng
+  const updateUserRoles = async () => {
+    setLoading(true);
+    try {
+      const { authApi } = require('../configs/Apis');
+      
+      const response = await authApi().put(endpoint.ASSIGN_ROLE(userForRole.id), {
+        roleIds: selectedRoles
+      });
+      
+      const data = response.data;
+      if (data.success) {
+        setMessage({ type: 'success', content: 'Đã cập nhật quyền cho người dùng thành công!' });
+        // Refresh
+        setRoleReload(!roleReload);
+        setRoleDialogOpen(false);
+      } else {
+        setMessage({ type: 'error', content: data.message || 'Không thể cập nhật quyền' });
+      }
+    } catch (error) {
+      console.error('Lỗi khi cập nhật quyền:', error);
+      setMessage({ 
+        type: 'error', 
+        content: error.response?.data?.message || 'Không thể kết nối đến máy chủ'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Xử lý thay đổi trang và số dòng hiển thị cho phần quản lý người dùng
+  const handleUserChangePage = (event, newPage) => {
+    setUserPage(newPage);
+  };
+
+  const handleUserChangeRowsPerPage = (event) => {
+    setUserRowsPerPage(parseInt(event.target.value, 10));
+    setUserPage(0);
   };
   
   // Nếu chưa đăng nhập hoặc không có quyền admin/staff, chuyển hướng về trang chủ
@@ -660,19 +868,351 @@ const Admin = () => {
             </>
           )}
         </TabPanel>
-        
-        <TabPanel value={tabValue} index={1}>
-          <Typography variant="h6">Quản lý người dùng</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Chức năng đang phát triển...
-          </Typography>
+          <TabPanel value={tabValue} index={1}>
+          {message.content && (
+            <Alert 
+              severity={message.type} 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 2,
+                '& .MuiAlert-icon': {
+                  color: message.type === 'success' ? 'var(--success)' : 'var(--error)'
+                }
+              }}
+              onClose={() => setMessage({ type: '', content: '' })}
+            >
+              {message.content}
+            </Alert>
+          )}
+          
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+            <Typography variant="h6">
+              Danh sách người dùng
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Chip 
+                label="Tất cả" 
+                onClick={() => setUserFilter('ALL')} 
+                color={userFilter === 'ALL' ? 'primary' : 'default'}
+                variant={userFilter === 'ALL' ? 'filled' : 'outlined'}
+              />
+              <Chip 
+                label="Đang hoạt động" 
+                onClick={() => setUserFilter('ACTIVE')} 
+                color={userFilter === 'ACTIVE' ? 'success' : 'default'} 
+                variant={userFilter === 'ACTIVE' ? 'filled' : 'outlined'}
+              />
+              <Chip 
+                label="Đã khóa" 
+                onClick={() => setUserFilter('INACTIVE')} 
+                color={userFilter === 'INACTIVE' ? 'error' : 'default'} 
+                variant={userFilter === 'INACTIVE' ? 'filled' : 'outlined'}
+              />
+            </Box>
+          </Box>
+          
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          )}
+          
+          {!loading && users.length === 0 ? (
+            <Alert severity="info" sx={{ borderRadius: 2 }}>
+              Không tìm thấy người dùng nào.
+            </Alert>
+          ) : (
+            <>
+              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 2 }}>
+                <Table sx={{ minWidth: 650 }}>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: 'rgba(0, 0, 0, 0.03)' }}>
+                      <TableCell>ID</TableCell>
+                      <TableCell>Thông tin người dùng</TableCell>
+                      <TableCell>Username</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Vai trò</TableCell>
+                      <TableCell>Trạng thái</TableCell>
+                      <TableCell align="right">Thao tác</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow 
+                        key={user.id}
+                        hover
+                        sx={{ 
+                          '&:last-child td, &:last-child th': { border: 0 }
+                        }}
+                      >
+                        <TableCell>{user.id}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Avatar 
+                              src={user.avatar} 
+                              alt={user.username}
+                              sx={{ width: 40, height: 40 }}
+                            >
+                              {user.fullname?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase()}
+                            </Avatar>
+                            <div>
+                              <Typography variant="body2" component="div" sx={{ fontWeight: 'bold' }}>
+                                {user.fullname}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Tham gia: {formatDate(user.createdDate)}
+                              </Typography>
+                            </div>
+                          </Box>
+                        </TableCell>
+                        <TableCell>{user.username}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {user.roles && user.roles.map((role) => (
+                              <Chip 
+                                key={role.id} 
+                                size="small"
+                                label={role.name === 'ADMIN' ? 'Quản trị viên' : 
+                                       role.name === 'STAFF' ? 'Nhân viên' : 
+                                       role.name === 'USER' ? 'Người dùng' : 
+                                       role.name === 'SELLER' ? 'Người bán' : role.name}
+                                color={role.name === 'ADMIN' ? 'error' : 
+                                       role.name === 'STAFF' ? 'warning' : 
+                                       role.name === 'SELLER' ? 'success' : 'info'}
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                        </TableCell>
+                        <TableCell>                          <Chip 
+                            size="small"
+                            label={user.isActive || user.active ? 'Đang hoạt động' : 'Đã khóa'} 
+                            color={user.isActive || user.active ? 'success' : 'error'}
+                            sx={{ fontWeight: 'medium' }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                            <Tooltip title="Phân quyền">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => openRoleDialog(user)}
+                              >
+                                <SupervisorAccountIcon />
+                              </IconButton>
+                            </Tooltip>
+                              {(user.isActive || user.active) ? (
+                              <Tooltip title="Khóa tài khoản">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setUserDialogType('deactivate');
+                                    setUserDialogOpen(true);
+                                  }}
+                                >
+                                  <CancelIcon />
+                                </IconButton>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip title="Kích hoạt tài khoản">
+                                <IconButton
+                                  size="small"
+                                  color="success"
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setUserDialogType('activate');
+                                    setUserDialogOpen(true);
+                                  }}
+                                >
+                                  <CheckCircleIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              <TablePagination
+                rowsPerPageOptions={[10, 25, 50]}
+                component="div"
+                count={totalUsers}
+                rowsPerPage={userRowsPerPage}
+                page={userPage}
+                onPageChange={handleUserChangePage}
+                onRowsPerPageChange={handleUserChangeRowsPerPage}
+                labelRowsPerPage="Hiển thị:"
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} trên ${count !== -1 ? count : `hơn ${to}`}`}
+              />
+            </>
+          )}
         </TabPanel>
-        
-        <TabPanel value={tabValue} index={2}>
-          <Typography variant="h6">Phân quyền</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Chức năng đang phát triển...
-          </Typography>
+          <TabPanel value={tabValue} index={2}>
+          {message.content && (
+            <Alert 
+              severity={message.type} 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 2,
+                '& .MuiAlert-icon': {
+                  color: message.type === 'success' ? 'var(--success)' : 'var(--error)'
+                }
+              }}
+              onClose={() => setMessage({ type: '', content: '' })}
+            >
+              {message.content}
+            </Alert>
+          )}
+          
+          <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Quản lý phân quyền người dùng
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Bạn có thể phân quyền cho người dùng bằng cách sử dụng chức năng phân quyền ở tab "Quản lý người dùng".
+              Hoặc bạn có thể xem danh sách người dùng theo nhóm quyền dưới đây.
+            </Typography>
+            
+            <Divider sx={{ my: 2 }} />
+            
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                <CircularProgress />
+              </Box>
+            )}
+            
+            {!loading && (
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ height: '100%', borderRadius: 2, boxShadow: 3 }}>
+                    <CardContent>
+                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ bgcolor: 'error.main' }}>
+                          <SupervisorAccountIcon />
+                        </Avatar>
+                        <Typography variant="h6" component="div">
+                          Quản trị viên
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        Người dùng có toàn quyền quản trị hệ thống, bao gồm phân quyền và quản lý người dùng.
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2 }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined" 
+                        onClick={() => {
+                          setUserFilter('ROLE_ADMIN');
+                          setTabValue(1);
+                        }}
+                      >
+                        Xem danh sách
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ height: '100%', borderRadius: 2, boxShadow: 3 }}>
+                    <CardContent>
+                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ bgcolor: 'warning.main' }}>
+                          <PersonIcon />
+                        </Avatar>
+                        <Typography variant="h6" component="div">
+                          Nhân viên
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        Người dùng có quyền quản lý nội dung hệ thống, phê duyệt đăng ký người bán.
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2 }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        onClick={() => {
+                          setUserFilter('ROLE_STAFF');
+                          setTabValue(1);
+                        }}
+                      >
+                        Xem danh sách
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ height: '100%', borderRadius: 2, boxShadow: 3 }}>
+                    <CardContent>
+                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ bgcolor: 'success.main' }}>
+                          <StoreIcon />
+                        </Avatar>
+                        <Typography variant="h6" component="div">
+                          Người bán
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        Người dùng có quyền đăng bán sản phẩm, quản lý cửa hàng và đơn hàng.
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2 }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        onClick={() => {
+                          setUserFilter('ROLE_SELLER');
+                          setTabValue(1);
+                        }}
+                      >
+                        Xem danh sách
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+                
+                <Grid item xs={12} md={6} lg={3}>
+                  <Card sx={{ height: '100%', borderRadius: 2, boxShadow: 3 }}>
+                    <CardContent>
+                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ bgcolor: 'info.main' }}>
+                          <PersonIcon />
+                        </Avatar>
+                        <Typography variant="h6" component="div">
+                          Người dùng
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" paragraph>
+                        Người dùng thông thường, có thể mua sắm và quản lý tài khoản cá nhân.
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ px: 2, pb: 2 }}>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        onClick={() => {
+                          setUserFilter('ROLE_USER');
+                          setTabValue(1);
+                        }}
+                      >
+                        Xem danh sách
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              </Grid>
+            )}
+          </Paper>
         </TabPanel>
       </Paper>
       
@@ -743,6 +1283,121 @@ const Admin = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseImageDialog} color="inherit">Đóng</Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* User Management Dialog */}
+      <Dialog
+        open={userDialogOpen}
+        onClose={() => setUserDialogOpen(false)}
+        aria-labelledby="user-dialog-title"
+      >
+        <DialogTitle id="user-dialog-title">
+          {userDialogType === 'activate' ? 'Kích hoạt tài khoản' : 'Khóa tài khoản'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {userDialogType === 'activate' 
+              ? `Bạn có chắc chắn muốn kích hoạt tài khoản của "${selectedUser?.fullname || selectedUser?.username}" không?` 
+              : `Bạn có chắc chắn muốn khóa tài khoản của "${selectedUser?.fullname || selectedUser?.username}" không?`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUserDialogOpen(false)} color="inherit">Hủy</Button>
+          <Button 
+            onClick={() => updateUserStatus(selectedUser.id, userDialogType === 'activate')} 
+            color={userDialogType === 'activate' ? 'success' : 'error'}
+            variant="contained"
+          >
+            {userDialogType === 'activate' ? 'Kích hoạt' : 'Khóa tài khoản'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Role Management Dialog */}
+      <Dialog
+        open={roleDialogOpen}
+        onClose={() => setRoleDialogOpen(false)}
+        aria-labelledby="role-dialog-title"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="role-dialog-title">
+          Phân quyền người dùng
+        </DialogTitle>
+        <DialogContent>
+          {userForRole && (
+            <>
+              <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar 
+                  src={userForRole.avatar} 
+                  alt={userForRole.username}
+                  sx={{ width: 50, height: 50 }}
+                >
+                  {userForRole.fullname?.charAt(0)?.toUpperCase() || userForRole.username?.charAt(0)?.toUpperCase()}
+                </Avatar>
+                <div>
+                  <Typography variant="h6" component="div">
+                    {userForRole.fullname}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {userForRole.email}
+                  </Typography>
+                </div>
+              </Box>
+              
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>
+                Quyền hạn
+              </Typography>
+              
+              <Box sx={{ mt: 1 }}>
+                {roles.map((role) => (
+                  <FormControlLabel
+                    key={role.id}
+                    control={
+                      <Checkbox
+                        checked={selectedRoles.includes(role.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRoles([...selectedRoles, role.id]);
+                          } else {
+                            setSelectedRoles(selectedRoles.filter(id => id !== role.id));
+                          }
+                        }}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip 
+                          size="small"
+                          label={role.name === 'ADMIN' ? 'Quản trị viên' : 
+                                role.name === 'STAFF' ? 'Nhân viên' : 
+                                role.name === 'USER' ? 'Người dùng' : 
+                                role.name === 'SELLER' ? 'Người bán' : role.name}
+                          color={role.name === 'ADMIN' ? 'error' : 
+                                role.name === 'STAFF' ? 'warning' : 
+                                role.name === 'SELLER' ? 'success' : 'info'}
+                        />
+                        <Typography variant="body2">
+                          {role.description}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                ))}
+              </Box>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRoleDialogOpen(false)} color="inherit">Hủy</Button>
+          <Button 
+            onClick={updateUserRoles} 
+            color="primary"
+            variant="contained"
+          >
+            Lưu thay đổi
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

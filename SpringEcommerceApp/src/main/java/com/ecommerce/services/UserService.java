@@ -18,13 +18,17 @@ public interface UserService extends UserDetailsService {
     List<User> findAll();
     User findByUsername(String username);
     User findByEmail(String email);
+    List<User> findByActiveStatus(boolean isActive);
     
     // Phương thức mới cho chức năng profile
     void updateAvatar(User user, MultipartFile avatar);
     void changePassword(User user, String newPassword);
-    
-    // Phương thức thêm vai trò cho người dùng
+      // Phương thức thêm vai trò cho người dùng
     void addRoleToUser(User user, Role role);
+    void removeRoleFromUser(User user, Role role);
+    
+    // Phương thức xóa cache người dùng
+    void clearUserCache(String username);
     
     @Override
     UserDetails loadUserByUsername(String username);

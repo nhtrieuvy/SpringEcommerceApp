@@ -441,8 +441,7 @@ public class UserServiceImpl implements UserService {
             return user; // Vẫn trả về user để tiếp tục quá trình
         }
     }
-    
-    @Override
+      @Override
     public void addRoleToUser(User user, Role role) {
         // Clear user cache to ensure updated roles are reflected
         userDetailsCache.remove(user.getUsername());
@@ -452,10 +451,45 @@ public class UserServiceImpl implements UserService {
             user.setRoles(new HashSet<>());
         }
         
+        // // Ensure we have a complete user object with password
+        // if (user.getPassword() == null) {
+        //     // Get a fresh copy of the user with all fields from the database
+        //     User refreshedUser = userRepository.findById(user.getId());
+        //     if (refreshedUser != null && refreshedUser.getPassword() != null) {
+        //         user.setPassword(refreshedUser.getPassword());
+        //     } else {
+        //         throw new RuntimeException("Không thể cập nhật quyền: password của user là null");
+        //     }
+        // }
+        
         // Add the role to the user's role set
         user.getRoles().add(role);
         
         // Update the user in the database
         userRepository.update(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findByActiveStatus(boolean isActive) {
+        return userRepository.findByActiveStatus(isActive);
+    }
+      @Override
+    public void removeRoleFromUser(User user, Role role) {
+        Set<Role> roles = user.getRoles();
+        roles.remove(role);
+        user.setRoles(roles);
+        userRepository.update(user);
+        
+        // Xóa cache
+        userDetailsCache.remove(user.getUsername());
+    }
+    
+    @Override
+    public void clearUserCache(String username) {
+        if (username != null) {
+            userDetailsCache.remove(username);
+            System.out.println("Cleared cache for user: " + username);
+        }
     }
 }
