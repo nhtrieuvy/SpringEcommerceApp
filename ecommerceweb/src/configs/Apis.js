@@ -41,6 +41,11 @@ export const endpoint = {
     UPDATE_PROFILE: `/api/profile`,
     CHANGE_PASSWORD: `/api/profile/password`,
     GET_USER_INFO: `/api/profile`,
+    
+    // Endpoints cho chức năng quên mật khẩu
+    FORGOT_PASSWORD: `/api/password/forgot`,
+    VALIDATE_RESET_TOKEN: `/api/password/reset/validate`,
+    RESET_PASSWORD: `/api/password/reset`,
 };
 
 // Hàm tạo instance axios với token xác thực

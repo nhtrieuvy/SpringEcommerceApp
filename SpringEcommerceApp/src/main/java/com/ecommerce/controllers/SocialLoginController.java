@@ -231,6 +231,7 @@ public class SocialLoginController {
             String name = (String) facebookUserInfo.get("name");
             String facebookId = (String) facebookUserInfo.get("id");
             String picture = null;
+
             
             // Facebook trả về picture trong một nested object
             if (facebookUserInfo.containsKey("picture")) {
@@ -494,6 +495,10 @@ public class SocialLoginController {
                 user.setAuthProvider("GOOGLE");
             }
             
+            // Cập nhật thời gian đăng nhập cuối cùng
+            user.setLastLogin(new Date());
+            System.out.println("Updated last login time for user: " + user.getUsername());
+            
             // Lưu thay đổi
             userService.update(user);
             System.out.println("Google user updated successfully: " + user.getId());
@@ -632,6 +637,10 @@ public class SocialLoginController {
                 user.setFacebookId(facebookId);
                 user.setAuthProvider("FACEBOOK");
             }
+            
+            // Cập nhật thời gian đăng nhập cuối cùng
+            user.setLastLogin(new Date());
+            System.out.println("Updated last login time for user: " + user.getUsername());
             
             // Lưu thay đổi
             userService.update(user);

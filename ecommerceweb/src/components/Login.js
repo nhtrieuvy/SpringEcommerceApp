@@ -434,7 +434,8 @@ export default function Login() {
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                   <MuiLink 
-                    href="#" 
+                    component={Link}
+                    to="/forgot-password"
                     variant="body2"
                     sx={{ 
                       color: 'var(--primary-main)',

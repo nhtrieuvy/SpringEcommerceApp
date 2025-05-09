@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/api")
@@ -157,6 +158,10 @@ public class ApiUserController {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(new AuthResponse(false, "Lỗi hệ thống: User không tồn tại sau khi xác thực", null, null));
                 }
+                
+                // Cập nhật thời gian đăng nhập cuối cùng
+                user.setLastLogin(new Date());
+                userService.update(user);
                 
                 // Sử dụng phương thức static để tạo token
                 String token = JwtUtils.generateToken(user.getUsername());
