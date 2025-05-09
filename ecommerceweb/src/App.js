@@ -5,6 +5,8 @@ import Home from "./components/Home";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Profile from "./components/Profile";
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -155,6 +157,16 @@ const App = () => {
                 <AuthenticatedRoute>
                   <Profile />
                 </AuthenticatedRoute>
+              } />
+              <Route path="/forgot-password" element={
+                <ProtectedRoute>
+                  <ForgotPassword />
+                </ProtectedRoute>
+              } />
+              <Route path="/reset-password" element={
+                <ProtectedRoute>
+                  <ResetPassword />
+                </ProtectedRoute>
               } />
             </Routes>
             <Footer />

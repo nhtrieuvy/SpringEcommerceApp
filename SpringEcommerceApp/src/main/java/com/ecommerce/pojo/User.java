@@ -1,6 +1,7 @@
 package com.ecommerce.pojo;
 
 import jakarta.persistence.*;
+import java.util.Date;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -49,6 +50,16 @@ public class User {
     // Trường để xác định đăng nhập từ đâu
     @Column(name = "auth_provider")
     private String authProvider;
+    
+    // Trường lưu thời gian tạo tài khoản
+    @Column(name = "created_date")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdDate;
+    
+    // Trường lưu thời gian đăng nhập cuối cùng
+    @Column(name = "last_login")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lastLogin;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -140,11 +151,35 @@ public class User {
         this.authProvider = authProvider;
     }
 
+    public Date getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+    
+    public Date getLastLogin() {
+        return lastLogin;
+    }
+
+    public void setLastLogin(Date lastLogin) {
+        this.lastLogin = lastLogin;
+    }
+
     public Set<Role> getRoles() {
         return roles;
     }
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    // PrePersist để tự động thiết lập thời gian tạo khi lưu đối tượng mới
+    @PrePersist
+    protected void onCreate() {
+        if (createdDate == null) {
+            createdDate = new Date();
+        }
     }
 }

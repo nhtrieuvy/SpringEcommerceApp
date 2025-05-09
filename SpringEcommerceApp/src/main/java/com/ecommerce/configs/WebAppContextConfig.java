@@ -21,6 +21,10 @@ import org.springframework.web.servlet.config.annotation.DefaultServletHandlerCo
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import java.util.Properties;
 
 /**
  *
@@ -74,21 +78,5 @@ public class WebAppContextConfig implements WebMvcConfigurer{
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         converters.add(new MappingJackson2HttpMessageConverter());
     }
-
-    // Thêm cấu hình CORS cho WebMVC
-//    @Override
-//    public void addCorsMappings(org.springframework.web.servlet.config.annotation.CorsRegistry registry) {
-//        registry.addMapping("/**")
-//                .allowedOrigins("http://localhost:3000")
-//                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-//                .allowedHeaders("*")
-//                .allowCredentials(true)
-//                .maxAge(3600);
-//    }
-
-    // // Thêm multipart resolver để xử lý file upload
-    // @Bean
-    // public StandardServletMultipartResolver multipartResolver() {
-    //     return new StandardServletMultipartResolver();
-    // }
+    
 }

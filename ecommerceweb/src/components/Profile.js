@@ -404,9 +404,15 @@ const Profile = () => {
                   {user.email}
                 </Typography>
                 
-                <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.8 }}>
-                  Thành viên từ: {user.createdDate ? new Date(user.createdDate).toLocaleDateString('vi-VN') : 'N/A'}
-                </Typography>
+                <Box sx={{ mt: 0.5, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 0, sm: 1 }, opacity: 0.8 }}>
+                  <Typography variant="body2">
+                    Thành viên từ: {user.createdDate ? new Date(user.createdDate).toLocaleDateString('vi-VN') : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>•</Typography>
+                  <Typography variant="body2">
+                    Lần cuối đăng nhập: {user.lastLogin ? new Date(user.lastLogin).toLocaleTimeString('vi-VN') + " " + new Date(user.createdDate).toLocaleDateString('vi-VN'): 'N/A'}
+                  </Typography>
+                </Box>
               </Box>
             </Grid>
           </Grid>
