@@ -61,11 +61,13 @@ export const endpoint = {
     USER_DETAIL: (id) => `/api/admin/users/${id}`,
     USER_UPDATE: (id) => `/api/admin/users/${id}`,
     USER_DELETE: (id) => `/api/admin/users/${id}`,
-    
-    // Endpoints cho phân quyền
+      // Endpoints cho phân quyền
     ROLES: `/api/admin/roles`,
     ASSIGN_ROLE: (userId) => `/api/admin/users/${userId}/roles`,
     REMOVE_ROLE: (userId, roleId) => `/api/admin/users/${userId}/roles/${roleId}`,
+    
+    // Endpoints để lấy danh sách người dùng theo role
+    USERS_BY_ROLE: (roleName) => `/api/admin/users/role/${roleName}`,
 };
 
 // Hàm tạo instance axios với token xác thực

@@ -467,14 +467,19 @@ public class UserServiceImpl implements UserService {
         
         // Update the user in the database
         userRepository.update(user);
-    }
-
-    @Override
+    }    @Override
     @Transactional(readOnly = true)
     public List<User> findByActiveStatus(boolean isActive) {
         return userRepository.findByActiveStatus(isActive);
     }
-      @Override
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findByRole(String roleName) {
+        return userRepository.findByRole(roleName);
+    }
+    
+    @Override
     public void removeRoleFromUser(User user, Role role) {
         Set<Role> roles = user.getRoles();
         roles.remove(role);

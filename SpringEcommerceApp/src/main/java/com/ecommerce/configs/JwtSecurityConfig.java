@@ -45,10 +45,9 @@ public class JwtSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))            .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    .requestMatchers("/**/api/login", "/**/api/login/google", "/**/api/login/facebook", "/**/api/register").permitAll()
-                    .requestMatchers("/**/api/products/**").permitAll()
+                    .requestMatchers("/**/api/login", "/**/api/login/google", "/**/api/login/facebook", "/**/api/register").permitAll()                    .requestMatchers("/**/api/products/**").permitAll()
                     .requestMatchers("/**/api/admin/**").hasAnyRole("ADMIN", "STAFF") // Cho phép ADMIN và STAFF truy cập API admin
-                    .requestMatchers("/**/api/admin/users/*/roles").hasRole("ADMIN")  // Riêng phân quyền chỉ ADMIN
+                    // Không đặt rule riêng cho roles vì sẽ xử lý bằng @PreAuthorize và kiểm tra trong controller
                     .requestMatchers("/**/api/**").authenticated()
                     .anyRequest().permitAll())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
