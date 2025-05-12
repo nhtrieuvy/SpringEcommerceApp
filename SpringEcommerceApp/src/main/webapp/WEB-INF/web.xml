@@ -4,6 +4,7 @@
    xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
    version="6.0">
    
+   
     <!-- Yêu cầu HTTPS cho tất cả các kết nối -->
     <security-constraint>
         <web-resource-collection>
@@ -14,11 +15,6 @@
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
         </user-data-constraint>
     </security-constraint>
-    
-    <!-- Chỉ định đích chuyển hướng khi yêu cầu HTTPS -->
-    <!-- <login-config>
-        <auth-method>BASIC</auth-method>
-    </login-config> -->
     
 </web-app>
 
