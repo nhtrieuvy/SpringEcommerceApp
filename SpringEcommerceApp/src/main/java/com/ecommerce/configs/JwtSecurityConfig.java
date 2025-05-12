@@ -25,43 +25,47 @@ import org.slf4j.LoggerFactory;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
-@Order(1) // Đảm bảo JwtSecurityConfig được áp dụng trước SpringSecurityConfigs
+@Order(1)
 public class JwtSecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(JwtSecurityConfig.class);
 
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain jwtFilterChain(HttpSecurity http) throws Exception {
         logger.info("Configuring JWT security filter chain");
-        
+
         http
-            .securityMatcher("/**") // Áp dụng cho tất cả URL
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    .requestMatchers("/**/api/login", "/**/api/login/google", "/**/api/login/facebook", "/**/api/register").permitAll()
-                    .requestMatchers("/**/api/products/**").permitAll()
-                    .requestMatchers("/**/api/admin/**").hasAnyRole("ADMIN", "STAFF") // Cho phép ADMIN và STAFF truy cập API admin
-                    .requestMatchers("/**/api/admin/users/*/roles").hasRole("ADMIN")  // Riêng phân quyền chỉ ADMIN
-                    .requestMatchers("/**/api/**").authenticated()
-                    .anyRequest().permitAll())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(ex -> ex
-                    .authenticationEntryPoint((request, response, authException) -> {
-                        logger.error("Unauthorized error: {}", authException.getMessage());
-                        response.setContentType("application/json;charset=UTF-8");
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication failed: " 
-                                + authException.getMessage() + "\"}");
-                    })
-            );
-        
+                .securityMatcher("/api/**") // Chỉ áp dụng cho các request bắt đầu với /api/
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/login", "/api/login/google", "/api/login/facebook", "/api/register")
+                        .permitAll()
+                        .requestMatchers("/api/password/forgot", "/api/password/reset", "/api/password/reset/validate")
+                        .permitAll()
+                        .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "STAFF") // Cho phép ADMIN và STAFF
+                                                                                            // truy cập API admin
+
+                        .requestMatchers("/api/**").authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            logger.error("Unauthorized error: {}", authException.getMessage());
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter()
+                                    .write("{\"error\":\"Unauthorized\",\"message\":\"Authentication failed: "
+                                            + authException.getMessage() + "\"}");
+                        }));
+
         logger.info("JWT security filter chain configured successfully");
         return http.build();
     }
@@ -69,7 +73,7 @@ public class JwtSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         logger.info("Configuring CORS");
-        
+
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("https://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -77,15 +81,15 @@ public class JwtSecurityConfig {
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         // Thêm các headers liên quan đến Cross-Origin-Opener-Policy
         HttpHeaders headers = new HttpHeaders();
         headers.add("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
         headers.add("Cross-Origin-Embedder-Policy", "require-corp");
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        
+
         logger.info("CORS configuration completed");
         return source;
     }

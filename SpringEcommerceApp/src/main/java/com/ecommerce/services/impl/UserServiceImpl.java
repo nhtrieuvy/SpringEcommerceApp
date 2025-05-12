@@ -214,17 +214,16 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             throw new UsernameNotFoundException("Không tìm thấy người dùng: " + username);
         }
-        
-        Set<GrantedAuthority> authorities = new HashSet<>();
+          Set<GrantedAuthority> authorities = new HashSet<>();
         
         // Xử lý roles
         if (user.getRoles() != null && !user.getRoles().isEmpty()) {
             for (Role role : user.getRoles()) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()));
+                authorities.add(new SimpleGrantedAuthority(role.getName()));
             }
         } else {
-            // Nếu không có role, gán mặc định ROLE_USER
-            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+            // Nếu không có role, gán mặc định USER
+            authorities.add(new SimpleGrantedAuthority("USER"));
         }
         
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
@@ -467,14 +466,19 @@ public class UserServiceImpl implements UserService {
         
         // Update the user in the database
         userRepository.update(user);
-    }
-
-    @Override
+    }    @Override
     @Transactional(readOnly = true)
     public List<User> findByActiveStatus(boolean isActive) {
         return userRepository.findByActiveStatus(isActive);
     }
-      @Override
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findByRole(String roleName) {
+        return userRepository.findByRole(roleName);
+    }
+    
+    @Override
     public void removeRoleFromUser(User user, Role role) {
         Set<Role> roles = user.getRoles();
         roles.remove(role);

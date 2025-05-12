@@ -1,6 +1,5 @@
 package com.ecommerce.filters;
 
-import com.ecommerce.pojo.User;
 import com.ecommerce.services.UserService;
 import com.ecommerce.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
@@ -42,12 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return; // Chú ý: trả về ngay lập tức, không tiếp tục filter chain cho OPTIONS
         }
 
-        System.out.println("JwtAuthenticationFilter processing request: " + request.getMethod() + " " + request.getRequestURI());
-        
+        System.out.println(
+                "JwtAuthenticationFilter processing request: " + request.getMethod() + " " + request.getRequestURI());
+
         final String authHeader = request.getHeader("Authorization");
         System.out.println("Authorization header: " + authHeader);
 
-        // 2. Nếu không có header Authorization hoặc không bắt đầu bằng "Bearer ", bỏ qua
+        // 2. Nếu không có header Authorization hoặc không bắt đầu bằng "Bearer ", bỏ
+        // qua
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             System.out.println("No JWT token found, continue filter chain");
             filterChain.doFilter(request, response);
@@ -59,29 +60,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = authHeader.substring(7);
             String username = JwtUtils.extractUsername(jwt);
             System.out.println("Extracted username from token: " + username);
-            
+
             // 4. Kiểm tra username và authentication trong context
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 // 5. Lấy thông tin user từ database
                 UserDetails userDetails = userService.loadUserByUsername(username);
-                
+
                 // 6. Xác thực token
                 if (userDetails != null && JwtUtils.validateToken(jwt, username)) {
-                    UsernamePasswordAuthenticationToken authToken = 
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null, 
-                                    userDetails.getAuthorities()
-                            );
-                    
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
+
                     authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
-                    
+                            new WebAuthenticationDetailsSource().buildDetails(request));
+
                     // 7. Đặt authentication vào SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     System.out.println("Authentication set in SecurityContext for user: " + username);
-                    
+
                     // 8. Thêm attribute username vào request
                     request.setAttribute("jwt_username", username);
                 } else {
@@ -95,17 +93,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 9. Tiếp tục filter chain
         filterChain.doFilter(request, response);
-        
+
         // 10. Kiểm tra lại xác thực sau khi xử lý
-        System.out.println("After filter chain, authentication: " + 
-                         (SecurityContextHolder.getContext().getAuthentication() != null ? 
-                          SecurityContextHolder.getContext().getAuthentication().getName() : "null"));
+        System.out.println("After filter chain, authentication: " +
+                (SecurityContextHolder.getContext().getAuthentication() != null
+                        ? SecurityContextHolder.getContext().getAuthentication().getName()
+                        : "null"));
     }
-    
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        // Chỉ lọc các URLs bắt đầu với /api/
-        String path = request.getRequestURI();
-        return !path.contains("/api/");
-    }
+
 }

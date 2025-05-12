@@ -199,9 +199,7 @@ public class UserRepositoryImpl implements UserRepository {
         }
         
         return passwordEncoder.matches(password, user.getPassword());
-    }
-
-    @Override
+    }    @Override
     public List<User> findByActiveStatus(boolean isActive) {
         Session session = sessionFactory.getCurrentSession();
         
@@ -210,6 +208,32 @@ public class UserRepositoryImpl implements UserRepository {
             query.setParameter("active", isActive);
             return query.getResultList();
         } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
+    public List<User> findByRole(String roleName) {
+        if (roleName == null || roleName.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        try {
+            Session session = sessionFactory.getCurrentSession();
+            
+            // Sử dụng HQL với JOIN để lấy tất cả người dùng có vai trò chỉ định
+            Query<User> query = session.createQuery(
+                "SELECT DISTINCT u FROM User u " +
+                "JOIN u.roles r " +
+                "WHERE r.name = :roleName", 
+                User.class
+            );
+            query.setParameter("roleName", roleName);
+            
+            return query.getResultList();
+        } catch (Exception e) {
+            System.err.println("Error finding users by role: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }

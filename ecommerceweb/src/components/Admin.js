@@ -129,14 +129,16 @@ const Admin = () => {
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [userDialogType, setUserDialogType] = useState('');
   const [userFilter, setUserFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'INACTIVE'
-  
-  // State cho trang phân quyền
+    // State cho trang phân quyền
   const [roles, setRoles] = useState([]);
   const [userForRole, setUserForRole] = useState(null);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [availableRoles, setAvailableRoles] = useState([]);
   const [roleReload, setRoleReload] = useState(false);
+  const [usersByRole, setUsersByRole] = useState([]);
+  const [currentRoleView, setCurrentRoleView] = useState('');
+  const [roleUserDialogOpen, setRoleUserDialogOpen] = useState(false);
     useEffect(() => {
     // Kiểm tra quyền truy cập
     if (user && !(user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF'))) {
@@ -423,9 +425,31 @@ const Admin = () => {
       setRoleDialogOpen(true);
     }
   };
-  
-  // Cập nhật quyền cho người dùng
+    // Cập nhật quyền cho người dùng
   const updateUserRoles = async () => {
+    // Kiểm tra người dùng hiện tại có phải là STAFF không
+    const currentUserIsStaff = user && 
+      user.roles.some(r => r.name === 'STAFF') && 
+      !user.roles.some(r => r.name === 'ADMIN');
+      
+    // Kiểm tra người dùng đích có quyền ADMIN không
+    const targetUserHasAdmin = userForRole.roles.some(r => r.name === 'ADMIN');
+    
+    // Nếu người dùng hiện tại là STAFF và người dùng đích có quyền ADMIN, không cho phép thay đổi
+    if (currentUserIsStaff && targetUserHasAdmin) {
+      setMessage({ type: 'error', content: 'Nhân viên không có quyền thay đổi quyền của người dùng có quyền ADMIN' });
+      return;
+    }
+    
+    // Lấy thông tin quyền ADMIN
+    const adminRole = roles.find(role => role.name === 'ADMIN');
+    
+    // Kiểm tra nếu người dùng hiện tại là STAFF và đang cố gắng thêm quyền ADMIN
+    if (currentUserIsStaff && adminRole && selectedRoles.includes(adminRole.id)) {
+      setMessage({ type: 'error', content: 'Nhân viên không có quyền cấp quyền ADMIN cho người dùng' });
+      return;
+    }
+      
     setLoading(true);
     try {
       const { authApi } = require('../configs/Apis');
@@ -445,6 +469,34 @@ const Admin = () => {
       }
     } catch (error) {
       console.error('Lỗi khi cập nhật quyền:', error);
+      setMessage({ 
+        type: 'error', 
+        content: error.response?.data?.message || 'Không thể kết nối đến máy chủ'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Lấy danh sách người dùng theo quyền
+  const fetchUsersByRole = async (roleName) => {
+    setLoading(true);
+    try {
+      const { authApi } = require('../configs/Apis');
+      
+      const response = await authApi().get(endpoint.USERS_BY_ROLE(roleName));
+      
+      const data = response.data;
+      if (data.success) {
+        setUsersByRole(data.content);
+        // Mở dialog hiển thị danh sách
+        setCurrentRoleView(roleName);
+        setRoleUserDialogOpen(true);
+      } else {
+        setMessage({ type: 'error', content: data.message || `Không thể lấy danh sách người dùng có quyền ${roleName}` });
+      }
+    } catch (error) {
+      console.error(`Lỗi khi lấy danh sách người dùng có quyền ${roleName}:`, error);
       setMessage({ 
         type: 'error', 
         content: error.response?.data?.message || 'Không thể kết nối đến máy chủ'
@@ -1106,14 +1158,10 @@ const Admin = () => {
                         Người dùng có toàn quyền quản trị hệ thống, bao gồm phân quyền và quản lý người dùng.
                       </Typography>
                     </CardContent>
-                    <CardActions sx={{ px: 2, pb: 2 }}>
-                      <Button 
+                    <CardActions sx={{ px: 2, pb: 2 }}>                      <Button 
                         size="small" 
                         variant="outlined" 
-                        onClick={() => {
-                          setUserFilter('ROLE_ADMIN');
-                          setTabValue(1);
-                        }}
+                        onClick={() => fetchUsersByRole('ADMIN')}
                       >
                         Xem danh sách
                       </Button>
@@ -1136,14 +1184,10 @@ const Admin = () => {
                         Người dùng có quyền quản lý nội dung hệ thống, phê duyệt đăng ký người bán.
                       </Typography>
                     </CardContent>
-                    <CardActions sx={{ px: 2, pb: 2 }}>
-                      <Button 
+                    <CardActions sx={{ px: 2, pb: 2 }}>                      <Button 
                         size="small" 
                         variant="outlined"
-                        onClick={() => {
-                          setUserFilter('ROLE_STAFF');
-                          setTabValue(1);
-                        }}
+                        onClick={() => fetchUsersByRole('STAFF')}
                       >
                         Xem danh sách
                       </Button>
@@ -1166,14 +1210,10 @@ const Admin = () => {
                         Người dùng có quyền đăng bán sản phẩm, quản lý cửa hàng và đơn hàng.
                       </Typography>
                     </CardContent>
-                    <CardActions sx={{ px: 2, pb: 2 }}>
-                      <Button 
+                    <CardActions sx={{ px: 2, pb: 2 }}>                      <Button 
                         size="small" 
                         variant="outlined"
-                        onClick={() => {
-                          setUserFilter('ROLE_SELLER');
-                          setTabValue(1);
-                        }}
+                        onClick={() => fetchUsersByRole('SELLER')}
                       >
                         Xem danh sách
                       </Button>
@@ -1196,14 +1236,10 @@ const Admin = () => {
                         Người dùng thông thường, có thể mua sắm và quản lý tài khoản cá nhân.
                       </Typography>
                     </CardContent>
-                    <CardActions sx={{ px: 2, pb: 2 }}>
-                      <Button 
+                    <CardActions sx={{ px: 2, pb: 2 }}>                      <Button 
                         size="small" 
                         variant="outlined"
-                        onClick={() => {
-                          setUserFilter('ROLE_USER');
-                          setTabValue(1);
-                        }}
+                        onClick={() => fetchUsersByRole('USER')}
                       >
                         Xem danh sách
                       </Button>
@@ -1349,42 +1385,55 @@ const Admin = () => {
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>
                 Quyền hạn
               </Typography>
-              
-              <Box sx={{ mt: 1 }}>
-                {roles.map((role) => (
-                  <FormControlLabel
-                    key={role.id}
-                    control={
-                      <Checkbox
-                        checked={selectedRoles.includes(role.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedRoles([...selectedRoles, role.id]);
-                          } else {
-                            setSelectedRoles(selectedRoles.filter(id => id !== role.id));
-                          }
-                        }}
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip 
-                          size="small"
-                          label={role.name === 'ADMIN' ? 'Quản trị viên' : 
-                                role.name === 'STAFF' ? 'Nhân viên' : 
-                                role.name === 'USER' ? 'Người dùng' : 
-                                role.name === 'SELLER' ? 'Người bán' : role.name}
-                          color={role.name === 'ADMIN' ? 'error' : 
-                                role.name === 'STAFF' ? 'warning' : 
-                                role.name === 'SELLER' ? 'success' : 'info'}
+                <Box sx={{ mt: 1 }}>
+                {roles.map((role) => {
+                  // Kiểm tra người dùng hiện tại có phải là STAFF không
+                  const currentUserIsStaff = user && 
+                    user.roles.some(r => r.name === 'STAFF') && 
+                    !user.roles.some(r => r.name === 'ADMIN');
+                  
+                  // Nếu người dùng là STAFF và role là ADMIN, không hiển thị
+                  if (currentUserIsStaff && role.name === 'ADMIN') {
+                    return null;
+                  }
+                  
+                  return (
+                    <FormControlLabel
+                      key={role.id}
+                      control={
+                        <Checkbox
+                          checked={selectedRoles.includes(role.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedRoles([...selectedRoles, role.id]);
+                            } else {
+                              setSelectedRoles(selectedRoles.filter(id => id !== role.id));
+                            }
+                          }}
+                          // Vô hiệu hóa checkbox nếu người dùng là STAFF và đang thao tác với người dùng có quyền ADMIN
+                          disabled={currentUserIsStaff && userForRole.roles.some(r => r.name === 'ADMIN')}
                         />
-                        <Typography variant="body2">
-                          {role.description}
-                        </Typography>
-                      </Box>
-                    }
-                  />
-                ))}
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip 
+                            size="small"
+                            label={role.name === 'ADMIN' ? 'Quản trị viên' : 
+                                  role.name === 'STAFF' ? 'Nhân viên' : 
+                                  role.name === 'USER' ? 'Người dùng' : 
+                                  role.name === 'SELLER' ? 'Người bán' : role.name}
+                            color={role.name === 'ADMIN' ? 'error' : 
+                                  role.name === 'STAFF' ? 'warning' : 
+                                  role.name === 'SELLER' ? 'success' : 'info'}
+                          />
+                          <Typography variant="body2">
+                            {role.description}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  );
+                })}
               </Box>
             </>
           )}
@@ -1398,6 +1447,99 @@ const Admin = () => {
           >
             Lưu thay đổi
           </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Dialog hiển thị danh sách người dùng theo quyền */}
+      <Dialog
+        open={roleUserDialogOpen}
+        onClose={() => setRoleUserDialogOpen(false)}
+        aria-labelledby="role-users-dialog-title"
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle id="role-users-dialog-title">
+          Danh sách người dùng có quyền {
+            currentRoleView === 'ADMIN' ? 'Quản trị viên' :
+            currentRoleView === 'STAFF' ? 'Nhân viên' :
+            currentRoleView === 'SELLER' ? 'Người bán' :
+            currentRoleView === 'USER' ? 'Người dùng thông thường' : 
+            currentRoleView
+          }
+        </DialogTitle>
+        <DialogContent>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : usersByRole.length === 0 ? (
+            <Alert severity="info" sx={{ my: 2 }}>
+              Không tìm thấy người dùng nào có quyền này.
+            </Alert>
+          ) : (
+            <TableContainer component={Paper} variant="outlined" sx={{ mt: 2, borderRadius: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: 'rgba(0, 0, 0, 0.03)' }}>
+                    <TableCell>Người dùng</TableCell>
+                    <TableCell>Username</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Trạng thái</TableCell>
+                    <TableCell align="right">Thao tác</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {usersByRole.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Avatar 
+                            src={user.avatar} 
+                            alt={user.username}
+                            sx={{ width: 32, height: 32 }}
+                          >
+                            {user.fullname?.charAt(0)?.toUpperCase() || user.username?.charAt(0)?.toUpperCase()}
+                          </Avatar>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            {user.fullname || user.username}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>{user.username}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          size="small"
+                          label={user.isActive || user.active ? 'Đang hoạt động' : 'Đã khóa'} 
+                          color={user.isActive || user.active ? 'success' : 'error'}
+                          sx={{ fontWeight: 'medium' }}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                          <Tooltip title="Phân quyền">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => {
+                                setRoleUserDialogOpen(false);
+                                openRoleDialog(user);
+                              }}
+                            >
+                              <SupervisorAccountIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRoleUserDialogOpen(false)} color="inherit">Đóng</Button>
         </DialogActions>
       </Dialog>
     </Container>

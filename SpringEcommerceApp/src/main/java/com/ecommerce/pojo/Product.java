@@ -26,6 +26,7 @@ public class Product {
     private double price;
     private int quantity;
     private String image;
+    private boolean active = true;
 
     @ManyToOne
     @JoinColumn(name = "store_id")
@@ -87,6 +88,14 @@ public class Product {
         this.image = image;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public Store getStore() {
         return store;
     }
@@ -110,6 +119,4 @@ public class Product {
     public void setReviews(Set<Review> reviews) {
         this.reviews = reviews;
     }
-
-    
 }
