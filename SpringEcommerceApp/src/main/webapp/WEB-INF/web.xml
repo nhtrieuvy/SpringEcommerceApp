@@ -16,9 +16,9 @@
     </security-constraint>
     
     <!-- Chỉ định đích chuyển hướng khi yêu cầu HTTPS -->
-    <login-config>
+    <!-- <login-config>
         <auth-method>BASIC</auth-method>
-    </login-config>
+    </login-config> -->
     
 </web-app>
 

@@ -7,21 +7,22 @@ package com.ecommerce.configs;
 import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletRegistration;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+import jakarta.servlet.Filter;
+
 
 /**
  *
  * @author nhanh
  */
-public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherServletInitializer{
-
-    @Override
+public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherServletInitializer{    @Override
     protected Class<?>[] getRootConfigClasses() {
         return new Class[]{
             HibernateConfigs.class,
             SpringSecurityConfigs.class,
             JwtSecurityConfig.class,
             ThymeleafConfig.class,
-            MailConfig.class
+            MailConfig.class,
+            CacheConfig.class
         };
     }
 
@@ -35,6 +36,11 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
     @Override
     protected String[] getServletMappings() {
         return new String[] {"/"};
+    }
+
+    @Override
+    protected Filter[] getServletFilters() {
+        return new Filter[] {}; // Không cần thêm JwtFilter ở đây vì Spring Security sẽ xử lý
     }
 
     // Thêm cấu hình multipart cho file upload

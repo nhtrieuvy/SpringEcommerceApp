@@ -37,10 +37,33 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public List<Role> findAll() {
         return roleRepository.findAll();
-    }
-
-    @Override
+    }    @Override
     public Role findByName(String name) {
         return roleRepository.findByName(name);
+    }
+      @Override
+    public Role findByNameNormalized(String name) {
+        if (name == null) return null;
+        
+        // Chuẩn hóa tên vai trò
+        String normalizedName = name;
+        
+        System.out.println("Lookup role with original name: " + name);
+        
+        // Nếu tên bắt đầu bằng "ROLE_", loại bỏ tiền tố
+        if (normalizedName.startsWith("ROLE_")) {
+            normalizedName = normalizedName.substring(5);
+            System.out.println("Stripped ROLE_ prefix, normalized name: " + normalizedName);
+        }
+        
+        // Tìm vai trò với tên đã chuẩn hóa
+        Role role = roleRepository.findByName(normalizedName);
+        if (role == null) {
+            System.out.println("WARNING: Role not found with name: " + normalizedName);
+        } else {
+            System.out.println("Found role: " + role.getName() + ", ID: " + role.getId());
+        }
+        
+        return role;
     }
 }
