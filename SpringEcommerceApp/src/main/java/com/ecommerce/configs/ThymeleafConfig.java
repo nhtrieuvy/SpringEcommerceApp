@@ -17,14 +17,14 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
  * @author nhanh
  */
 @Configuration
-public class ThymeleafConfig {
-    @Bean
+public class ThymeleafConfig {    @Bean
     public ClassLoaderTemplateResolver templateResolver() {
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("templates/");
         templateResolver.setSuffix(".html");
         templateResolver.setTemplateMode("HTML");
         templateResolver.setCharacterEncoding("UTF-8");
+        templateResolver.setCacheable(false); // Tắt cache trong môi trường phát triển để khi thay đổi template sẽ được cập nhật ngay lập tức
         return templateResolver;
     }
 

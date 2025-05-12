@@ -216,4 +216,22 @@ public class User {
             createdDate = new Date();
         }
     }
+
+    // Kiểm tra xem người dùng có vai trò Admin hay không
+    public boolean isAdmin() {
+        if (this.roles != null) {
+            return this.roles.stream()
+                    .anyMatch(role -> "ADMIN".equals(role.getName()));
+        }
+        return false;
+    }
+    
+    // Kiểm tra xem người dùng có vai trò cụ thể hay không
+    public boolean hasRole(String roleName) {
+        if (this.roles != null) {
+            return this.roles.stream()
+                    .anyMatch(role -> roleName.equals(role.getName()));
+        }
+        return false;
+    }
 }

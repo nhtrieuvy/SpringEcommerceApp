@@ -3,18 +3,21 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\Dis
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\HibernateConfigs.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\JwtSecurityConfig.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\MailConfig.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\SecurityWebApplicationInitializer.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\SpringSecurityConfigs.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\ThymeleafConfig.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\configs\WebAppContextConfig.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\AdminController.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiAdminController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiHomeController.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiPasswordResetController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiProductController.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiSellerController.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiSocialLoginController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ApiUserController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\HomeController.java
-D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\PasswordResetController.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\LoginController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\ProductController.java
-D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\SellerController.java
-D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\SocialLoginController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\TestController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\controllers\UserController.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\filters\JwtAuthenticationFilter.java
@@ -23,6 +26,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Catego
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Comment.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Order.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\OrderDetail.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\OrderStatusHistory.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\PasswordResetToken.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Payment.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\pojo\Product.java
@@ -38,6 +42,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositorie
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\CommentRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\OrderDetailRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\OrderRepositoryImpl.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\OrderStatusHistoryRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\PasswordResetTokenRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\PaymentRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\ProductRepositoryImpl.java
@@ -49,6 +54,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositorie
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\impl\UserRepositoryImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\OrderDetailRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\OrderRepository.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\OrderStatusHistoryRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\PasswordResetTokenRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\PaymentRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\ProductRepository.java
@@ -58,6 +64,9 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositorie
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\SellerRequestRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\StoreRepository.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\repositories\UserRepository.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\security\CustomAuthenticationSuccessHandler.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\security\CustomUserDetailsService.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\security\UserPrincipal.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\CategoryService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\CommentService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\EmailService.java
@@ -69,6 +78,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\im
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\PasswordResetServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\PaymentServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\ProductServiceImpl.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\ReportServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\ReviewServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\RoleServiceImpl.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\impl\SellerRequestServiceImpl.java
@@ -80,6 +90,7 @@ D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\Or
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\PasswordResetService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\PaymentService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\ProductService.java
+D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\ReportService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\ReviewService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\RoleService.java
 D:\Study\PTHTW\CuoiKi\SpringEcommerceApp\src\main\java\com\ecommerce\services\SellerRequestService.java

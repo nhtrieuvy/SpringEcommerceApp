@@ -1,0 +1,225 @@
+/* Styles for admin panel */
+
+/* Common Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+/* Admin Sidebar Styles */
+.admin-sidebar {
+    min-height: 100vh;
+    background-color: #343a40;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.admin-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 0.2rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.admin-sidebar .nav-link i {
+    margin-right: 0.5rem;
+    width: 20px;
+    text-align: center;
+}
+
+/* Admin Content Styles */
+.admin-content {
+    min-height: 100vh;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+}
+
+/* Card Styles */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: none;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* Stats Card Styles */
+.stats-card {
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Table Styles */
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Button Styles */
+.btn-group-sm .btn {
+    border-radius: 0.25rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.76563rem;
+}
+
+/* Form Styles */
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Modal Styles */
+.modal-header {
+    background-color: #f8f9fa;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* Pagination Styles */
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.pagination .page-link {
+    color: #007bff;
+}
+
+.pagination .page-link:hover {
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 992px) {
+    .admin-sidebar {
+        position: fixed;
+        left: -280px;
+        width: 280px;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .admin-sidebar.mobile-show {
+        left: 0;
+    }
+    
+    .admin-content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Status Colors */
+.status-pending {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.status-processing {
+    background-color: #17a2b8 !important;
+    color: #fff !important;
+}
+
+.status-shipping {
+    background-color: #6f42c1 !important;
+    color: #fff !important;
+}
+
+.status-completed {
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+
+.status-cancelled {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .admin-content {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+}
+
+/* Helper Classes */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.font-weight-medium {
+    font-weight: 500;
+}
+
+.font-weight-semibold {
+    font-weight: 600;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Additional Animation */
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
