@@ -2,198 +2,131 @@ package com.ecommerce.repositories.impl;
 
 import com.ecommerce.pojo.Product;
 import com.ecommerce.repositories.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import org.hibernate.query.Query;
+
 import java.util.List;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
+@Transactional
 public class ProductRepositoryImpl implements ProductRepository {
+
     @Autowired
     private SessionFactory sessionFactory;
-    
-    // Simple cache for frequently accessed products
-    private final Map<Long, Product> idCache = new ConcurrentHashMap<>();
 
     @Override
     public void save(Product product) {
-        Session session = sessionFactory.getCurrentSession();
-        session.persist(product);
-        
-        // Add to cache if it has an ID
-        if (product.getId() != null) {
-            idCache.put(product.getId(), product);
-        }
+        getCurrentSession().persist(product);
     }
 
     @Override
     public void update(Product product) {
-        Session session = sessionFactory.getCurrentSession();
-        session.merge(product);
-        
-        // Update cache
-        if (product.getId() != null) {
-            idCache.put(product.getId(), product);
-        }
+        getCurrentSession().merge(product);
     }
 
     @Override
     public void delete(Long id) {
-        if (id == null) return;
-        
-        Session session = sessionFactory.getCurrentSession();
-        Product product = session.get(Product.class, id);
-        if (product != null) {
-            // Clear cache
-            idCache.remove(id);
-            session.remove(product);
-        }
+        Product product = findById(id);
+        if (product != null) getCurrentSession().remove(product);
     }
 
     @Override
     public Product findById(Long id) {
-        if (id == null) {
-            return null;
-        }
-        
-        // Check cache first
-        Product cachedProduct = idCache.get(id);
-        if (cachedProduct != null) {
-            return cachedProduct;
-        }
-        
-        try {
-            Session session = sessionFactory.getCurrentSession();
-            Product product = session.get(Product.class, id);
-            
-            // Update cache if found
-            if (product != null) {
-                idCache.put(id, product);
-            }
-            
-            return product;
-        } catch (Exception e) {
-            System.err.println("Error finding product by id: " + e.getMessage());
-            return null;
-        }
+        return getCurrentSession().get(Product.class, id);
     }
 
     @Override
     public List<Product> findAll() {
-        try {
-            Session session = sessionFactory.getCurrentSession();
-            Query<Product> query = session.createQuery("FROM Product", Product.class);
-            query.setCacheable(true); // Enable query cache
-            return query.list();
-        } catch (Exception e) {
-            System.err.println("Error getting all products: " + e.getMessage());
-            return Collections.emptyList();
-        }
+        return getCurrentSession().createQuery("FROM Product", Product.class).getResultList();
     }
+    @Override
+public List<Product> findByName(String name) {
+    String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
+    return getCurrentSession()
+            .createQuery(hql, Product.class)
+            .setParameter("kw", "%" + name.toLowerCase() + "%")
+            .getResultList();
+}
+
+@Override
+public List<Product> findByCategoryId(Long categoryId) {
+    String hql = "FROM Product p WHERE p.category.id = :catId";
+    return getCurrentSession()
+            .createQuery(hql, Product.class)
+            .setParameter("catId", categoryId)
+            .getResultList();
+}
+
+@Override
+public List<Product> findByPriceRange(Double min, Double max) {
+    String hql = "FROM Product p WHERE p.price >= :min AND p.price <= :max";
+    return getCurrentSession()
+            .createQuery(hql, Product.class)
+            .setParameter("min", min)
+            .setParameter("max", max)
+            .getResultList();
+}
+
+@Override
+public List<Product> search(String keyword) {
+    String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
+    return getCurrentSession()
+            .createQuery(hql, Product.class)
+            .setParameter("kw", "%" + keyword.toLowerCase() + "%")
+            .getResultList();
+}
+
 
     @Override
-    public List<Product> findByName(String name) {
-        if (name == null || name.trim().isEmpty()) {
-            return findAll();
+    public List<Product> searchAdvanced(String name, Long storeId, Double minPrice, Double maxPrice,
+                                        String sortBy, String sortDir, int page, int size) {
+        StringBuilder hql = new StringBuilder("FROM Product p WHERE 1=1");
+
+        if (name != null && !name.isEmpty()) {
+            hql.append(" AND LOWER(p.name) LIKE :name");
         }
-        
-        try {
-            Session session = sessionFactory.getCurrentSession();
-            // Tìm kiếm tương đối với LIKE để tìm kiếm tên sản phẩm không chính xác
-            String nameLike = "%" + name.trim() + "%";
-            Query<Product> query = session.createQuery(
-                    "FROM Product WHERE LOWER(name) LIKE LOWER(:name)", 
-                    Product.class);
-            query.setParameter("name", nameLike);
-            query.setCacheable(true); // Enable query cache
-            return query.list();
-        } catch (Exception e) {
-            System.err.println("Error finding products by name: " + e.getMessage());
-            return Collections.emptyList();
+        if (storeId != null) {
+            hql.append(" AND p.store.id = :storeId");
         }
+        if (minPrice != null) {
+            hql.append(" AND p.price >= :minPrice");
+        }
+        if (maxPrice != null) {
+            hql.append(" AND p.price <= :maxPrice");
+        }
+
+        // Sorting
+        if (sortBy != null && !sortBy.isEmpty()) {
+            hql.append(" ORDER BY p.").append(sortBy);
+            if ("desc".equalsIgnoreCase(sortDir)) {
+                hql.append(" DESC");
+            } else {
+                hql.append(" ASC");
+            }
+        }
+
+        Session session = getCurrentSession();
+        Query<Product> query = session.createQuery(hql.toString(), Product.class);
+
+        if (name != null && !name.isEmpty()) {
+            query.setParameter("name", "%" + name.toLowerCase() + "%");
+        }
+        if (storeId != null) query.setParameter("storeId", storeId);
+        if (minPrice != null) query.setParameter("minPrice", minPrice);
+        if (maxPrice != null) query.setParameter("maxPrice", maxPrice);
+
+        // Pagination
+        query.setFirstResult(page * size);
+        query.setMaxResults(size);
+
+        return query.getResultList();
     }
-    
-    @Override
-    public List<Product> findByCategoryId(Long categoryId) {
-        if (categoryId == null) {
-            return findAll();
-        }
-        
-        try {
-            Session session = sessionFactory.getCurrentSession();
-            Query<Product> query = session.createQuery(
-                    "FROM Product p WHERE p.category.id = :categoryId", 
-                    Product.class);
-            query.setParameter("categoryId", categoryId);
-            query.setCacheable(true); // Enable query cache
-            return query.list();
-        } catch (Exception e) {
-            System.err.println("Error finding products by category id: " + e.getMessage());
-            return Collections.emptyList();
-        }
-    }
-    
-    @Override
-    public List<Product> findByPriceRange(Double minPrice, Double maxPrice) {
-        try {
-            Session session = sessionFactory.getCurrentSession();
-            StringBuilder queryBuilder = new StringBuilder("FROM Product p WHERE 1=1");
-            
-            if (minPrice != null) {
-                queryBuilder.append(" AND p.price >= :minPrice");
-            }
-            
-            if (maxPrice != null) {
-                queryBuilder.append(" AND p.price <= :maxPrice");
-            }
-            
-            Query<Product> query = session.createQuery(queryBuilder.toString(), Product.class);
-            
-            if (minPrice != null) {
-                query.setParameter("minPrice", minPrice);
-            }
-            
-            if (maxPrice != null) {
-                query.setParameter("maxPrice", maxPrice);
-            }
-            
-            query.setCacheable(true); // Enable query cache
-            return query.list();
-        } catch (Exception e) {
-            System.err.println("Error finding products by price range: " + e.getMessage());
-            return Collections.emptyList();
-        }
-    }
-    
-    @Override
-    public List<Product> search(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return findAll();
-        }
-        
-        try {
-            String cleanKeyword = keyword.trim().toLowerCase();
-            
-            // Tìm kiếm cơ bản dùng LIKE 
-            Session session = sessionFactory.getCurrentSession();
-            String queryStr = "FROM Product p WHERE " +
-                    "LOWER(p.name) LIKE :keyword OR " +
-                    "LOWER(p.description) LIKE :keyword OR " +
-                    "LOWER(p.category.name) LIKE :keyword";
-            
-            Query<Product> query = session.createQuery(queryStr, Product.class);
-            query.setParameter("keyword", "%" + cleanKeyword + "%");
-            
-            // Không cache query tìm kiếm vì keyword có thể thay đổi rất nhiều
-            return query.list();
-        } catch (Exception e) {
-            System.err.println("Error searching products: " + e.getMessage());
-            return Collections.emptyList();
-        }
+
+    private Session getCurrentSession() {
+        return sessionFactory.getCurrentSession();
     }
 }
