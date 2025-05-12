@@ -12,8 +12,7 @@ import lombok.Setter;
 @Table(name = "seller_requests")
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
+
 public class SellerRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -79,4 +78,142 @@ public class SellerRequest {
             status = "PENDING";
         }
     }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getTaxNumber() {
+        return taxNumber;
+    }
+
+    public void setTaxNumber(String taxNumber) {
+        this.taxNumber = taxNumber;
+    }
+
+    public String getBankAccount() {
+        return bankAccount;
+    }
+
+    public void setBankAccount(String bankAccount) {
+        this.bankAccount = bankAccount;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
+
+    public String getSellerType() {
+        return sellerType;
+    }
+
+    public void setSellerType(String sellerType) {
+        this.sellerType = sellerType;
+    }
+
+    public String getIdCardFront() {
+        return idCardFront;
+    }
+
+    public void setIdCardFront(String idCardFront) {
+        this.idCardFront = idCardFront;
+    }
+
+    public String getIdCardBack() {
+        return idCardBack;
+    }
+
+    public void setIdCardBack(String idCardBack) {
+        this.idCardBack = idCardBack;
+    }
+
+    public String getBusinessLicense() {
+        return businessLicense;
+    }
+
+    public void setBusinessLicense(String businessLicense) {
+        this.businessLicense = businessLicense;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getStatusNotes() {
+        return statusNotes;
+    }
+
+    public void setStatusNotes(String statusNotes) {
+        this.statusNotes = statusNotes;
+    }
+
+    public String getReviewedBy() {
+        return reviewedBy;
+    }
+
+    public void setReviewedBy(String reviewedBy) {
+        this.reviewedBy = reviewedBy;
+    }
+
+    public Date getReviewedDate() {
+        return reviewedDate;
+    }
+
+    public void setReviewedDate(Date reviewedDate) {
+        this.reviewedDate = reviewedDate;
+    }
+
+    public Date getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+    
+    
 }

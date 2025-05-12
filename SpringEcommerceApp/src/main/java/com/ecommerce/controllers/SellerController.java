@@ -142,10 +142,7 @@ public class SellerController {
             ));
         }
     }
-      /**
-     * Lấy danh sách tất cả các yêu cầu đăng ký
-     * Chỉ ADMIN hoặc STAFF mới có quyền truy cập
-     */
+     
     @GetMapping("/requests")
     @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
     public ResponseEntity<?> getAllRequests(

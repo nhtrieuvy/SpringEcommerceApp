@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import ReviewPage from './components/ReviewPage';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import Home from "./components/Home";
@@ -8,6 +9,9 @@ import Profile from "./components/Profile";
 import Admin from "./components/Admin";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
+import CreateStore from './components/CreateStore';
+import CreateProduct from './components/CreateProduct';
+import ProductSearch from './components/ProductSearch';
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -15,6 +19,8 @@ import MyUserReducer from "./reducers/MyUserReducer";
 import { MyUserContext } from "./configs/MyContexts";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './App.css'; // Import CSS với theme xanh lá
+
+
 
 // Google OAuth Client ID - thay thế bằng ID của bạn khi đăng ký trên Google Cloud Platform
 const GOOGLE_CLIENT_ID = "618407643524-0nasoq3jc5dvturarl9truih021cofag.apps.googleusercontent.com";
@@ -117,12 +123,12 @@ const AuthenticatedRoute = ({ children }) => {
 const App = () => {
   // Sử dụng useReducer với MyUserReducer, state ban đầu là null
   const [user, dispatch] = useReducer(MyUserReducer, null);
-  
+
   // Kiểm tra phiên đăng nhập khi tải trang
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    
+
     if (token && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
@@ -134,7 +140,7 @@ const App = () => {
       }
     }
   }, []);
-  
+
   return (
     <MyUserContext.Provider value={[user, dispatch]}>
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
@@ -143,6 +149,17 @@ const App = () => {
           <BrowserRouter>
             <Header />
             <Routes>
+              <Route path="/create-store" element={
+                <AuthenticatedRoute>
+                  <CreateStore />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/create-product" element={
+                <AuthenticatedRoute>
+                  <CreateProduct />
+                </AuthenticatedRoute>
+              } />
+
               <Route path="/" element={<Home />} />
               <Route path="/login" element={
                 <ProtectedRoute>
@@ -174,6 +191,10 @@ const App = () => {
                   <ResetPassword />
                 </ProtectedRoute>
               } />
+              <Route path="/search" element={<ProductSearch />} />
+              <Route path="/review/product/:id" element={<ReviewPage type="product" />} />
+              <Route path="/review/seller/:id" element={<ReviewPage type="seller" />} />
+
             </Routes>
             <Footer />
           </BrowserRouter>

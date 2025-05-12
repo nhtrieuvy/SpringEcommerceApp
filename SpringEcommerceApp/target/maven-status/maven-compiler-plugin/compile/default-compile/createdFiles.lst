@@ -23,6 +23,7 @@ com\ecommerce\repositories\impl\PasswordResetTokenRepositoryImpl.class
 com\ecommerce\controllers\AdminController.class
 com\ecommerce\repositories\CategoryRepository.class
 com\ecommerce\services\impl\ReviewServiceImpl.class
+com\ecommerce\controllers\ApiStoreController.class
 com\ecommerce\services\UserService.class
 com\ecommerce\filters\JwtAuthenticationFilter.class
 com\ecommerce\configs\JwtSecurityConfig.class
