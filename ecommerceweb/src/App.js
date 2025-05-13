@@ -12,6 +12,7 @@ import ResetPassword from "./components/ResetPassword";
 import CreateStore from './components/CreateStore';
 import CreateProduct from './components/CreateProduct';
 import ProductSearch from './components/ProductSearch';
+import StoreList from './components/StoreList';
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -190,8 +191,10 @@ const App = () => {
                 <ProtectedRoute>
                   <ResetPassword />
                 </ProtectedRoute>
-              } />
-              <Route path="/search" element={<ProductSearch />} />
+              } />              <Route path="/search" element={<ProductSearch />} />
+              <Route path="/products" element={<ProductSearch />} />
+              <Route path="/stores" element={<StoreList />} />
+              <Route path="/store/:id" element={<StoreList />} />
               <Route path="/review/product/:id" element={<ReviewPage type="product" />} />
               <Route path="/review/seller/:id" element={<ReviewPage type="seller" />} />
 

@@ -30,6 +30,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import { MyUserContext } from '../configs/MyContexts';
 
 const Header = () => {
@@ -200,8 +201,7 @@ const Header = () => {
                                             color: location.pathname === '/' ? 'var(--primary-main)' : 'inherit',
                                             fontWeight: location.pathname === '/' ? 600 : 400
                                         }}
-                                    >
-                                        <HomeIcon fontSize="small" />
+                                    >                                        <HomeIcon fontSize="small" />
                                         Trang chủ
                                     </MenuItem>
                                     <MenuItem
@@ -216,6 +216,19 @@ const Header = () => {
                                     >
                                         <ShoppingCartIcon fontSize="small" />
                                         Sản phẩm
+                                    </MenuItem>
+                                    <MenuItem
+                                        component={RouterLink}
+                                        to="/stores"
+                                        onClick={handleClose}
+                                        sx={{ 
+                                            gap: 1,
+                                            color: location.pathname === '/stores' ? 'var(--primary-main)' : 'inherit',
+                                            fontWeight: location.pathname === '/stores' ? 600 : 400
+                                        }}
+                                    >
+                                        <StorefrontIcon fontSize="small" />
+                                        Cửa hàng
                                     </MenuItem>
                                     
                                     {user ? (
@@ -309,9 +322,20 @@ const Header = () => {
                                     sx={{ 
                                         color: scrolled ? 'white' : (location.pathname === '/products' ? 'var(--primary-main)' : 'var(--text-primary)'),
                                         fontWeight: location.pathname === '/products' ? 600 : 500
+                                    }}                                >
+                                    Sản phẩm
+                                </Button>
+                                <Button
+                                    className={`nav-link ${location.pathname === '/stores' ? 'active' : ''}`}
+                                    component={RouterLink}
+                                    to="/stores"
+                                    startIcon={<StorefrontIcon />}
+                                    sx={{ 
+                                        color: scrolled ? 'white' : (location.pathname === '/stores' ? 'var(--primary-main)' : 'var(--text-primary)'),
+                                        fontWeight: location.pathname === '/stores' ? 600 : 500
                                     }}
                                 >
-                                    Sản phẩm
+                                    Cửa hàng
                                 </Button>
                                 
                                 {user ? (
