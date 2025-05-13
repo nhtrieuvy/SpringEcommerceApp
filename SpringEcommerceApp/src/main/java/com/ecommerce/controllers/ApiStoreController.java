@@ -25,6 +25,6 @@ public class ApiStoreController {
 
     @GetMapping("/seller/{sellerId}")
     public List<Store> getStoresBySeller(@PathVariable Long sellerId) {
-        return storeService.findBySellerId(sellerId);
+        return storeService.findByUserId(sellerId);
     }
 }

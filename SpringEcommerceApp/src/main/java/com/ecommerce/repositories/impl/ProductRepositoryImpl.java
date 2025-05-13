@@ -43,43 +43,52 @@ public class ProductRepositoryImpl implements ProductRepository {
     public List<Product> findAll() {
         return getCurrentSession().createQuery("FROM Product", Product.class).getResultList();
     }
+
     @Override
-public List<Product> findByName(String name) {
-    String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
-    return getCurrentSession()
-            .createQuery(hql, Product.class)
-            .setParameter("kw", "%" + name.toLowerCase() + "%")
-            .getResultList();
-}
+    public List<Product> findByName(String name) {
+        String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
+        return getCurrentSession()
+                .createQuery(hql, Product.class)
+                .setParameter("kw", "%" + name.toLowerCase() + "%")
+                .getResultList();
+    }
 
-@Override
-public List<Product> findByCategoryId(Long categoryId) {
-    String hql = "FROM Product p WHERE p.category.id = :catId";
-    return getCurrentSession()
-            .createQuery(hql, Product.class)
-            .setParameter("catId", categoryId)
-            .getResultList();
-}
+    @Override
+    public List<Product> findByCategoryId(Long categoryId) {
+        String hql = "FROM Product p WHERE p.category.id = :catId";
+        return getCurrentSession()
+                .createQuery(hql, Product.class)
+                .setParameter("catId", categoryId)
+                .getResultList();
+    }
 
-@Override
-public List<Product> findByPriceRange(Double min, Double max) {
-    String hql = "FROM Product p WHERE p.price >= :min AND p.price <= :max";
-    return getCurrentSession()
-            .createQuery(hql, Product.class)
-            .setParameter("min", min)
-            .setParameter("max", max)
-            .getResultList();
-}
+    @Override
+    public List<Product> findByPriceRange(Double min, Double max) {
+        String hql = "FROM Product p WHERE p.price >= :min AND p.price <= :max";
+        return getCurrentSession()
+                .createQuery(hql, Product.class)
+                .setParameter("min", min)
+                .setParameter("max", max)
+                .getResultList();
+    }
 
-@Override
-public List<Product> search(String keyword) {
-    String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
-    return getCurrentSession()
-            .createQuery(hql, Product.class)
-            .setParameter("kw", "%" + keyword.toLowerCase() + "%")
-            .getResultList();
-}
+    @Override
+    public List<Product> search(String keyword) {
+        String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
+        return getCurrentSession()
+                .createQuery(hql, Product.class)
+                .setParameter("kw", "%" + keyword.toLowerCase() + "%")
+                .getResultList();
+    }
 
+    @Override
+    public List<Product> findByStoreId(Long storeId) {
+        String hql = "FROM Product p WHERE p.store.id = :storeId";
+        return getCurrentSession()
+                .createQuery(hql, Product.class)
+                .setParameter("storeId", storeId)
+                .getResultList();
+    }
 
     @Override
     public List<Product> searchAdvanced(String name, Long storeId, Double minPrice, Double maxPrice,
