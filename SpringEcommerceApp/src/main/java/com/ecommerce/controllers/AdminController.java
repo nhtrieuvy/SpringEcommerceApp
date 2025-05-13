@@ -5,14 +5,13 @@ import com.ecommerce.pojo.Order;
 import com.ecommerce.pojo.OrderStatusHistory;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Role;
-import com.ecommerce.pojo.Seller;
 import com.ecommerce.pojo.User;
 import com.ecommerce.services.CategoryService;
 import com.ecommerce.services.OrderService;
 import com.ecommerce.services.ProductService;
 import com.ecommerce.services.RoleService;
-import com.ecommerce.services.SellerService;
 import com.ecommerce.services.UserService;
+import com.ecommerce.services.StoreService;
 
 import com.ecommerce.services.ReportService;
 
@@ -48,8 +47,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin")
 @PreAuthorize("hasAuthority('ADMIN')")
-public class AdminController {
-    @Autowired
+public class AdminController {    @Autowired
     private UserService userService;
 
     @Autowired
@@ -65,7 +63,7 @@ public class AdminController {
     private RoleService roleService;
 
     @Autowired
-    private SellerService sellerService;
+    private StoreService storeService;
 
     @Autowired
     private ReportService reportService;
@@ -206,17 +204,15 @@ public class AdminController {
                             (product.getDescription() != null
                                     && product.getDescription().toLowerCase().contains(keyword.toLowerCase())))
                     .collect(Collectors.toList());
-        }
-
-        // Phân trang
+        }        // Phân trang
         int start = page * size;
         int end = Math.min(start + size, allProducts.size());
 
         List<Product> paginatedProducts = allProducts.subList(start, end);
 
-        // Lấy danh sách danh mục và người bán
+        // Lấy danh sách danh mục và người dùng có role Seller
         List<Category> categories = categoryService.findAll();
-        List<Seller> sellers = sellerService.findAll();
+        List<User> sellers = userService.findByRole("SELLER");
         model.addAttribute("products", paginatedProducts);
         model.addAttribute("categories", categories);
         model.addAttribute("sellers", sellers);
@@ -895,5 +891,174 @@ public class AdminController {
             default:
                 return statusCode;
         }
+    }
+
+    // ==================== Store Management Methods ====================
+
+    @GetMapping("/stores")
+    public String manageStores(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword,
+            Model model) {
+
+        // Lấy danh sách cửa hàng từ service
+        List<Map<String, Object>> allStores = storeService.findAllWithUserInfo();
+
+        // Áp dụng bộ lọc nếu có
+        if (status != null && !status.isEmpty()) {
+            boolean isActive = "active".equals(status);
+            allStores = allStores.stream()
+                    .filter(store -> (boolean) store.get("active") == isActive)
+                    .collect(Collectors.toList());
+        }
+
+        if (keyword != null && !keyword.isEmpty()) {
+            allStores = allStores.stream()
+                    .filter(store -> 
+                        ((String) store.get("name") != null && 
+                         ((String) store.get("name")).toLowerCase().contains(keyword.toLowerCase())) ||
+                        ((String) store.get("description") != null && 
+                         ((String) store.get("description")).toLowerCase().contains(keyword.toLowerCase())) ||
+                        ((String) store.get("username") != null && 
+                         ((String) store.get("username")).toLowerCase().contains(keyword.toLowerCase()))
+                    )
+                    .collect(Collectors.toList());
+        }
+
+        // Phân trang
+        int start = page * size;
+        int end = Math.min(start + size, allStores.size());
+
+        List<Map<String, Object>> paginatedStores = allStores.subList(start, end);
+        
+        model.addAttribute("stores", paginatedStores);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", (int) Math.ceil((double) allStores.size() / size));
+        
+        // Thêm menu active để đánh dấu menu hiện tại
+        model.addAttribute("activeMenu", "stores");
+
+        // Set the content fragment to be included in the layout
+        model.addAttribute("content", "stores :: content");
+
+        return "admin";
+    }
+
+    @GetMapping("/stores/view/{id}")
+    public String viewStore(@PathVariable Long id, Model model) {
+        Map<String, Object> store = storeService.findByIdWithUserInfo(id);
+        
+        if (store == null) {
+            model.addAttribute("errorMessage", "Không tìm thấy cửa hàng!");
+            return "redirect:/admin/stores";
+        }
+        
+        // Get products for this store
+        List<Product> storeProducts = productService.findByStoreId(id);
+        
+        model.addAttribute("store", store);
+        model.addAttribute("products", storeProducts);
+        model.addAttribute("activeMenu", "stores");
+        model.addAttribute("content", "store-detail :: content");
+        
+        return "admin";
+    }
+    
+    @GetMapping("/stores/toggle/{id}")
+    public String toggleStoreStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            boolean success = storeService.toggleStatus(id);
+            
+            if (success) {
+                redirectAttributes.addFlashAttribute("successMessage", "Trạng thái cửa hàng đã được cập nhật!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy cửa hàng!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", 
+                    "Lỗi khi thay đổi trạng thái cửa hàng: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/stores";
+    }
+
+    // ==================== Seller Request Management Methods ====================
+
+    @GetMapping("/seller-requests")
+    public String manageSellerRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            Model model) {
+
+        // Get list of seller requests from service
+        // This will now return user role change requests instead of seller requests
+        List<Map<String, Object>> allRequests = userService.findAllSellerRequests();
+
+        // Áp dụng bộ lọc nếu có
+        if (status != null && !status.isEmpty()) {
+            allRequests = allRequests.stream()
+                    .filter(request -> status.equals(request.get("status")))
+                    .collect(Collectors.toList());
+        }
+
+        // Phân trang
+        int start = page * size;
+        int end = Math.min(start + size, allRequests.size());
+
+        List<Map<String, Object>> paginatedRequests = allRequests.subList(start, end);
+        
+        model.addAttribute("requests", paginatedRequests);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", (int) Math.ceil((double) allRequests.size() / size));
+        
+        // Thêm menu active để đánh dấu menu hiện tại
+        model.addAttribute("activeMenu", "sellerRequests");
+
+        // Set the content fragment to be included in the layout
+        model.addAttribute("content", "seller-requests :: content");
+
+        return "admin";
+    }
+
+    @PostMapping("/seller-requests/approve/{id}")
+    public String approveSellerRequest(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            // Update the user to have seller role instead of creating a seller entity
+            boolean success = userService.approveSellerRequest(id);
+            
+            if (success) {
+                redirectAttributes.addFlashAttribute("successMessage", "Đã phê duyệt yêu cầu trở thành người bán thành công!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy yêu cầu hoặc đã xử lý trước đó!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi xử lý yêu cầu: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/seller-requests";
+    }
+
+    @PostMapping("/seller-requests/reject/{id}")
+    public String rejectSellerRequest(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason,
+            RedirectAttributes redirectAttributes) {
+        try {
+            // Update the seller request status instead of deleting a seller entity
+            boolean success = userService.rejectSellerRequest(id, reason);
+            
+            if (success) {
+                redirectAttributes.addFlashAttribute("successMessage", "Đã từ chối yêu cầu trở thành người bán!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy yêu cầu hoặc đã xử lý trước đó!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi xử lý yêu cầu: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/seller-requests";
     }
 }

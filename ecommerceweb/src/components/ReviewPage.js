@@ -8,7 +8,7 @@ const ReviewPage = ({ type }) => {
 
   return (
     <div>
-      <h2>Đánh giá {type === 'product' ? 'Sản phẩm' : 'Người bán'} #{id}</h2>
+      <h2>Đánh giá {type === 'product' ? 'Sản phẩm' : 'Cửa hàng'} #{id}</h2>
       <ReviewForm type={type} targetId={id} />
       <ReviewList type={type} targetId={id} />
     </div>

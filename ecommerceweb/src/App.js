@@ -196,7 +196,7 @@ const App = () => {
               <Route path="/stores" element={<StoreList />} />
               <Route path="/store/:id" element={<StoreList />} />
               <Route path="/review/product/:id" element={<ReviewPage type="product" />} />
-              <Route path="/review/seller/:id" element={<ReviewPage type="seller" />} />
+              <Route path="/review/store/:id" element={<ReviewPage type="store" />} />
 
             </Routes>
             <Footer />

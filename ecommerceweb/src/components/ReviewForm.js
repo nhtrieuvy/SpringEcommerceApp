@@ -16,7 +16,7 @@ const ReviewForm = ({ type, targetId }) => {
     };
 
     if (type === 'product') reviewData.productId = targetId;
-    if (type === 'seller') reviewData.sellerId = targetId;
+    if (type === 'store') reviewData.storeId = targetId;
 
     try {
       await axios.post(`/api/review/${type}`, reviewData);
@@ -30,7 +30,7 @@ const ReviewForm = ({ type, targetId }) => {
 
   return (
     <form onSubmit={handleSubmit} style={{ marginBottom: 20 }}>
-      <h4>Đánh giá {type === 'product' ? 'sản phẩm' : 'người bán'}</h4>
+      <h4>Đánh giá {type === 'product' ? 'sản phẩm' : 'cửa hàng'}</h4>
       <label>Điểm (1–5): </label>
       <input type="number" min={1} max={5} value={rating} onChange={(e) => setRating(e.target.value)} required />
       <br />

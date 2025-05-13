@@ -146,8 +146,7 @@ const StoreList = () => {
                   <Typography variant="body2" color="text.secondary" paragraph sx={{ mt: 1 }}>
                     {store.description || "Chưa có mô tả"}
                   </Typography>
-                  <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                    <Button 
+                  <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>                    <Button 
                       component={Link} 
                       to={`/store/${store.id}`} 
                       variant="outlined" 
@@ -157,7 +156,7 @@ const StoreList = () => {
                     </Button>
                     <Button 
                       component={Link} 
-                      to={`/review/seller/${store.id}`} 
+                      to={`/review/store/${store.id}`} 
                       variant="text" 
                       size="small"
                     >

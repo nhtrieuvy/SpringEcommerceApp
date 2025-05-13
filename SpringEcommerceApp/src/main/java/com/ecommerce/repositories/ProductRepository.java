@@ -14,9 +14,9 @@ public interface ProductRepository {
 
     public List<Product> findByName(String name);
 
-    public List<Product> findByCategoryId(Long categoryId);
-
-    public List<Product> findByPriceRange(Double minPrice, Double maxPrice);
+    public List<Product> findByCategoryId(Long categoryId);    public List<Product> findByPriceRange(Double minPrice, Double maxPrice);
 
     public List<Product> search(String keyword);
+    
+    public List<Product> findByStoreId(Long storeId);
 }

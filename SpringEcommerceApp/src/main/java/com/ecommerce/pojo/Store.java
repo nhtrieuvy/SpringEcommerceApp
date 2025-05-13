@@ -19,15 +19,14 @@ public class Store {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
-
-    private String description;
+    private String name;    private String description;
     private String address;
     private String logo;
+    private boolean active = true;
 
     @ManyToOne
     @JoinColumn(name = "seller_id")
-    private Seller seller;
+    private User seller;
 
     @OneToMany(mappedBy = "store")
     private Set<Product> products;

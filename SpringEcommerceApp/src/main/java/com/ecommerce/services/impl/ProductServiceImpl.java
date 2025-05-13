@@ -66,4 +66,9 @@ public class ProductServiceImpl implements ProductService {
                                         String sortBy, String sortDir, int page, int size) {
         return productRepository.searchAdvanced(name, storeId, minPrice, maxPrice, sortBy, sortDir, page, size);
     }
+
+    @Override
+    public List<Product> findByStoreId(Long storeId) {
+        return productRepository.findByStoreId(storeId);
+    }
 }

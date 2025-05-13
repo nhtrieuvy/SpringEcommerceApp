@@ -3,10 +3,10 @@ package com.ecommerce.controllers;
 
 import com.ecommerce.pojo.ReviewProduct;
 import com.ecommerce.pojo.ReviewReply;
-import com.ecommerce.pojo.ReviewSeller;
+import com.ecommerce.pojo.ReviewStore;
 import com.ecommerce.services.ReviewProductService;
 import com.ecommerce.services.ReviewReplyService;
-import com.ecommerce.services.ReviewSellerService;
+import com.ecommerce.services.ReviewStoreService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +25,7 @@ public class ApiReviewController {
     private ReviewProductService reviewProductService;
 
     @Autowired
-    private ReviewSellerService reviewSellerService;
+    private ReviewStoreService reviewStoreService;
 
     @Autowired
     private ReviewReplyService reviewReplyService;
@@ -36,10 +36,10 @@ public class ApiReviewController {
         return ResponseEntity.ok("Đã thêm đánh giá sản phẩm");
     }
 
-    @PostMapping("/seller")
-    public ResponseEntity<?> addSellerReview(@RequestBody ReviewSeller review) {
-        reviewSellerService.addReview(review);
-        return ResponseEntity.ok("Đã thêm đánh giá người bán");
+    @PostMapping("/store")
+    public ResponseEntity<?> addStoreReview(@RequestBody ReviewStore review) {
+        reviewStoreService.addReview(review);
+        return ResponseEntity.ok("Đã thêm đánh giá cửa hàng");
     }
 
     @PostMapping("/reply")
@@ -53,9 +53,9 @@ public class ApiReviewController {
         return reviewProductService.getReviewsByProductId(productId);
     }
 
-    @GetMapping("/seller/{sellerId}")
-    public List<ReviewSeller> getSellerReviews(@PathVariable Long sellerId) {
-        return reviewSellerService.getReviewsBySellerId(sellerId);
+    @GetMapping("/store/{storeId}")
+    public List<ReviewStore> getStoreReviews(@PathVariable Long storeId) {
+        return reviewStoreService.getReviewsByStoreId(storeId);
     }
 
     @GetMapping("/reply/{reviewId}")
