@@ -4,7 +4,7 @@ import ReviewForm from './ReviewForm';
 import ReviewList from './ReviewList';
 
 const ReviewPage = ({ type }) => {
-  const { id } = useParams(); // Lấy ID từ URL
+  const { id } = useParams();
 
   return (
     <div>

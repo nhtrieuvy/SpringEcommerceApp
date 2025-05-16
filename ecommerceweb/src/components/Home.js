@@ -1,54 +1,55 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { 
-  Typography, 
-  Container, 
-  Box, 
-  Button, 
-  Paper,
-  Grid
-} from "@mui/material";
+import { Typography, Container, Box, Grid, Card, CardContent, CardMedia, Button } from "@mui/material";
+import defaultApi from '../configs/Apis';
 
 const Home = () => {
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await defaultApi.get('/api/products');
+                setProducts(response.data);
+            } catch (error) {
+                console.error("Error fetching products:", error);
+            }
+        };
+        fetchProducts();
+    }, []);
+
     return (
         <Container maxWidth="lg">
-            <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 2 }}>
-                <Box textAlign="center" py={4}>
-                    <Typography variant="h3" component="h1" gutterBottom>
-                        Welcome to Our E-commerce Store
-                    </Typography>
-                    <Typography variant="h6" color="textSecondary" paragraph>
-                        Shop the latest products at unbeatable prices!
-                    </Typography>
-                    
-                    <Grid container spacing={2} justifyContent="center" mt={3}>
-                        <Grid item>
-                            <Button 
-                                component={Link} 
-                                to="/login" 
-                                variant="contained" 
-                                color="primary" 
-                                size="large"
-                            >
-                                Đăng nhập
+            <Typography variant="h3" component="h1" gutterBottom>
+                Welcome to Our E-commerce Store
+            </Typography>
+            <Grid container spacing={4}>
+                {products.map((product) => (
+                    <Grid item xs={12} sm={6} md={4} key={product.id}>
+                        <Card>
+                            <CardMedia
+                                component="img"
+                                height="140"
+                                image={product.image || "https://via.placeholder.com/150"}
+                                alt={product.name}
+                            />
+                            <CardContent>
+                                <Typography variant="h5" component="div">
+                                    {product.name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {product.description}
+                                </Typography>
+                            </CardContent>
+                            <Button component={Link} to={`/products/${product.id}`} variant="contained" color="primary">
+                                View Details
                             </Button>
-                        </Grid>
-                        <Grid item>
-                            <Button 
-                                component={Link} 
-                                to="/register" 
-                                variant="contained" 
-                                color="secondary" 
-                                size="large"
-                            >
-                                Đăng ký
-                            </Button>
-                        </Grid>
+                        </Card>
                     </Grid>
-                </Box>
-            </Paper>
+                ))}
+            </Grid>
         </Container>
     );
-}
+};
 
 export default Home;

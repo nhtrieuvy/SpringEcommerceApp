@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import defaultApi from '../configs/Apis';
 
 const ReviewList = ({ type, targetId }) => {
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
-    axios.get(`/api/review/${type}/${targetId}`)
+    defaultApi.get(`/api/review/${type}/${targetId}`)
       .then(res => setReviews(res.data))
       .catch(() => console.error('Lỗi lấy đánh giá'));
   }, [type, targetId]);

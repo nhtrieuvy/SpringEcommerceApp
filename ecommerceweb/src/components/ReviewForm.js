@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { authApi } from '../configs/Apis';
 
 const ReviewForm = ({ type, targetId }) => {
   const [rating, setRating] = useState(5);
@@ -19,7 +20,7 @@ const ReviewForm = ({ type, targetId }) => {
     if (type === 'store') reviewData.storeId = targetId;
 
     try {
-      await axios.post(`/api/review/${type}`, reviewData);
+      await authApi().post(`/api/review/${type}`, reviewData);
       setMessage('✅ Đánh giá đã gửi!');
       setComment('');
       setRating(5);

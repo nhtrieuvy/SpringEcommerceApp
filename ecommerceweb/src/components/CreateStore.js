@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import API from '../api/axios';
+import { authApi } from '../configs/Apis';
 
 const CreateStore = () => {
   const [name, setName] = useState('');
@@ -11,7 +11,7 @@ const CreateStore = () => {
     e.preventDefault();
     try {
       const store = { name, description, seller: { id: sellerId } };
-      await API.post('/stores', store);
+      await authApi().post('/api/stores', store);
       setMessage('Tạo cửa hàng thành công!');
       setName('');
       setDescription('');

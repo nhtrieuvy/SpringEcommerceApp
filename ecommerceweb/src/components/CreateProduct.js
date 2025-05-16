@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import API from '../api/axios';
+import { authApi } from '../configs/Apis';
 
 const CreateProduct = () => {
   const [form, setForm] = useState({
@@ -27,11 +27,11 @@ const CreateProduct = () => {
         price: parseFloat(form.price),
         quantity: parseInt(form.quantity),
         image: form.image,
-        category: { id: form.category }, // nếu bạn dùng entity Category
-        store: { id: form.storeId } // vì Product liên kết Store bằng @ManyToOne
+        category: { id: form.category },
+        store: { id: form.storeId }
       };
 
-      await API.post('/products', product);
+      await authApi().post('/api/products', product);
       setMessage('Đăng sản phẩm thành công!');
       setForm({ name: '', description: '', price: '', image: '', quantity: '', category: '', storeId: '' });
     } catch (err) {

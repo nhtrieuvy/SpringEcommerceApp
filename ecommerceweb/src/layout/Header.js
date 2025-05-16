@@ -31,6 +31,7 @@ import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import AddIcon from '@mui/icons-material/Add';
 import { MyUserContext } from '../configs/MyContexts';
 
 const Header = () => {
@@ -230,7 +231,36 @@ const Header = () => {
                                         <StorefrontIcon fontSize="small" />
                                         Cửa hàng
                                     </MenuItem>
-                                    
+                                    {user && user.roles && user.roles.some(role => role.name === 'SELLER' || role.name === 'ADMIN') && (
+                                        <MenuItem
+                                            component={RouterLink}
+                                            to="/create-product"
+                                            onClick={handleClose}
+                                            sx={{
+                                                gap: 1,
+                                                color: location.pathname === '/create-product' ? 'var(--primary-main)' : 'inherit',
+                                                fontWeight: location.pathname === '/create-product' ? 600 : 400
+                                            }}
+                                        >
+                                            <AddIcon fontSize="small" />
+                                            Tạo sản phẩm
+                                        </MenuItem>
+                                    )}
+                                    {user && user.roles && user.roles.some(role => role.name === 'SELLER' || role.name === 'ADMIN') && (
+                                        <MenuItem
+                                            component={RouterLink}
+                                            to="/create-store"
+                                            onClick={handleClose}
+                                            sx={{
+                                                gap: 1,
+                                                color: location.pathname === '/create-store' ? 'var(--primary-main)' : 'inherit',
+                                                fontWeight: location.pathname === '/create-store' ? 600 : 400
+                                            }}
+                                        >
+                                            <StorefrontIcon fontSize="small" />
+                                            Tạo cửa hàng
+                                        </MenuItem>
+                                    )}
                                     {user ? (
                                         // Menu items khi đã đăng nhập
                                         <>
@@ -337,7 +367,34 @@ const Header = () => {
                                 >
                                     Cửa hàng
                                 </Button>
-                                
+                                {user && user.roles && user.roles.some(role => role.name === 'SELLER' || role.name === 'ADMIN') && (
+                                    <Button
+                                        className={`nav-link ${location.pathname === '/create-product' ? 'active' : ''}`}
+                                        component={RouterLink}
+                                        to="/create-product"
+                                        startIcon={<AddIcon />}
+                                        sx={{ 
+                                            color: scrolled ? 'white' : (location.pathname === '/create-product' ? 'var(--primary-main)' : 'var(--text-primary)'),
+                                            fontWeight: location.pathname === '/create-product' ? 600 : 500
+                                        }}
+                                    >
+                                        Tạo sản phẩm
+                                    </Button>
+                                )}
+                                {user && user.roles && user.roles.some(role => role.name === 'SELLER' || role.name === 'ADMIN') && (
+                                    <Button
+                                        className={`nav-link ${location.pathname === '/create-store' ? 'active' : ''}`}
+                                        component={RouterLink}
+                                        to="/create-store"
+                                        startIcon={<StorefrontIcon />}
+                                        sx={{ 
+                                            color: scrolled ? 'white' : (location.pathname === '/create-store' ? 'var(--primary-main)' : 'var(--text-primary)'),
+                                            fontWeight: location.pathname === '/create-store' ? 600 : 500
+                                        }}
+                                    >
+                                        Tạo cửa hàng
+                                    </Button>
+                                )}
                                 {user ? (
                                     <>
                                         {/* Nút wishlist */}
