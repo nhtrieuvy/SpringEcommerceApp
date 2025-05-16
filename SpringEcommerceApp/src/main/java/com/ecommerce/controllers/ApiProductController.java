@@ -8,6 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
+@CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", maxAge = 3600)
 public class ApiProductController {
 
     @Autowired

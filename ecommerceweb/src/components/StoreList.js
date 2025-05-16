@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import API from '../api/axios';
 import { Link } from 'react-router-dom';
 import { 
   Container, 
@@ -18,6 +17,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import defaultApi from '../configs/Apis';
 
 const StoreList = () => {
   const [stores, setStores] = useState([]);
@@ -32,7 +32,7 @@ const StoreList = () => {
   const fetchStores = async () => {
     try {
       setLoading(true);
-      const response = await API.get('/stores');
+      const response = await defaultApi.get('/api/stores');
       setStores(response.data || []);
       setError(null);
     } catch (err) {

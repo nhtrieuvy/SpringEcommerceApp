@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import API from '../api/axios';
+import defaultApi from '../configs/Apis';
 import { Link } from 'react-router-dom';
 import { 
   Container, 
@@ -50,34 +50,13 @@ const ProductSearch = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const res = await API.get('/products/search', { params });
-      
-      // Kiểm tra nếu API trả về dữ liệu đúng định dạng
-      if (res.data && Array.isArray(res.data)) {
-        setProducts(res.data);
-        // Nếu API trả về số lượng trang
-        if (res.data.totalPages) {
-          setTotalPages(res.data.totalPages);
-        } else {
-          // Nếu không, tính tạm 5 trang để có phân trang demo
-          setTotalPages(5);
-        }
-      } else if (res.data && res.data.content && Array.isArray(res.data.content)) {
-        // Nếu API trả về dạng Page của Spring
-        setProducts(res.data.content);
-        setTotalPages(res.data.totalPages || 5);
-      } else {
-        // Dữ liệu mẫu nếu API không trả về đúng định dạng
-        setProducts(sampleProducts);
-        setTotalPages(5);
-      }
-      
+      const response = await defaultApi.get('/api/products/search', { params });
+      setProducts(response.data.content);
+      setTotalPages(response.data.totalPages);
       setError(null);
     } catch (err) {
-      console.error('Lỗi khi gọi API:', err);
-      setError('Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.');
-      setProducts(sampleProducts);
-      setTotalPages(5);
+      console.error('Error fetching products:', err);
+      setError('Failed to fetch products. Please try again later.');
     } finally {
       setLoading(false);
     }
