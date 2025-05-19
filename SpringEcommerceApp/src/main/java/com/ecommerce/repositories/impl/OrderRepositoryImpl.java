@@ -32,43 +32,68 @@ public class OrderRepositoryImpl implements OrderRepository {
         Session session = sessionFactory.getCurrentSession();
         Order order = session.get(Order.class, id);
         if (order != null) session.remove(order);
-    }
-
-    @Override
+    }    @Override
     public Order findById(Long id) {
         Session session = sessionFactory.getCurrentSession();
-        return session.get(Order.class, id);
+        String hql = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderDetails od LEFT JOIN FETCH od.product WHERE o.id = :id";
+        Query<Order> query = session.createQuery(hql, Order.class);
+        query.setParameter("id", id);
+        Order order = query.uniqueResult();
+        
+        // Initialize payment if exists
+        if (order != null && order.getPayment() != null) {
+            order.getPayment().getAmount(); // Force initialization
+        }
+        
+        return order;
     }
 
     @Override
     public List<Order> findAll() {
         Session session = sessionFactory.getCurrentSession();
-        return session.createQuery("FROM Order", Order.class).list();
-    }
-
-    @Override
+        // First fetch with order details
+        String hql = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderDetails od LEFT JOIN FETCH od.product";
+        List<Order> orders = session.createQuery(hql, Order.class).list();
+        
+        // Initialize payments for each order to avoid LazyInitializationException
+        for (Order order : orders) {
+            if (order.getPayment() != null) {
+                order.getPayment().getAmount(); // Force initialization
+            }
+        }
+        
+        return orders;
+    }    @Override
     public List<Order> findByUserId(Long userId) {
         Session session = sessionFactory.getCurrentSession();
-        Query<Order> query = session.createQuery("FROM Order WHERE user.id = :userId", Order.class);
+        String hql = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderDetails od LEFT JOIN FETCH od.product WHERE o.user.id = :userId";
+        Query<Order> query = session.createQuery(hql, Order.class);
         query.setParameter("userId", userId);
-        return query.list();
-    }
-
-    @Override
+        List<Order> orders = query.list();
+        
+        // Initialize payments for each order to avoid LazyInitializationException
+        for (Order order : orders) {
+            if (order.getPayment() != null) {
+                order.getPayment().getAmount(); // Force initialization
+            }
+        }
+        
+        return orders;
+    }    @Override
     public List<Order> findByStatusAndDateRange(String status, Date fromDate, Date toDate) {
         Session session = sessionFactory.getCurrentSession();
-        StringBuilder hql = new StringBuilder("FROM Order WHERE 1=1");
+        StringBuilder hql = new StringBuilder("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.orderDetails od LEFT JOIN FETCH od.product WHERE 1=1");
         
         if (status != null && !status.isEmpty()) {
-            hql.append(" AND status = :status");
+            hql.append(" AND o.status = :status");
         }
         
         if (fromDate != null) {
-            hql.append(" AND orderDate >= :fromDate");
+            hql.append(" AND o.orderDate >= :fromDate");
         }
         
         if (toDate != null) {
-            hql.append(" AND orderDate <= :toDate");
+            hql.append(" AND o.orderDate <= :toDate");
         }
         
         Query<Order> query = session.createQuery(hql.toString(), Order.class);
@@ -85,7 +110,16 @@ public class OrderRepositoryImpl implements OrderRepository {
             query.setParameter("toDate", toDate);
         }
         
-        return query.list();
+        List<Order> orders = query.list();
+        
+        // Initialize payments for each order to avoid LazyInitializationException
+        for (Order order : orders) {
+            if (order.getPayment() != null) {
+                order.getPayment().getAmount(); // Force initialization
+            }
+        }
+        
+        return orders;
     }
 
     @Override

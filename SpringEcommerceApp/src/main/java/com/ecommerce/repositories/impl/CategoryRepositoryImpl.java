@@ -19,10 +19,8 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     
     // Simple cache for frequently accessed categories
     private final Map<Long, Category> idCache = new ConcurrentHashMap<>();
-    private final Map<String, Category> nameCache = new ConcurrentHashMap<>();
-
-    @Override
-    public void save(Category category) {
+    private final Map<String, Category> nameCache = new ConcurrentHashMap<>();    @Override
+    public Category save(Category category) {
         Session session = sessionFactory.getCurrentSession();
         session.persist(category);
         
@@ -33,12 +31,14 @@ public class CategoryRepositoryImpl implements CategoryRepository {
         if (category.getName() != null) {
             nameCache.put(category.getName().toLowerCase(), category);
         }
+        
+        return category;
     }
 
     @Override
-    public void update(Category category) {
+    public Category update(Category category) {
         Session session = sessionFactory.getCurrentSession();
-        session.merge(category);
+        category = (Category) session.merge(category);
         
         // Update cache
         if (category.getId() != null) {
@@ -47,6 +47,8 @@ public class CategoryRepositoryImpl implements CategoryRepository {
         if (category.getName() != null) {
             nameCache.put(category.getName().toLowerCase(), category);
         }
+        
+        return category;
     }
 
     @Override
@@ -64,9 +66,7 @@ public class CategoryRepositoryImpl implements CategoryRepository {
             
             session.remove(category);
         }
-    }
-
-    @Override
+    }    @Override
     public Category findById(Long id) {
         if (id == null) {
             return null;
@@ -80,10 +80,21 @@ public class CategoryRepositoryImpl implements CategoryRepository {
         
         try {
             Session session = sessionFactory.getCurrentSession();
-            Category category = session.get(Category.class, id);
+            
+            // Sử dụng HQL với JOIN FETCH để khởi tạo products
+            Query<Category> query = session.createQuery(
+                "SELECT c FROM Category c LEFT JOIN FETCH c.products WHERE c.id = :id", 
+                Category.class);
+            query.setParameter("id", id);
+            Category category = query.uniqueResult();
             
             // Update cache if found
             if (category != null) {
+                // Đảm bảo products được khởi tạo
+                if (category.getProducts() != null) {
+                    category.getProducts().size(); // Khởi tạo collection
+                }
+                
                 idCache.put(id, category);
                 if (category.getName() != null) {
                     nameCache.put(category.getName().toLowerCase(), category);
@@ -95,19 +106,25 @@ public class CategoryRepositoryImpl implements CategoryRepository {
             System.err.println("Error finding category by id: " + e.getMessage());
             return null;
         }
-    }
-
-    @Override
+    }    @Override
     public List<Category> findAll() {
         try {
             Session session = sessionFactory.getCurrentSession();
-            Query<Category> query = session.createQuery("FROM Category", Category.class);
+            
+            // Sử dụng JOIN FETCH để khởi tạo collection products
+            Query<Category> query = session.createQuery(
+                "SELECT DISTINCT c FROM Category c LEFT JOIN FETCH c.products", Category.class);
             query.setCacheable(true); // Enable query cache
             
             List<Category> categories = query.list();
             
-            // Update cache
+            // Đảm bảo products được khởi tạo
             for (Category category : categories) {
+                if (category.getProducts() != null) {
+                    category.getProducts().size(); // Khởi tạo collection
+                }
+                
+                // Update cache
                 if (category.getId() != null) {
                     idCache.put(category.getId(), category);
                 }
@@ -121,9 +138,7 @@ public class CategoryRepositoryImpl implements CategoryRepository {
             System.err.println("Error getting all categories: " + e.getMessage());
             return Collections.emptyList();
         }
-    }
-
-    @Override
+    }    @Override
     public Category findByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             return null;
@@ -139,7 +154,10 @@ public class CategoryRepositoryImpl implements CategoryRepository {
         
         try {
             Session session = sessionFactory.getCurrentSession();
-            Query<Category> query = session.createQuery("FROM Category WHERE LOWER(name) = :name", Category.class);
+            // Sử dụng JOIN FETCH để khởi tạo collection products
+            Query<Category> query = session.createQuery(
+                "SELECT c FROM Category c LEFT JOIN FETCH c.products WHERE LOWER(c.name) = :name", 
+                Category.class);
             query.setParameter("name", normalizedName);
             query.setCacheable(true); // Enable query cache
             

@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import ReviewPage from './components/ReviewPage';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import Home from "./components/Home";
@@ -9,10 +8,11 @@ import Profile from "./components/Profile";
 import Admin from "./components/Admin";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
-import CreateStore from './components/CreateStore';
-import CreateProduct from './components/CreateProduct';
-import ProductSearch from './components/ProductSearch';
-import StoreList from './components/StoreList';
+import SellerDashboard from "./components/seller/SellerDashboard";
+import SellerProducts from "./components/SellerProducts";
+import SellerStores from "./components/SellerStores";
+import ProductDetail from "./components/ProductDetail";
+import SellerDetail from "./components/SellerDetail";
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -148,20 +148,10 @@ const App = () => {
         <ThemeProvider theme={theme}>
           <CssBaseline /> {/* Reset CSS để đồng nhất trên các trình duyệt */}
           <BrowserRouter>
-            <Header />
-            <Routes>
-              <Route path="/create-store" element={
-                <AuthenticatedRoute>
-                  <CreateStore />
-                </AuthenticatedRoute>
-              } />
-              <Route path="/create-product" element={
-                <AuthenticatedRoute>
-                  <CreateProduct />
-                </AuthenticatedRoute>
-              } />
-
-              <Route path="/" element={<Home />} />
+            <Header />            <Routes>
+                  <Route path="/" element={<Home />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/sellers/:id" element={<SellerDetail />} />
               <Route path="/login" element={
                 <ProtectedRoute>
                   <Login />
@@ -186,17 +176,25 @@ const App = () => {
                 <ProtectedRoute>
                   <ForgotPassword />
                 </ProtectedRoute>
-              } />
-              <Route path="/reset-password" element={
+              } />              <Route path="/reset-password" element={
                 <ProtectedRoute>
                   <ResetPassword />
                 </ProtectedRoute>
-              } />              <Route path="/search" element={<ProductSearch />} />
-              <Route path="/products" element={<ProductSearch />} />
-              <Route path="/stores" element={<StoreList />} />
-              <Route path="/store/:id" element={<StoreList />} />
-              <Route path="/review/product/:id" element={<ReviewPage type="product" />} />
-              <Route path="/review/store/:id" element={<ReviewPage type="store" />} />
+              } />              <Route path="/seller/dashboard" element={
+                <AuthenticatedRoute>
+                  <SellerDashboard />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/seller/stores" element={
+                <AuthenticatedRoute>
+                  <SellerStores />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/seller/products" element={
+                <AuthenticatedRoute>
+                  <SellerProducts />
+                </AuthenticatedRoute>
+              } />
 
             </Routes>
             <Footer />

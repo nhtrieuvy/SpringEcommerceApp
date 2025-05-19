@@ -32,68 +32,114 @@ public class ProductRepositoryImpl implements ProductRepository {
     public void delete(Long id) {
         Product product = findById(id);
         if (product != null) getCurrentSession().remove(product);
-    }
-
-    @Override
+    }    @Override
     public Product findById(Long id) {
-        return getCurrentSession().get(Product.class, id);
-    }
-
-    @Override
-    public List<Product> findAll() {
-        return getCurrentSession().createQuery("FROM Product", Product.class).getResultList();
-    }
-
-    @Override
-    public List<Product> findByName(String name) {
-        String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
+        String hql = "SELECT p FROM Product p LEFT JOIN FETCH p.category LEFT JOIN FETCH p.store WHERE p.id = :id";
         return getCurrentSession()
+                .createQuery(hql, Product.class)
+                .setParameter("id", id)
+                .uniqueResult();
+    }@Override
+    public List<Product> findAll() {
+        // First fetch with category
+        Query<Product> query = getCurrentSession().createQuery(
+                "SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category", 
+                Product.class);
+        List<Product> products = query.getResultList();
+        
+        // Then initialize the store for each product to avoid LazyInitializationException
+        for (Product product : products) {
+            if (product.getStore() != null) {
+                product.getStore().getName(); // Force initialization
+            }
+        }
+        
+        return products;
+    }    @Override
+    public List<Product> findByName(String name) {
+        String hql = "SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE LOWER(p.name) LIKE :kw";
+        List<Product> products = getCurrentSession()
                 .createQuery(hql, Product.class)
                 .setParameter("kw", "%" + name.toLowerCase() + "%")
                 .getResultList();
-    }
-
-    @Override
+                
+        // Then initialize the store for each product to avoid LazyInitializationException
+        for (Product product : products) {
+            if (product.getStore() != null) {
+                product.getStore().getName(); // Force initialization
+            }
+        }
+        
+        return products;
+    }    @Override
     public List<Product> findByCategoryId(Long categoryId) {
-        String hql = "FROM Product p WHERE p.category.id = :catId";
-        return getCurrentSession()
+        String hql = "SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE p.category.id = :catId";
+        List<Product> products = getCurrentSession()
                 .createQuery(hql, Product.class)
                 .setParameter("catId", categoryId)
                 .getResultList();
-    }
-
-    @Override
+        
+        // Initialize the store for each product to avoid LazyInitializationException
+        for (Product product : products) {
+            if (product.getStore() != null) {
+                product.getStore().getName(); // Force initialization
+            }
+        }
+        
+        return products;
+    }    @Override
     public List<Product> findByPriceRange(Double min, Double max) {
-        String hql = "FROM Product p WHERE p.price >= :min AND p.price <= :max";
-        return getCurrentSession()
+        String hql = "SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE p.price >= :min AND p.price <= :max";
+        List<Product> products = getCurrentSession()
                 .createQuery(hql, Product.class)
                 .setParameter("min", min)
                 .setParameter("max", max)
                 .getResultList();
-    }
-
-    @Override
+        
+        // Initialize the store for each product to avoid LazyInitializationException
+        for (Product product : products) {
+            if (product.getStore() != null) {
+                product.getStore().getName(); // Force initialization
+            }
+        }
+        
+        return products;
+    }    @Override
     public List<Product> search(String keyword) {
-        String hql = "FROM Product p WHERE LOWER(p.name) LIKE :kw";
-        return getCurrentSession()
+        String hql = "SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE LOWER(p.name) LIKE :kw";
+        List<Product> products = getCurrentSession()
                 .createQuery(hql, Product.class)
                 .setParameter("kw", "%" + keyword.toLowerCase() + "%")
                 .getResultList();
-    }
-
-    @Override
+        
+        // Initialize the store for each product to avoid LazyInitializationException
+        for (Product product : products) {
+            if (product.getStore() != null) {
+                product.getStore().getName(); // Force initialization
+            }
+        }
+        
+        return products;
+    }@Override
     public List<Product> findByStoreId(Long storeId) {
-        String hql = "FROM Product p WHERE p.store.id = :storeId";
-        return getCurrentSession()
+        String hql = "SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE p.store.id = :storeId";
+        List<Product> products = getCurrentSession()
                 .createQuery(hql, Product.class)
                 .setParameter("storeId", storeId)
                 .getResultList();
-    }
-
-    @Override
+        
+        // Initialize the store for each product to avoid LazyInitializationException
+        for (Product product : products) {
+            if (product.getStore() != null) {
+                product.getStore().getName(); // Force initialization
+            }
+        }
+        
+        return products;
+    }    @Override
     public List<Product> searchAdvanced(String name, Long storeId, Double minPrice, Double maxPrice,
                                         String sortBy, String sortDir, int page, int size) {
-        StringBuilder hql = new StringBuilder("FROM Product p WHERE 1=1");
+        StringBuilder hql = new StringBuilder("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category WHERE 1=1");
 
         if (name != null && !name.isEmpty()) {
             hql.append(" AND LOWER(p.name) LIKE :name");
@@ -132,7 +178,16 @@ public class ProductRepositoryImpl implements ProductRepository {
         query.setFirstResult(page * size);
         query.setMaxResults(size);
 
-        return query.getResultList();
+        List<Product> products = query.getResultList();
+        
+        // Initialize the store for each product to avoid LazyInitializationException
+        for (Product product : products) {
+            if (product.getStore() != null) {
+                product.getStore().getName(); // Force initialization
+            }
+        }
+        
+        return products;
     }
 
     private Session getCurrentSession() {

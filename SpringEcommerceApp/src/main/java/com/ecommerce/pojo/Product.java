@@ -7,12 +7,15 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "products")
 @NoArgsConstructor
 @AllArgsConstructor
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,18 +28,17 @@ public class Product {
     private double price;
     private int quantity;
     private String image;
-    private boolean active = true;
-
-    @ManyToOne
+    private boolean active = true;    @ManyToOne
     @JoinColumn(name = "store_id")
+    @JsonIgnoreProperties("products")
     private Store store;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
-    private Category category;
-
-    @OneToMany(mappedBy = "product")
+    @JsonIgnoreProperties("products")
+    private Category category;    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     @Cache(usage = CacheConcurrencyStrategy.READ_ONLY)
+    @JsonIgnore
     private Set<Review> reviews;
 
     public Long getId() {

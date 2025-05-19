@@ -1,13 +1,29 @@
 package com.ecommerce.pojo;
 
 import java.util.Date;
+import jakarta.persistence.*;
 
+@Entity
+@Table(name = "review_products")
 public class ReviewProduct {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(name = "user_id")
     private Long userId;
+    
+    @Column(name = "product_id")
     private Long productId;
+    
+    @Column(nullable = false)
     private Integer rating;
+    
+    @Column(length = 1000)
     private String comment;
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created_at")
     private Date createdAt;
 
     // Getter & Setter for id

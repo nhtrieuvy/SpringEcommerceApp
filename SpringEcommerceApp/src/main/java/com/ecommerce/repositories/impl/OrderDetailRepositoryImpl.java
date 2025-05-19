@@ -31,24 +31,25 @@ public class OrderDetailRepositoryImpl implements OrderDetailRepository {
         Session session = sessionFactory.getCurrentSession();
         OrderDetail orderDetail = session.get(OrderDetail.class, id);
         if (orderDetail != null) session.remove(orderDetail);
-    }
-
-    @Override
+    }    @Override
     public OrderDetail findById(Long id) {
         Session session = sessionFactory.getCurrentSession();
-        return session.get(OrderDetail.class, id);
+        String hql = "SELECT od FROM OrderDetail od LEFT JOIN FETCH od.product WHERE od.id = :id";
+        Query<OrderDetail> query = session.createQuery(hql, OrderDetail.class);
+        query.setParameter("id", id);
+        return query.uniqueResult();
     }
 
     @Override
     public List<OrderDetail> findAll() {
         Session session = sessionFactory.getCurrentSession();
-        return session.createQuery("FROM OrderDetail", OrderDetail.class).list();
-    }
-
-    @Override
+        String hql = "SELECT DISTINCT od FROM OrderDetail od LEFT JOIN FETCH od.product";
+        return session.createQuery(hql, OrderDetail.class).list();
+    }    @Override
     public List<OrderDetail> findByOrderId(Long orderId) {
         Session session = sessionFactory.getCurrentSession();
-        Query<OrderDetail> query = session.createQuery("FROM OrderDetail WHERE order.id = :orderId", OrderDetail.class);
+        String hql = "SELECT DISTINCT od FROM OrderDetail od LEFT JOIN FETCH od.product WHERE od.order.id = :orderId";
+        Query<OrderDetail> query = session.createQuery(hql, OrderDetail.class);
         query.setParameter("orderId", orderId);
         return query.list();
     }

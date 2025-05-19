@@ -5,12 +5,6 @@
 package com.ecommerce.configs;
 
 import org.springframework.context.annotation.Bean;
-import org.thymeleaf.spring6.SpringTemplateEngine;
-import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
-import org.thymeleaf.spring6.view.ThymeleafViewResolver;
-import org.springframework.web.servlet.ViewResolver;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -22,11 +16,6 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
-import java.util.Properties;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 
 /**
@@ -41,6 +30,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
         "com.ecommerce.repositories",
         "com.ecommerce.services"
 })
+
 public class WebAppContextConfig implements WebMvcConfigurer {
 
     @Override
@@ -52,11 +42,46 @@ public class WebAppContextConfig implements WebMvcConfigurer {
     @Override
     public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
         configurer.enable();
-    } // Thêm cấu hình hỗ trợ JSON message converter
-
-    @Override
+    }    // Thêm cấu hình hỗ trợ JSON message converter    @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        converters.add(new MappingJackson2HttpMessageConverter());
+        MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
+        
+        // Thêm nhiều content type hỗ trợ
+        List<org.springframework.http.MediaType> supportedMediaTypes = new java.util.ArrayList<>();
+        
+        // Support for standard application/json
+        supportedMediaTypes.add(org.springframework.http.MediaType.APPLICATION_JSON);
+        
+        // Support for application/json;charset=UTF-8
+        supportedMediaTypes.add(new org.springframework.http.MediaType(
+            org.springframework.http.MediaType.APPLICATION_JSON.getType(),
+            org.springframework.http.MediaType.APPLICATION_JSON.getSubtype(), 
+            java.nio.charset.StandardCharsets.UTF_8
+        ));
+        
+        // Support for text/plain (some clients might send JSON with this content type)
+        supportedMediaTypes.add(org.springframework.http.MediaType.TEXT_PLAIN);
+        
+        // Support for text/html (in case browser sends form data)
+        supportedMediaTypes.add(org.springframework.http.MediaType.TEXT_HTML);
+        
+        // Support for generic form submission content type
+        supportedMediaTypes.add(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
+        
+        jsonConverter.setSupportedMediaTypes(supportedMediaTypes);
+        
+        // Cấu hình ObjectMapper để xử lý circular references
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        jsonConverter.setObjectMapper(objectMapper);
+        
+        converters.add(jsonConverter);
+    }
+
+    @Bean
+    public StandardServletMultipartResolver multipartResolver() {
+        return new StandardServletMultipartResolver();
     }
 
     @Override

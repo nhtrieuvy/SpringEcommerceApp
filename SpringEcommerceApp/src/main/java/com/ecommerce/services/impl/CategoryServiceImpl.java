@@ -15,18 +15,23 @@ public class CategoryServiceImpl implements CategoryService {
     private CategoryRepository categoryRepository;
 
     @Override
-    public void save(Category category) {
-        categoryRepository.save(category);
+    public Category save(Category category) {
+        return categoryRepository.save(category);
     }
 
     @Override
-    public void update(Category category) {
-        categoryRepository.update(category);
+    public Category update(Category category) {
+        return categoryRepository.update(category);
     }
 
     @Override
-    public void delete(Long id) {
-        categoryRepository.delete(id);
+    public boolean delete(Long id) {
+        try {
+            categoryRepository.delete(id);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

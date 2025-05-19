@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 public interface StoreService {
-    void save(Store store);
-    void update(Store store);
-    void delete(Long id);
+    Store save(Store store);  // Trả về đối tượng Store sau khi lưu
+    Store update(Store store); // Trả về đối tượng Store sau khi cập nhật
+    boolean delete(Long id);
     Store findById(Long id);
     List<Store> findAll();
     List<Store> findByUserId(Long userId);
