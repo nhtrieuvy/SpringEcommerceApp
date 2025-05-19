@@ -1,6 +1,7 @@
 package com.ecommerce.pojo;
 
 import java.util.Date;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -24,6 +25,7 @@ public class ReviewProduct {
     
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at")
+
     private Date createdAt;
 
     // Getter & Setter for id

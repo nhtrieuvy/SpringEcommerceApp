@@ -8,12 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.hibernate.query.Query;
 import java.util.List;
-<<<<<<< Updated upstream
-=======
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
->>>>>>> Stashed changes
 
 @Repository
 public class StoreRepositoryImpl implements StoreRepository {
@@ -80,13 +77,8 @@ public class StoreRepositoryImpl implements StoreRepository {
     }
 
     @Override
-    public List<Store> findBySellerId(Long sellerId) {
+    public List<Store> findByUserId(Long userId) {
         Session session = sessionFactory.getCurrentSession();
-<<<<<<< Updated upstream
-        Query<Store> query = session.createQuery("FROM Store WHERE seller.id = :sellerId", Store.class);
-        query.setParameter("sellerId", sellerId);
-        return query.list();
-=======
         String hql = "SELECT DISTINCT s FROM Store s LEFT JOIN FETCH s.products WHERE s.seller.id = :userId";
         Query<Store> query = session.createQuery(hql, Store.class);
         query.setParameter("userId", userId);
@@ -144,6 +136,5 @@ public class StoreRepositoryImpl implements StoreRepository {
         map.put("username", result[7]);
         map.put("fullname", result[8]);
         return map;
->>>>>>> Stashed changes
     }
 }

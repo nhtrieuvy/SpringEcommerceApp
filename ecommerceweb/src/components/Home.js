@@ -1,55 +1,27 @@
-<<<<<<< Updated upstream
+
 import React from "react";
+
+import React, { useState, useEffect } from "react";
+
 import { Link } from "react-router-dom";
-import { 
-  Typography, 
-  Container, 
-  Box, 
-  Button, 
-  Paper,
-  Grid
-} from "@mui/material";
+import { Typography, Container, Box, Grid, Card, CardContent, CardMedia, Button } from "@mui/material";
+import defaultApi from '../configs/Apis';
 
 const Home = () => {
-    return (
-        <Container maxWidth="lg">
-            <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 2 }}>
-                <Box textAlign="center" py={4}>
-                    <Typography variant="h3" component="h1" gutterBottom>
-                        Welcome to Our E-commerce Store
-                    </Typography>
-                    <Typography variant="h6" color="textSecondary" paragraph>
-                        Shop the latest products at unbeatable prices!
-                    </Typography>
-                    
-                    <Grid container spacing={2} justifyContent="center" mt={3}>
-                        <Grid item>
-                            <Button 
-                                component={Link} 
-                                to="/login" 
-                                variant="contained" 
-                                color="primary" 
-                                size="large"
-                            >
-                                Đăng nhập
-                            </Button>
-                        </Grid>
-                        <Grid item>
-                            <Button 
-                                component={Link} 
-                                to="/register" 
-                                variant="contained" 
-                                color="secondary" 
-                                size="large"
-                            >
-                                Đăng ký
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Box>
-            </Paper>
-        </Container>
-=======
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await defaultApi.get('/api/products');
+                setProducts(response.data);
+            } catch (error) {
+                console.error("Error fetching products:", error);
+            }
+        };
+        fetchProducts();
+    }, []);
+}
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -1206,9 +1178,8 @@ const Home = () => {
                 </Box>
             </Container>
         </Box>
->>>>>>> Stashed changes
     );
-}
+};
 
 
 export default Home;

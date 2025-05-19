@@ -1,8 +1,12 @@
 package com.ecommerce.controllers;
 
+import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Role;
+import com.ecommerce.pojo.Store;
 import com.ecommerce.pojo.User;
+import com.ecommerce.services.ProductService;
 import com.ecommerce.services.RoleService;
+import com.ecommerce.services.StoreService;
 import com.ecommerce.services.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +26,15 @@ public class ApiAdminController {
     private UserService userService;
 
     @Autowired
-    private RoleService roleService; // API để lấy danh sách người dùng với phân trang và lọc
+    private RoleService roleService;
 
+    @Autowired
+    private ProductService productService;
+
+    @Autowired
+    private StoreService storeService;
+
+    // API để lấy danh sách người dùng với phân trang và lọc
     @GetMapping("/users")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> getAllUsers(
@@ -72,8 +83,9 @@ public class ApiAdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy danh sách người dùng: " + e.getMessage()));
         }
-    } // API để lấy thông tin chi tiết của một người dùng
+    }
 
+    // API để lấy thông tin chi tiết của một người dùng
     @GetMapping("/users/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
@@ -102,7 +114,9 @@ public class ApiAdminController {
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "message", "Không tìm thấy người dùng với ID: " + id));
-            } // Cập nhật trạng thái hoạt động
+            }
+
+            // Cập nhật trạng thái hoạt động
             if (updates.containsKey("isActive")) {
                 boolean isActive = (boolean) updates.get("isActive");
                 user.setActive(isActive);
@@ -174,8 +188,9 @@ public class ApiAdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy danh sách quyền: " + e.getMessage()));
         }
-    } // API để cập nhật quyền cho người dùng
+    }
 
+    // API để cập nhật quyền cho người dùng
     @PutMapping("/users/{userId}/roles")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> updateUserRoles(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
@@ -191,6 +206,7 @@ public class ApiAdminController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "Danh sách quyền không được để trống"));
             }
+
             // Kiểm tra nếu người dùng hiện tại là STAFF và cố gắng cấp quyền ADMIN cho
             // người khác
             org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder
@@ -287,8 +303,9 @@ public class ApiAdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", errorMsg));
         }
-    } // Xóa quyền của người dùng
+    }
 
+    // Xóa quyền của người dùng
     @DeleteMapping("/users/{userId}/roles/{roleId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> removeRoleFromUser(@PathVariable Long userId, @PathVariable Long roleId) {
@@ -303,7 +320,9 @@ public class ApiAdminController {
             if (role == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "message", "Không tìm thấy quyền với ID: " + roleId));
-            } // Kiểm tra nếu người dùng hiện tại là STAFF và cố gắng xóa quyền ADMIN
+            }
+
+            // Kiểm tra nếu người dùng hiện tại là STAFF và cố gắng xóa quyền ADMIN
             org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder
                     .getContext().getAuthentication();
 
@@ -359,8 +378,9 @@ public class ApiAdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi xóa quyền: " + e.getMessage()));
         }
-    } // Phương thức hỗ trợ
+    }
 
+    // Phương thức hỗ trợ
     private String getDescriptionForRole(String roleName) {
         switch (roleName) {
             case "ADMIN":
@@ -426,8 +446,7 @@ public class ApiAdminController {
 
         return null;
     }
-<<<<<<< Updated upstream
-=======
+
 
     // Add role-based access control for creating products and stores
     @PostMapping("/products")
@@ -437,8 +456,10 @@ public class ApiAdminController {
             productService.save(product);
             return ResponseEntity.ok(Map.of("success", true, "message", "Product created successfully"));
         } catch (Exception e) {
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
+
         }
     }
 
@@ -449,9 +470,11 @@ public class ApiAdminController {
             storeService.save(store);
             return ResponseEntity.ok(Map.of("success", true, "message", "Store created successfully"));
         } catch (Exception e) {
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
+
     }
->>>>>>> Stashed changes
+
 }

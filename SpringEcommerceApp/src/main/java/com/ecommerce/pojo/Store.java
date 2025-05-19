@@ -1,8 +1,7 @@
 package com.ecommerce.pojo;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.util.HashSet;
@@ -14,10 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "stores")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Store {
     @Id
@@ -25,20 +21,12 @@ public class Store {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
-
-    private String description;
+    private String name;    private String description;
     private String address;
     private String logo;
-<<<<<<< Updated upstream
 
-    @ManyToOne
-    @JoinColumn(name = "seller_id")
-    private Seller seller;
 
-    @OneToMany(mappedBy = "store")
-    private Set<Product> products;
-=======
+
     private boolean active = true;
     @ManyToOne
     @JoinColumn(name = "seller_id")
@@ -94,6 +82,7 @@ public class Store {
             return store;
         }
     }
+
 
     /**
      * @return the id
@@ -207,5 +196,4 @@ public class Store {
         this.products = products;
     }
 
->>>>>>> Stashed changes
 }

@@ -3,7 +3,9 @@ package com.ecommerce.repositories.impl;
 import com.ecommerce.pojo.ReviewProduct;
 import com.ecommerce.repositories.ReviewProductRepository;
 import java.util.List;
+
 import org.hibernate.Session;
+
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Repository;
 public class ReviewProductRepositoryImpl implements ReviewProductRepository {
     
     @Autowired
+
     private SessionFactory sessionFactory;    @Override
     public void addReview(ReviewProduct review) {
         Session session = this.sessionFactory.getCurrentSession();
@@ -38,7 +41,7 @@ public class ReviewProductRepositoryImpl implements ReviewProductRepository {
     
     @Override
     public ReviewProduct getReviewById(Long id) {
-        return this.sessionFactory.getCurrentSession().get(ReviewProduct.class, id);
+
     }
 
     @Override
@@ -48,7 +51,7 @@ public class ReviewProductRepositoryImpl implements ReviewProductRepository {
                 .setParameter("pid", productId)
                 .getResultList();
     }
-    
+
     @Override
     public double getAverageRatingByProductId(Long productId) {
         Object result = this.sessionFactory.getCurrentSession()
@@ -62,4 +65,5 @@ public class ReviewProductRepositoryImpl implements ReviewProductRepository {
         
         return ((Double) result).doubleValue();
     }
+
 }

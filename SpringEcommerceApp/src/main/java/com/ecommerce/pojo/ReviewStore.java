@@ -2,43 +2,19 @@ package com.ecommerce.pojo;
 
 import java.util.Date;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "review_replies")
-public class ReviewReply {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ReviewStore {
     private Long id;
-    
-    @Column(name = "review_id")
-    private Long reviewId;
-    
-    @Column(name = "user_id")
     private Long userId;
-    
-    @Column(length = 1000)
+    private Long storeId;
+    private Integer rating;
     private String comment;
-    
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "created_at")
-
     private Date createdAt;
 
-    // Getter & Setter for id
     public Long getId() {
         return id;
     }
     public void setId(Long id) {
         this.id = id;
-    }
-
-    // Getter & Setter for reviewId
-    public Long getReviewId() {
-        return reviewId;
-    }
-    public void setReviewId(Long reviewId) {
-        this.reviewId = reviewId;
     }
 
     // Getter & Setter for userId
@@ -47,6 +23,22 @@ public class ReviewReply {
     }
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    // Getter & Setter for storeId
+    public Long getStoreId() {
+        return storeId;
+    }
+    public void setStoreId(Long storeId) {
+        this.storeId = storeId;
+    }
+
+    // Getter & Setter for rating
+    public Integer getRating() {
+        return rating;
+    }
+    public void setRating(Integer rating) {
+        this.rating = rating;
     }
 
     // Getter & Setter for comment

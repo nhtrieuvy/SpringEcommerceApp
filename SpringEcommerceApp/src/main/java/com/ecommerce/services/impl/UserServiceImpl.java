@@ -1,6 +1,9 @@
 package com.ecommerce.services.impl;
 
 import com.ecommerce.pojo.User;
+import com.ecommerce.pojo.Role;
+import com.ecommerce.pojo.SellerRequest;
+import com.ecommerce.pojo.Store;
 import com.ecommerce.repositories.UserRepository;
 import com.ecommerce.services.UserService;
 import java.io.IOException;
@@ -9,9 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import com.ecommerce.pojo.Role;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -495,5 +498,83 @@ public class UserServiceImpl implements UserService {
             userDetailsCache.remove(username);
             System.out.println("Cleared cache for user: " + username);
         }
+    }    @Override
+    public List<Map<String, Object>> findAllSellerRequests() {
+        Session session = sessionFactory.getCurrentSession();
+        String hql = "SELECT new map(sr.id as id, sr.shopName as shopName, " +
+                "sr.description as description, sr.status as status, " +
+                "sr.createdDate as createdDate, sr.sellerType as sellerType, " +
+                "u.id as userId, u.username as username, u.fullname as fullname, u.email as email) " +
+                "FROM SellerRequest sr JOIN sr.user u ORDER BY sr.createdDate DESC";
+        
+        @SuppressWarnings("unchecked")
+        Query<Map<String, Object>> query = session.createQuery(hql);
+        return query.list();
+    }
+
+    @Override
+    public boolean approveSellerRequest(Long id) {
+        Session session = sessionFactory.getCurrentSession();
+        
+        // Find the seller request
+        SellerRequest request = session.get(SellerRequest.class, id);
+        if (request == null || !"PENDING".equals(request.getStatus())) {
+            return false;
+        }
+          // Update the request status
+        request.setStatus("APPROVED");
+        request.setReviewedDate(new Date());
+        
+        // Add the SELLER role to the user
+        User user = request.getUser();
+        
+        // Find the SELLER role
+        String hql = "FROM Role WHERE LOWER(name) = 'seller'";
+        Role sellerRole = session.createQuery(hql, Role.class).uniqueResult();
+        
+        if (sellerRole != null) {
+            // Add the role to the user if they don't already have it
+            Set<Role> roles = user.getRoles();
+            if (roles == null) {
+                roles = new HashSet<>();
+            }
+            
+            boolean hasRole = roles.stream()
+                    .anyMatch(r -> r.getId().equals(sellerRole.getId()));
+            
+            if (!hasRole) {
+                roles.add(sellerRole);
+                user.setRoles(roles);
+            }
+            
+            // Create a store for the user
+            Store store = new Store();
+            store.setName(request.getShopName());
+            store.setDescription(request.getDescription());
+            store.setAddress(request.getAddress());
+            store.setSeller(user);
+            store.setActive(true);
+            
+            session.persist(store);
+        }
+        
+        return true;
+    }
+
+    @Override
+    public boolean rejectSellerRequest(Long id, String reason) {
+        Session session = sessionFactory.getCurrentSession();
+        
+        // Find the seller request
+        SellerRequest request = session.get(SellerRequest.class, id);
+        if (request == null || !"PENDING".equals(request.getStatus())) {
+            return false;
+        }
+          // Update the request status
+        request.setStatus("REJECTED");
+        request.setStatusNotes(reason);
+        request.setReviewedDate(new Date());
+        
+        return true;
     }
 }

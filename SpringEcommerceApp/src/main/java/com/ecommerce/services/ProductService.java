@@ -14,14 +14,12 @@ public interface ProductService {
     List<Product> findByCategoryId(Long categoryId);
     List<Product> findByPriceRange(Double minPrice, Double maxPrice);
     List<Product> search(String keyword);
-<<<<<<< Updated upstream
-}
-=======
+
+
     List<Product> findByStoreId(Long storeId);
 
     List<Product> searchAdvanced(String name, Long storeId, Double minPrice, Double maxPrice,
                                  String sortBy, String sortDir, int page, int size);
-    
+
     String uploadProductImage(MultipartFile imageFile) throws Exception;
 }
->>>>>>> Stashed changes

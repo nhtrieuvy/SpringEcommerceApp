@@ -1,6 +1,7 @@
 package com.ecommerce.controllers;
 
 import com.ecommerce.pojo.Store;
+
 import com.ecommerce.pojo.User;
 import com.ecommerce.services.StoreService;
 import com.ecommerce.services.UserService;
@@ -22,9 +23,11 @@ import java.util.Map;
 @CrossOrigin(origins = { "https://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*", methods = {
         RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE,
         RequestMethod.OPTIONS }, maxAge = 3600)
+
 public class ApiStoreController {
     @Autowired
     private StoreService storeService;
+
 
     @Autowired
     private UserService userService;
@@ -235,5 +238,6 @@ public class ApiStoreController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
     }
 }

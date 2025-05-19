@@ -15,7 +15,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
+@CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", maxAge = 3600)
 public class ApiProductController {
+
     @Autowired
     private ProductService productService;
 
@@ -26,12 +28,7 @@ public class ApiProductController {
     private StoreService storeService;
 
     @GetMapping("")
-<<<<<<< Updated upstream
-    public List<Product> getAllProducts(@RequestParam(value = "q", required = false) String keyword) {
-        if (keyword == null || keyword.isEmpty())
-            return productService.findAll();
-        return productService.findByName(keyword);
-=======
+
     public ResponseEntity<?> getAllProducts(@RequestParam(value = "q", required = false) String keyword) {
         try {
             List<Product> products;
@@ -46,7 +43,7 @@ public class ApiProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching products: " + e.getMessage());
         }
->>>>>>> Stashed changes
+
     }
 
     @GetMapping("/{id}")
@@ -179,12 +176,11 @@ public class ApiProductController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-<<<<<<< Updated upstream
-}
-=======
+
+
 
     @GetMapping("/search")
-    public ResponseEntity<?> searchProducts(
+    public List<Product> searchProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long storeId,
             @RequestParam(required = false) Double minPrice,
@@ -203,5 +199,7 @@ public class ApiProductController {
                     .body("Error searching products: " + e.getMessage());
         }
     }
+    
+
 }
->>>>>>> Stashed changes
+

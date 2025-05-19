@@ -1,6 +1,7 @@
 package com.ecommerce.pojo;
 
 import java.util.Date;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -40,6 +41,7 @@ public class ReviewSeller {
     }
 
     // Getter & Setter for id
+
     public Long getId() {
         return id;
     }
@@ -82,6 +84,7 @@ public class ReviewSeller {
     // Getter & Setter for createdAt
     public Date getCreatedAt() {
         return createdAt;
+
     }    public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
@@ -98,4 +101,5 @@ public class ReviewSeller {
                 ", createdAt=" + createdAt +
                 '}';
     }
+
 }

@@ -3,7 +3,9 @@ package com.ecommerce.repositories.impl;
 import com.ecommerce.pojo.ReviewReply;
 import com.ecommerce.repositories.ReviewReplyRepository;
 import java.util.List;
+
 import org.hibernate.Session;
+
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Repository;
 public class ReviewReplyRepositoryImpl implements ReviewReplyRepository {
 
     @Autowired
+
     private SessionFactory sessionFactory;    @Override
     public void addReply(ReviewReply reply) {
         Session session = this.sessionFactory.getCurrentSession();
@@ -37,6 +40,7 @@ public class ReviewReplyRepositoryImpl implements ReviewReplyRepository {
     @Override
     public ReviewReply getReplyById(Long id) {
         return this.sessionFactory.getCurrentSession().get(ReviewReply.class, id);
+
     }
 
     @Override

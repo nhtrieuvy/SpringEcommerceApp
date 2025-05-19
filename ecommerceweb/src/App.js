@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import ReviewPage from './components/ReviewPage';
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import Home from "./components/Home";
@@ -8,14 +9,19 @@ import Profile from "./components/Profile";
 import Admin from "./components/Admin";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
-<<<<<<< Updated upstream
-=======
+
+
 import SellerDashboard from "./components/seller/SellerDashboard";
 import SellerProducts from "./components/SellerProducts";
 import SellerStores from "./components/SellerStores";
 import ProductDetail from "./components/ProductDetail";
 import SellerDetail from "./components/SellerDetail";
->>>>>>> Stashed changes
+
+import CreateStore from './components/CreateStore';
+import CreateProduct from './components/CreateProduct';
+import ProductSearch from './components/ProductSearch';
+import StoreList from './components/StoreList';
+
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -23,6 +29,8 @@ import MyUserReducer from "./reducers/MyUserReducer";
 import { MyUserContext } from "./configs/MyContexts";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './App.css'; // Import CSS với theme xanh lá
+
+
 
 // Google OAuth Client ID - thay thế bằng ID của bạn khi đăng ký trên Google Cloud Platform
 const GOOGLE_CLIENT_ID = "618407643524-0nasoq3jc5dvturarl9truih021cofag.apps.googleusercontent.com";
@@ -125,12 +133,12 @@ const AuthenticatedRoute = ({ children }) => {
 const App = () => {
   // Sử dụng useReducer với MyUserReducer, state ban đầu là null
   const [user, dispatch] = useReducer(MyUserReducer, null);
-  
+
   // Kiểm tra phiên đăng nhập khi tải trang
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    
+
     if (token && storedUser) {
       try {
         const userData = JSON.parse(storedUser);
@@ -142,23 +150,29 @@ const App = () => {
       }
     }
   }, []);
-  
+
   return (
     <MyUserContext.Provider value={[user, dispatch]}>
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <ThemeProvider theme={theme}>
           <CssBaseline /> {/* Reset CSS để đồng nhất trên các trình duyệt */}
           <BrowserRouter>
-<<<<<<< Updated upstream
+
             <Header />
             <Routes>
+              <Route path="/create-store" element={
+                <AuthenticatedRoute>
+                  <CreateStore />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/create-product" element={
+                <AuthenticatedRoute>
+                  <CreateProduct />
+                </AuthenticatedRoute>
+              } />
+
               <Route path="/" element={<Home />} />
-=======
-            <Header />            <Routes>
-                  <Route path="/" element={<Home />} />
-              <Route path="/products/:id" element={<ProductDetail />} />
-              <Route path="/sellers/:id" element={<SellerDetail />} />
->>>>>>> Stashed changes
+
               <Route path="/login" element={
                 <ProtectedRoute>
                   <Login />
@@ -187,10 +201,9 @@ const App = () => {
                 <ProtectedRoute>
                   <ResetPassword />
                 </ProtectedRoute>
-<<<<<<< Updated upstream
+
               } />
-=======
-              } />              <Route path="/seller/dashboard" element={
+              <Route path="/seller/dashboard" element={
                 <AuthenticatedRoute>
                   <SellerDashboard />
                 </AuthenticatedRoute>
@@ -206,7 +219,14 @@ const App = () => {
                 </AuthenticatedRoute>
               } />
 
->>>>>>> Stashed changes
+              <Route path="/search" element={<ProductSearch />} />
+              <Route path="/products" element={<ProductSearch />} />
+              <Route path="/stores" element={<StoreList />} />
+              <Route path="/store/:id" element={<StoreList />} />
+              <Route path="/review/product/:id" element={<ReviewPage type="product" />} />
+              <Route path="/review/store/:id" element={<ReviewPage type="store" />} />
+
+
             </Routes>
             <Footer />
           </BrowserRouter>
