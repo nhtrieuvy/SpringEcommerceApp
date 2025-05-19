@@ -4,36 +4,26 @@
  */
 package com.ecommerce.configs;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-import com.ecommerce.filters.JwtAuthenticationFilter;
 import com.ecommerce.security.CustomAuthenticationSuccessHandler;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author admin
+ * Primary security configuration for traditional web application endpoints.
+ * Extends BaseSecurityConfig to inherit common configurations.
  */
 @Configuration
 @EnableWebSecurity
@@ -45,8 +35,7 @@ import org.slf4j.LoggerFactory;
         "com.ecommerce.services",
         "com.ecommerce.filters"
 })
-
-public class SpringSecurityConfigs {
+public class SpringSecurityConfigs extends BaseSecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SpringSecurityConfigs.class);
 
     @Autowired
@@ -93,37 +82,9 @@ public class SpringSecurityConfigs {
     @Bean
     public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
         return new HandlerMappingIntrospector();
-    }
+    }    // CorsConfigurationSource is now inherited from BaseSecurityConfig
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-
-        CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowedOrigins(List.of("https://localhost:3000")); // Chuyển từ http sang https
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*")); // Cho phép tất cả headers
-        config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
-        return source;
-    }
-
-    @Bean
-    public Cloudinary cloudinary() {
-        Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", "dd0q3guu9",
-                "api_key", "867579141935144",
-                "api_secret", "lTIKfHjxzWqaHk9hn8GptW6owIE",
-                "secure", true));
-        return cloudinary;
-    }
-
-    @Bean
-    @Order(0)
     public StandardServletMultipartResolver multipartResolver() {
         return new StandardServletMultipartResolver();
     }

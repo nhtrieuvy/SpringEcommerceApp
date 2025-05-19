@@ -24,9 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * JWT Security configuration that extends the base security configuration.
+ * This class focuses on securing REST API endpoints with JWT authentication.
+ */
 @Configuration
 @Order(1)
-public class JwtSecurityConfig {
+public class JwtSecurityConfig extends BaseSecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(JwtSecurityConfig.class);
 
     @Autowired
@@ -50,10 +54,14 @@ public class JwtSecurityConfig {
                         .permitAll()
                         .requestMatchers("/api/password/forgot", "/api/password/reset", "/api/password/reset/validate")
                         .permitAll()
-                        .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers("/api/products/**", "/api/categories/**", "/api/review/product/**",
+                                "/api/review/reply/**")
+                        .permitAll()
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "STAFF") // Cho phép ADMIN và STAFF
                                                                                             // truy cập API admin
-
+                        .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN") // Cho phép SELLER và
+                                                                                              // ADMIN truy cập API
+                                                                                              // seller
                         .requestMatchers("/api/**").authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex

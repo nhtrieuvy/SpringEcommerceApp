@@ -20,7 +20,10 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Avatar
+  Avatar,
+  FormControlLabel,
+  Checkbox,
+  Tooltip
 } from "@mui/material";
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import EmailIcon from '@mui/icons-material/Email';
@@ -29,6 +32,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import { styled } from "@mui/system";
 
 // Styled component cho icon header
@@ -91,7 +95,13 @@ const AvatarWrapper = styled(Box)(({ theme }) => ({
 }));
 
 export default function Register() {
-  const [form, setForm] = useState({ username: "", password: "", email: "", confirmPassword: "" });
+  const [form, setForm] = useState({ 
+    username: "", 
+    password: "", 
+    email: "", 
+    confirmPassword: "",
+    isSeller: false 
+  });
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [fileName, setFileName] = useState("");
@@ -100,9 +110,12 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
-
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm({ 
+      ...form, 
+      [name]: type === 'checkbox' ? checked : value 
+    });
   };
 
   const handleFile = (e) => {
@@ -174,12 +187,21 @@ export default function Register() {
       const { default: API } = await import("../configs/Apis");
       console.log("Đang gửi request đăng ký đến:", endpoint.REGISTER);
       
-      // Gửi dữ liệu dưới dạng application/json thay vì form-data
-      const response = await API.post(endpoint.REGISTER, {
+      // Chuẩn bị dữ liệu để gửi
+      const requestData = {
         username: form.username,
         email: form.email,
-        password: form.password
-      });
+        password: form.password,
+        isSeller: form.isSeller
+      };
+      
+      // Thêm avatar nếu có (dưới dạng base64)
+      if (avatarPreview) {
+        requestData.avatar = avatarPreview;
+      }
+      
+      // Gửi dữ liệu dưới dạng application/json
+      const response = await API.post(endpoint.REGISTER, requestData);
 
       const data = response.data;
       console.log("Kết quả đăng ký:", data);
@@ -444,6 +466,30 @@ export default function Register() {
                     </Typography>
                   )}
                 </AvatarWrapper>
+
+                <Box sx={{ mt: 2, mb: 2 }}>
+                  <Tooltip title="Đăng ký như người bán hàng để tạo cửa hàng và bán sản phẩm">
+                    <FormControlLabel
+                      control={
+                        <Checkbox 
+                          checked={form.isSeller}
+                          onChange={handleChange}
+                          name="isSeller"
+                          color="primary"
+                          icon={<StorefrontIcon sx={{ opacity: 0.5 }} />}
+                          checkedIcon={<StorefrontIcon />}
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="body2">
+                            Đăng ký như người bán hàng
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Tooltip>
+                </Box>
 
                 <Button
                   type="submit"

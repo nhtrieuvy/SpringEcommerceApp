@@ -8,12 +8,14 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "categories")
 @NoArgsConstructor
 @AllArgsConstructor
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,9 +25,9 @@ public class Category {
     private String name;
     
     private String description;
-    
-    @OneToMany(mappedBy = "category")
+      @OneToMany(mappedBy = "category")
     @Cache(usage = CacheConcurrencyStrategy.READ_ONLY)
+    @JsonIgnoreProperties("category")
     private Set<Product> products;
 
     public Long getId() {

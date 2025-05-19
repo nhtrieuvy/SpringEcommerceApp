@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Date;
+import java.util.Base64;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 @RestController
 @RequestMapping("/api")
@@ -51,6 +54,9 @@ public class ApiUserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private Cloudinary cloudinary;
+
     @GetMapping("")
     public List<User> getAllUsers() {
         return userService.findAll();
@@ -72,6 +78,7 @@ public class ApiUserController {
             String username = params.get("username");
             String email = params.get("email");
             String password = params.get("password");
+            String avatar = params.get("avatar"); // Base64 avatar từ frontend
 
             // Kiểm tra dữ liệu đầu vào
             if (username == null || username.isEmpty()) {
@@ -99,16 +106,92 @@ public class ApiUserController {
                         .body(Map.of("success", false, "message", "Email đã tồn tại"));
             }
 
-            // Gọi service để tạo user mới (không có avatar)
+            // Tạo user mới và thêm avatar nếu có
             User user = new User();
             user.setUsername(username);
             user.setEmail(email);
             user.setPassword(password); // Service sẽ mã hóa password
 
+            // Xử lý avatar nếu có (Base64)
+            if (avatar != null && !avatar.isEmpty()) {
+                try {
+                    // Decode base64 string
+                    String base64Image = avatar;
+                    if (avatar.contains(",")) {
+                        base64Image = avatar.split(",")[1];
+                    }
+                    byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+
+                    // Upload ảnh lên Cloudinary
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> uploadResult = cloudinary.uploader().upload(
+                            imageBytes,
+                            ObjectUtils.asMap(
+                                    "folder", "ecommerce/avatars",
+                                    "resource_type", "auto"));
+
+                    // Lưu URL vào user
+                    user.setAvatar((String) uploadResult.get("secure_url"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.err.println("Failed to upload avatar: " + e.getMessage());
+                }
+            }
+
             User savedUser = userService.addUser(user);
 
-            // Xóa password trước khi trả về
-            // savedUser.setPassword(null);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công", "user", savedUser));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi đăng ký: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/register-with-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CrossOrigin(origins = { "https://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*")
+    public ResponseEntity<?> registerUserWithFile(
+            @RequestParam("username") String username,
+            @RequestParam("email") String email,
+            @RequestParam("password") String password,
+            @RequestParam(name = "avatar", required = false) MultipartFile avatar) {
+
+        try {
+            System.out.println("=== REGISTER WITH FILE DEBUG ===");
+
+            // Kiểm tra dữ liệu đầu vào
+            if (username == null || username.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Username không được để trống"));
+            }
+
+            if (email == null || email.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Email không được để trống"));
+            }
+
+            if (password == null || password.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Password không được để trống"));
+            }
+
+            // Kiểm tra username/email đã tồn tại
+            if (userService.findByUsername(username) != null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Username đã tồn tại"));
+            }
+            if (userService.findByEmail(email) != null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Email đã tồn tại"));
+            }
+
+            // Sử dụng UserService để tạo user với avatar
+            Map<String, String> params = new HashMap<>();
+            params.put("username", username);
+            params.put("email", email);
+            params.put("password", password);
+
+            User savedUser = userService.addUser(params, avatar);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công", "user", savedUser));
         } catch (Exception e) {

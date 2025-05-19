@@ -204,6 +204,7 @@ const Header = () => {
                                         <HomeIcon fontSize="small" />
                                         Trang chủ
                                     </MenuItem>
+<<<<<<< Updated upstream
                                     <MenuItem
                                         component={RouterLink}
                                         to="/products"
@@ -217,11 +218,12 @@ const Header = () => {
                                         <ShoppingCartIcon fontSize="small" />
                                         Sản phẩm
                                     </MenuItem>
+=======
+>>>>>>> Stashed changes
                                     
                                     {user ? (
                                         // Menu items khi đã đăng nhập
-                                        <>
-                                            <MenuItem 
+                                        <>                                            <MenuItem 
                                                 component={RouterLink}
                                                 to="/profile"
                                                 onClick={handleClose}
@@ -232,7 +234,49 @@ const Header = () => {
                                                 }}
                                             >                                                <AccountCircleIcon fontSize="small" />
                                                 Tài khoản
-                                            </MenuItem>
+                                            </MenuItem>                                            {user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
+                                                <>
+                                                    <MenuItem 
+                                                        component={RouterLink}
+                                                        to="/seller/dashboard"
+                                                        onClick={handleClose}
+                                                        sx={{ 
+                                                            gap: 1,
+                                                            color: location.pathname === '/seller/dashboard' ? 'var(--primary-main)' : 'inherit',
+                                                            fontWeight: location.pathname === '/seller/dashboard' ? 600 : 400
+                                                        }}
+                                                    >
+                                                        <StorefrontIcon fontSize="small" />
+                                                        Bảng điều khiển người bán
+                                                    </MenuItem>
+                                                    <MenuItem 
+                                                        component={RouterLink}
+                                                        to="/seller/stores"
+                                                        onClick={handleClose}
+                                                        sx={{ 
+                                                            gap: 1,
+                                                            color: location.pathname === '/seller/stores' ? 'var(--primary-main)' : 'inherit',
+                                                            fontWeight: location.pathname === '/seller/stores' ? 600 : 400
+                                                        }}
+                                                    >
+                                                        <StorefrontIcon fontSize="small" />
+                                                        Quản lý cửa hàng
+                                                    </MenuItem>
+                                                    <MenuItem 
+                                                        component={RouterLink}
+                                                        to="/seller/products"
+                                                        onClick={handleClose}
+                                                        sx={{ 
+                                                            gap: 1,
+                                                            color: location.pathname === '/seller/products' ? 'var(--primary-main)' : 'inherit',
+                                                            fontWeight: location.pathname === '/seller/products' ? 600 : 400
+                                                        }}
+                                                    >
+                                                        <ShoppingBasketIcon fontSize="small" />
+                                                        Quản lý sản phẩm
+                                                    </MenuItem>
+                                                </>
+                                            )}
                                             {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
                                                 <MenuItem 
                                                     component={RouterLink}
@@ -301,6 +345,7 @@ const Header = () => {
                                 >
                                     Trang chủ
                                 </Button>
+<<<<<<< Updated upstream
                                 <Button
                                     className={`nav-link ${location.pathname === '/products' ? 'active' : ''}`}
                                     component={RouterLink}
@@ -313,6 +358,8 @@ const Header = () => {
                                 >
                                     Sản phẩm
                                 </Button>
+=======
+>>>>>>> Stashed changes
                                 
                                 {user ? (
                                     <>
@@ -378,8 +425,7 @@ const Header = () => {
                                                 PaperProps={{
                                                     className: 'custom-card',
                                                 }}
-                                            >
-                                                <MenuItem 
+                                            >                                                <MenuItem 
                                                     component={RouterLink} 
                                                     to="/profile" 
                                                     onClick={handleUserMenuClose}
@@ -389,7 +435,46 @@ const Header = () => {
                                                     }}
                                                 >                                                    <AccountCircleIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
                                                     Tài khoản
-                                                </MenuItem>
+                                                </MenuItem>                                                {user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
+                                                    <>
+                                                        <MenuItem 
+                                                            component={RouterLink} 
+                                                            to="/seller/dashboard" 
+                                                            onClick={handleUserMenuClose}
+                                                            sx={{ 
+                                                                gap: 1,
+                                                                color: location.pathname === '/seller/dashboard' ? 'var(--primary-main)' : 'inherit'
+                                                            }}
+                                                        >
+                                                            <StorefrontIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                            Bảng điều khiển
+                                                        </MenuItem>
+                                                        <MenuItem 
+                                                            component={RouterLink} 
+                                                            to="/seller/stores" 
+                                                            onClick={handleUserMenuClose}
+                                                            sx={{ 
+                                                                gap: 1,
+                                                                color: location.pathname === '/seller/stores' ? 'var(--primary-main)' : 'inherit'
+                                                            }}
+                                                        >
+                                                            <StorefrontIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                            Quản lý cửa hàng
+                                                        </MenuItem>
+                                                        <MenuItem 
+                                                            component={RouterLink} 
+                                                            to="/seller/products" 
+                                                            onClick={handleUserMenuClose}
+                                                            sx={{ 
+                                                                gap: 1,
+                                                                color: location.pathname === '/seller/products' ? 'var(--primary-main)' : 'inherit'
+                                                            }}
+                                                        >
+                                                            <ShoppingBasketIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                            Quản lý sản phẩm
+                                                        </MenuItem>
+                                                    </>
+                                                )}
                                                 {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
                                                     <MenuItem 
                                                         component={RouterLink} 

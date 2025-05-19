@@ -12,21 +12,40 @@ import java.util.List;
 @Transactional
 public class StoreServiceImpl implements StoreService {
     @Autowired
-    private StoreRepository storeRepository;
-
+    private StoreRepository storeRepository;    
+    
     @Override
-    public void save(Store store) {
+    public Store save(Store store) {
         storeRepository.save(store);
-    }
-
-    @Override
-    public void update(Store store) {
-        storeRepository.update(store);
-    }
-
-    @Override
-    public void delete(Long id) {
-        storeRepository.delete(id);
+        return store;
+    }    @Override
+    public Store update(Store store) {
+        try {
+            System.out.println("Updating store in service layer: " + store.getId());
+            storeRepository.update(store);
+            System.out.println("Store updated successfully in repository");
+            
+            // Get the fresh store with eagerly loaded collections
+            Store updatedStore = findById(store.getId());
+            System.out.println("Retrieved updated store with all collections loaded");
+            return updatedStore;
+        } catch (Exception e) {
+            System.err.println("Error updating store in service layer: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-throw để ApiStoreController xử lý
+        }
+    }    @Override
+    public boolean delete(Long id) {
+        try {
+            System.out.println("Deleting store with ID: " + id + " from service layer");
+            storeRepository.delete(id);
+            System.out.println("Store deleted successfully");
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error deleting store in service layer: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override

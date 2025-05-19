@@ -108,4 +108,20 @@ public class JwtUtils {
             return false;
         }
     }
+    
+    public static String extractUsernameFromRequest(jakarta.servlet.http.HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return extractUsername(token);
+        }
+        
+        // Try to get username from request attribute (might be set by JwtRequestFilter)
+        Object usernameAttr = request.getAttribute("username");
+        if (usernameAttr != null) {
+            return usernameAttr.toString();
+        }
+        
+        return null;
+    }
 }

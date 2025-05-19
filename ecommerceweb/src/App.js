@@ -8,6 +8,14 @@ import Profile from "./components/Profile";
 import Admin from "./components/Admin";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
+<<<<<<< Updated upstream
+=======
+import SellerDashboard from "./components/seller/SellerDashboard";
+import SellerProducts from "./components/SellerProducts";
+import SellerStores from "./components/SellerStores";
+import ProductDetail from "./components/ProductDetail";
+import SellerDetail from "./components/SellerDetail";
+>>>>>>> Stashed changes
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -141,9 +149,16 @@ const App = () => {
         <ThemeProvider theme={theme}>
           <CssBaseline /> {/* Reset CSS để đồng nhất trên các trình duyệt */}
           <BrowserRouter>
+<<<<<<< Updated upstream
             <Header />
             <Routes>
               <Route path="/" element={<Home />} />
+=======
+            <Header />            <Routes>
+                  <Route path="/" element={<Home />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/sellers/:id" element={<SellerDetail />} />
+>>>>>>> Stashed changes
               <Route path="/login" element={
                 <ProtectedRoute>
                   <Login />
@@ -168,12 +183,30 @@ const App = () => {
                 <ProtectedRoute>
                   <ForgotPassword />
                 </ProtectedRoute>
-              } />
-              <Route path="/reset-password" element={
+              } />              <Route path="/reset-password" element={
                 <ProtectedRoute>
                   <ResetPassword />
                 </ProtectedRoute>
+<<<<<<< Updated upstream
               } />
+=======
+              } />              <Route path="/seller/dashboard" element={
+                <AuthenticatedRoute>
+                  <SellerDashboard />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/seller/stores" element={
+                <AuthenticatedRoute>
+                  <SellerStores />
+                </AuthenticatedRoute>
+              } />
+              <Route path="/seller/products" element={
+                <AuthenticatedRoute>
+                  <SellerProducts />
+                </AuthenticatedRoute>
+              } />
+
+>>>>>>> Stashed changes
             </Routes>
             <Footer />
           </BrowserRouter>
