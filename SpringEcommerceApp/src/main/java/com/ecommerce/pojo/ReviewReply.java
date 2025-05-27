@@ -1,6 +1,8 @@
 package com.ecommerce.pojo;
 
 import java.util.Date;
+import jakarta.persistence.*;
+
 
 import jakarta.persistence.*;
 

@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect, useRef } from "react";
+
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
     Typography,
@@ -130,16 +132,19 @@ const isInWishlist = async (productId) => {
     }
 };
 
+
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const theme = useTheme();
     const { user, isAuthenticated } = useAuth();
     
+
     // Refs for cart animation
     const productImageRef = useRef(null);
     const cartIconRef = useRef(null);
     const addToCartButtonRef = useRef(null);
+
     // State for product data
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -178,6 +183,7 @@ const ProductDetail = () => {
                 const response = await defaultApi.get(`/api/products/${id}`);
                 setProduct(response.data);
                 
+
                 // Check if the product is in wishlist via API instead of localStorage
                 if (isAuthenticated) {
                     try {
@@ -194,6 +200,7 @@ const ProductDetail = () => {
                     const favoritesFromStorage = JSON.parse(localStorage.getItem('favorites') || '[]');
                     setIsFavorite(favoritesFromStorage.includes(response.data.id));
                 }
+
                 
                 // Fetch related products based on category
                 if (response.data.category) {
@@ -229,7 +236,9 @@ const ProductDetail = () => {
         if (id) {
             fetchProductDetail();
         }
+
     }, [id, productsPerPage, isAuthenticated]); // Added isAuthenticated to dependency array
+
     // Fetch product reviews
     const fetchProductReviews = async () => {
         setReviewsLoading(true);
@@ -287,6 +296,7 @@ const ProductDetail = () => {
     };
     
     // Toggle favorite status
+
     const toggleFavorite = async () => {
         if (!isAuthenticated) {
             setSnackbar({
@@ -339,6 +349,7 @@ const ProductDetail = () => {
                 severity: 'error'
             });
         }
+
     };
     
     // Handle opening review dialog
@@ -654,8 +665,10 @@ const ProductDetail = () => {
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
     const currentRelatedProducts = relatedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
       // Hàm xử lý thêm sản phẩm vào giỏ hàng
     const handleAddToCart = async () => {
+
         if (!product) return;
         
         if (!isAuthenticated) {
@@ -678,11 +691,13 @@ const ProductDetail = () => {
         }
         
         try {
+
             // Add to cart using direct API function instead of CartService
             await addToCart(product, quantity);
             
             // Trigger animation
             animateAddToCart();
+
             
             // Hiển thị thông báo thành công
             setSnackbar({
@@ -690,6 +705,7 @@ const ProductDetail = () => {
                 message: 'Đã thêm sản phẩm vào giỏ hàng',
                 severity: 'success'
             });
+
         } catch (error) {
             console.error("Error adding product to cart:", error);
             setSnackbar({
@@ -699,6 +715,7 @@ const ProductDetail = () => {
             });
         }
     };
+
       // Cart animation functions
     const animateAddToCart = () => {
         // If we don't have necessary refs, just return
@@ -745,6 +762,7 @@ const ProductDetail = () => {
             addToCartButtonRef.current.classList.remove('button-added-to-cart');
         }, 2000);
     };
+
     
     // Placeholder images for product gallery
     const getProductImages = () => {
@@ -879,9 +897,11 @@ const ProductDetail = () => {
                                     justifyContent: 'center',
                                     backgroundColor: '#f5f5f5' 
                                 }}
+
                             >                                <Box 
                                     component="img" 
                                     ref={productImageRef}
+
                                     src={productImages[selectedImage]} 
                                     alt={product.name}
                                     sx={{ 
@@ -1090,8 +1110,10 @@ const ProductDetail = () => {
                                     </IconButton>
                                 </Box>
                             </Box>
+
                               {/* Action Buttons */}                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>                                <Button
                                     ref={addToCartButtonRef}
+
                                     variant="contained"
                                     color="primary"
                                     size="large"
@@ -1117,6 +1139,7 @@ const ProductDetail = () => {
                                     variant="outlined"
                                     color="primary"
                                     size="large"
+
                                     startIcon={<ReadMoreIcon />}
                                     onClick={() => navigate(`/products/compare?productId=${id}`)}
                                     sx={{
@@ -1135,6 +1158,7 @@ const ProductDetail = () => {
                                     variant="outlined"
                                     color="primary"
                                     size="large"
+
                                     startIcon={<FlashOnIcon />} // Added icon
                                     sx={{
                                         borderRadius: 2,

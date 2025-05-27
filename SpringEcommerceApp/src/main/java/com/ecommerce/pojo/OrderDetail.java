@@ -2,9 +2,6 @@ package com.ecommerce.pojo;
 
 import jakarta.persistence.*;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -14,9 +11,6 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 @Entity
 @Table(name = "order_details")
-
-@Getter
-@Setter
 
 @NoArgsConstructor
 @AllArgsConstructor

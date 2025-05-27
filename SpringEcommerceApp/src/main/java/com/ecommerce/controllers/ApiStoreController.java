@@ -1,7 +1,6 @@
 package com.ecommerce.controllers;
 
 import com.ecommerce.pojo.Store;
-
 import com.ecommerce.pojo.User;
 import com.ecommerce.services.StoreService;
 import com.ecommerce.services.UserService;
@@ -195,7 +194,8 @@ public class ApiStoreController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }    @DeleteMapping("/{id}")
+    }    
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStore(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         try {
             System.out.println("Attempting to delete store with ID: " + id);

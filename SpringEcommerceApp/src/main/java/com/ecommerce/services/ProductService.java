@@ -23,5 +23,7 @@ public interface ProductService {
     
     String uploadProductImage(MultipartFile imageFile) throws Exception;
 
+
     List<ProductComparisonDTO> compareProductsByCategory(Long categoryId);
+
 }

@@ -4,6 +4,7 @@ import com.ecommerce.pojo.ReviewProduct;
 import com.ecommerce.repositories.ReviewProductRepository;
 import java.util.List;
 
+
 import org.hibernate.Session;
 
 import org.hibernate.SessionFactory;
@@ -41,6 +42,8 @@ public class ReviewProductRepositoryImpl implements ReviewProductRepository {
     
     @Override
     public ReviewProduct getReviewById(Long id) {
+
+        return this.sessionFactory.getCurrentSession().get(ReviewProduct.class, id);
 
     }
 
