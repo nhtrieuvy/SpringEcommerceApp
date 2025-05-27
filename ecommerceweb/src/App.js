@@ -8,11 +8,20 @@ import Profile from "./components/Profile";
 import Admin from "./components/Admin";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
+
 import SellerDashboard from "./components/seller/SellerDashboard";
 import SellerProducts from "./components/SellerProducts";
 import SellerStores from "./components/SellerStores";
 import ProductDetail from "./components/ProductDetail";
 import SellerDetail from "./components/SellerDetail";
+
+
+import CreateStore from './components/CreateStore';
+import CreateProduct from './components/CreateProduct';
+import ProductSearch from './components/ProductSearch';
+import StoreList from './components/StoreList';
+
+
 import Footer from "./layout/Footer";
 import Header from "./layout/Header";
 import { useReducer } from "react";
@@ -148,6 +157,7 @@ const App = () => {
         <ThemeProvider theme={theme}>
           <CssBaseline /> {/* Reset CSS để đồng nhất trên các trình duyệt */}
           <BrowserRouter>
+
             <Header />            <Routes>
                   <Route path="/" element={<Home />} />
               <Route path="/products/:id" element={<ProductDetail />} />
@@ -180,7 +190,9 @@ const App = () => {
                 <ProtectedRoute>
                   <ResetPassword />
                 </ProtectedRoute>
+
               } />              <Route path="/seller/dashboard" element={
+
                 <AuthenticatedRoute>
                   <SellerDashboard />
                 </AuthenticatedRoute>
@@ -195,6 +207,8 @@ const App = () => {
                   <SellerProducts />
                 </AuthenticatedRoute>
               } />
+
+
 
             </Routes>
             <Footer />

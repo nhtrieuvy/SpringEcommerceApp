@@ -22,9 +22,11 @@ import java.util.Map;
 @CrossOrigin(origins = { "https://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*", methods = {
         RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE,
         RequestMethod.OPTIONS }, maxAge = 3600)
+
 public class ApiStoreController {
     @Autowired
     private StoreService storeService;
+
 
     @Autowired
     private UserService userService;
@@ -192,7 +194,8 @@ public class ApiStoreController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }    @DeleteMapping("/{id}")
+    }    
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStore(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         try {
             System.out.println("Attempting to delete store with ID: " + id);
@@ -235,5 +238,6 @@ public class ApiStoreController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
     }
 }

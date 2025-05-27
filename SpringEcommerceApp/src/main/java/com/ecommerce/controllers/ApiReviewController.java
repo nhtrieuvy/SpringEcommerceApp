@@ -1,5 +1,6 @@
 package com.ecommerce.controllers;
 
+
 import com.ecommerce.pojo.ReviewProduct;
 import com.ecommerce.pojo.ReviewReply;
 
@@ -20,7 +21,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+
 import org.springframework.web.bind.annotation.PutMapping;
+
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +36,10 @@ public class ApiReviewController {
 
     @Autowired
     private ReviewReplyService reviewReplyService;
+
+    @Autowired
+    private UserService userService;// API cho đánh giá sản phẩm
+
 
     @Autowired
     private UserService userService;// API cho đánh giá sản phẩm
@@ -95,6 +102,7 @@ public class ApiReviewController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
+
     }
 
     @PutMapping("/product/{id}")
@@ -120,11 +128,13 @@ public class ApiReviewController {
                 return ResponseEntity.notFound().build();
             }
             return ResponseEntity.ok(Map.of("message", "Đã xóa đánh giá sản phẩm thành công"));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
 
     // API cho trả lời đánh giá
     @PostMapping("/reply")
@@ -218,6 +228,7 @@ public class ApiReviewController {
                             userObj.put("fullName", user.getFullname());
                             userObj.put("avatar", user.getAvatar());
 
+
                             enhancedReview.put("user", userObj);
                         }
                     }
@@ -308,5 +319,6 @@ public class ApiReviewController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
+
     }
 }

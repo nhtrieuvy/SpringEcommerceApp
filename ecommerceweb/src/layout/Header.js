@@ -70,11 +70,11 @@ const Header = () => {
     const handleUserMenu = (event) => {
         setUserMenuAnchor(event.currentTarget);
     };
-    
+
     const handleUserMenuClose = () => {
         setUserMenuAnchor(null);
     };
-    
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -85,9 +85,9 @@ const Header = () => {
 
     return (
         <Slide appear={false} direction="down" in={!scrolled}>
-            <AppBar 
-                position="sticky" 
-                className="app-header" 
+            <AppBar
+                position="sticky"
+                className="app-header"
                 elevation={scrolled ? 4 : 0}
                 sx={{
                     background: scrolled ? 'var(--primary-gradient)' : '#fff',
@@ -102,9 +102,9 @@ const Header = () => {
                             variant="h5"
                             component={RouterLink}
                             to="/"
-                            sx={{ 
-                                flexGrow: { xs: 1, md: 0 }, 
-                                fontWeight: 'bold', 
+                            sx={{
+                                flexGrow: { xs: 1, md: 0 },
+                                fontWeight: 'bold',
                                 mr: 3,
                                 textDecoration: 'none',
                                 color: 'inherit',
@@ -117,20 +117,20 @@ const Header = () => {
                                 }
                             }}
                         >
-                            <ShoppingBasketIcon 
-                                sx={{ 
+                            <ShoppingBasketIcon
+                                sx={{
                                     fontSize: 32,
                                     color: scrolled ? 'inherit' : 'var(--primary-main)'
-                                }} 
+                                }}
                             />
                             <span className="fade-in">E-commerce Store</span>
                         </Typography>
 
                         {/* Search bar - Hiển thị trên desktop */}
                         {!isMobile && (
-                            <Box 
-                                sx={{ 
-                                    flexGrow: 1, 
+                            <Box
+                                sx={{
+                                    flexGrow: 1,
                                     mx: 2,
                                     display: 'flex',
                                     borderRadius: '20px',
@@ -144,7 +144,7 @@ const Header = () => {
                                 <SearchIcon sx={{ alignSelf: 'center', mr: 1, opacity: 0.7 }} />
                                 <InputBase
                                     placeholder="Tìm kiếm sản phẩm..."
-                                    sx={{ 
+                                    sx={{
                                         width: '100%',
                                         '& .MuiInputBase-input': {
                                             p: 1,
@@ -197,7 +197,7 @@ const Header = () => {
                                         component={RouterLink}
                                         to="/"
                                         onClick={handleClose}
-                                        sx={{ 
+                                        sx={{
                                             gap: 1,
                                             color: location.pathname === '/' ? 'var(--primary-main)' : 'inherit',
                                             fontWeight: location.pathname === '/' ? 600 : 400
@@ -205,6 +205,7 @@ const Header = () => {
                                     >                                        <HomeIcon fontSize="small" />
                                         Trang chủ
                                     </MenuItem>
+
                                     
                                     {user ? (
                                         // Menu items khi đã đăng nhập
@@ -262,12 +263,13 @@ const Header = () => {
                                                     </MenuItem>
                                                 </>
                                             )}
+
                                             {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
-                                                <MenuItem 
+                                                <MenuItem
                                                     component={RouterLink}
                                                     to="/admin"
                                                     onClick={handleClose}
-                                                    sx={{ 
+                                                    sx={{
                                                         gap: 1,
                                                         color: location.pathname === '/admin' ? 'var(--primary-main)' : 'inherit',
                                                         fontWeight: location.pathname === '/admin' ? 600 : 400
@@ -289,7 +291,7 @@ const Header = () => {
                                                 component={RouterLink}
                                                 to="/login"
                                                 onClick={handleClose}
-                                                sx={{ 
+                                                sx={{
                                                     gap: 1,
                                                     color: location.pathname === '/login' ? 'var(--primary-main)' : 'inherit',
                                                     fontWeight: location.pathname === '/login' ? 600 : 400
@@ -302,7 +304,7 @@ const Header = () => {
                                                 component={RouterLink}
                                                 to="/register"
                                                 onClick={handleClose}
-                                                sx={{ 
+                                                sx={{
                                                     gap: 1,
                                                     color: location.pathname === '/register' ? 'var(--primary-main)' : 'inherit',
                                                     fontWeight: location.pathname === '/register' ? 600 : 400
@@ -323,14 +325,16 @@ const Header = () => {
                                     component={RouterLink}
                                     to="/"
                                     startIcon={<HomeIcon />}
-                                    sx={{ 
+                                    sx={{
                                         color: scrolled ? 'white' : (location.pathname === '/' ? 'var(--primary-main)' : 'var(--text-primary)'),
                                         fontWeight: location.pathname === '/' ? 600 : 500
                                     }}
                                 >
                                     Trang chủ
                                 </Button>
+
                                 
+
                                 {user ? (
                                     <>
                                         {/* Nút wishlist */}
@@ -341,7 +345,7 @@ const Header = () => {
                                                 </Badge>
                                             </IconButton>
                                         </Tooltip>
-                                        
+
                                         {/* Nút giỏ hàng */}
                                         <Tooltip title="Giỏ hàng">
                                             <IconButton className="hover-scale">
@@ -350,25 +354,25 @@ const Header = () => {
                                                 </Badge>
                                             </IconButton>
                                         </Tooltip>
-                                        
+
                                         {/* Menu người dùng */}
                                         <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
                                             <Typography variant="body1" sx={{ mr: 1, color: scrolled ? 'white' : 'var(--text-primary)' }}>
                                                 {user.fullname || user.name || user.username}
                                             </Typography>
                                             <Tooltip title="Tài khoản">
-                                                <IconButton 
-                                                    onClick={handleUserMenu} 
+                                                <IconButton
+                                                    onClick={handleUserMenu}
                                                     className="avatar"
-                                                    sx={{ 
+                                                    sx={{
                                                         p: 0,
                                                         border: `2px solid ${scrolled ? 'white' : 'var(--primary-light)'}`,
                                                     }}
                                                 >
                                                     {user.avatar || user.picture ? (
-                                                        <Avatar 
-                                                            alt={user.username || user.name} 
-                                                            src={user.avatar || user.picture} 
+                                                        <Avatar
+                                                            alt={user.username || user.name}
+                                                            src={user.avatar || user.picture}
                                                             sx={{ width: 38, height: 38 }}
                                                         />
                                                     ) : (
@@ -395,6 +399,7 @@ const Header = () => {
                                                 PaperProps={{
                                                     className: 'custom-card',
                                                 }}
+
                                             >                                                <MenuItem 
                                                     component={RouterLink} 
                                                     to="/profile" 
@@ -412,6 +417,7 @@ const Header = () => {
                                                             to="/seller/dashboard" 
                                                             onClick={handleUserMenuClose}
                                                             sx={{ 
+
                                                                 gap: 1,
                                                                 color: location.pathname === '/seller/dashboard' ? 'var(--primary-main)' : 'inherit'
                                                             }}
@@ -419,11 +425,13 @@ const Header = () => {
                                                             <StorefrontIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
                                                             Bảng điều khiển
                                                         </MenuItem>
+
                                                         <MenuItem 
                                                             component={RouterLink} 
                                                             to="/seller/stores" 
                                                             onClick={handleUserMenuClose}
                                                             sx={{ 
+
                                                                 gap: 1,
                                                                 color: location.pathname === '/seller/stores' ? 'var(--primary-main)' : 'inherit'
                                                             }}
@@ -431,11 +439,13 @@ const Header = () => {
                                                             <StorefrontIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
                                                             Quản lý cửa hàng
                                                         </MenuItem>
+
                                                         <MenuItem 
                                                             component={RouterLink} 
                                                             to="/seller/products" 
                                                             onClick={handleUserMenuClose}
                                                             sx={{ 
+
                                                                 gap: 1,
                                                                 color: location.pathname === '/seller/products' ? 'var(--primary-main)' : 'inherit'
                                                             }}
@@ -446,11 +456,11 @@ const Header = () => {
                                                     </>
                                                 )}
                                                 {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
-                                                    <MenuItem 
-                                                        component={RouterLink} 
-                                                        to="/admin" 
+                                                    <MenuItem
+                                                        component={RouterLink}
+                                                        to="/admin"
                                                         onClick={handleUserMenuClose}
-                                                        sx={{ 
+                                                        sx={{
                                                             gap: 1,
                                                             color: location.pathname === '/admin' ? 'var(--primary-main)' : 'inherit'
                                                         }}
@@ -475,7 +485,7 @@ const Header = () => {
                                             component={RouterLink}
                                             to="/login"
                                             startIcon={<LoginIcon />}
-                                            sx={{ 
+                                            sx={{
                                                 color: scrolled ? 'white' : 'var(--primary-main)',
                                                 borderColor: scrolled ? 'white' : undefined
                                             }}
@@ -488,7 +498,7 @@ const Header = () => {
                                             component={RouterLink}
                                             to="/register"
                                             startIcon={<HowToRegIcon />}
-                                            sx={{ 
+                                            sx={{
                                                 ml: 1,
                                                 bgcolor: scrolled ? 'white' : 'var(--primary-main)',
                                                 color: scrolled ? 'var(--primary-main)' : 'white',

@@ -1,5 +1,8 @@
 package com.ecommerce.controllers;
 
+
+import com.ecommerce.dtos.ProductComparisonDTO;
+
 import com.ecommerce.pojo.Category;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Store;
@@ -12,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/products")
@@ -195,4 +199,79 @@ public class ApiProductController {
                     .body("Error searching products: " + e.getMessage());
         }
     }
+
+
+    @GetMapping("/compare")
+    public ResponseEntity<?> compareProductsByCategory(@RequestParam Long categoryId) {
+        try {
+            List<ProductComparisonDTO> comparisonResults = productService.compareProductsByCategory(categoryId);
+            return ResponseEntity.ok(comparisonResults);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error comparing products: " + e.getMessage());
+        }
+    }
+    
+    @GetMapping("/compare-with-product")
+    public ResponseEntity<?> compareWithProduct(@RequestParam Long productId) {
+        try {
+            Product product = productService.findById(productId);
+            if (product == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Lấy danh sách các sản phẩm cùng loại từ cửa hàng khác
+            List<ProductComparisonDTO> comparisonResults = 
+                productService.compareProductsByCategory(product.getCategory().getId());
+            
+            return ResponseEntity.ok(comparisonResults);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error comparing products: " + e.getMessage());
+        }
+    }
+    
+    @GetMapping("/recommendations")
+    public ResponseEntity<?> getRecommendations(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long productId,
+            @RequestParam(defaultValue = "6") int limit) {
+        try {
+            List<Product> recommendedProducts = new ArrayList<>();
+            
+            if (productId != null) {
+                // Get recommendations based on a specific product
+                Product product = productService.findById(productId);
+                if (product != null && product.getCategory() != null) {
+                    // Get products from the same category
+                    List<Product> similarProducts = productService.findByCategoryId(product.getCategory().getId());
+                    
+                    // Filter out the current product and limit results
+                    recommendedProducts = similarProducts.stream()
+                        .filter(p -> !p.getId().equals(productId))
+                        .limit(limit)
+                        .toList();
+                }
+            } else if (categoryId != null) {
+                // Get recommendations based on a specific category
+                recommendedProducts = productService.findByCategoryId(categoryId).stream()
+                    .limit(limit)
+                    .toList();
+            } else {
+                // Get general recommendations (newest or most popular products)
+                recommendedProducts = productService.findAll().stream()
+                    .limit(limit)
+                    .toList();
+            }
+            
+            return ResponseEntity.ok(recommendedProducts);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching product recommendations: " + e.getMessage());
+        }
+    }
+
 }
