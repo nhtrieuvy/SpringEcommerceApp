@@ -17,6 +17,7 @@ import com.cloudinary.utils.ObjectUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import java.util.stream.Collectors;
 
@@ -30,10 +31,11 @@ public class ProductServiceImpl implements ProductService {
     
     @Autowired
     private Cloudinary cloudinary;
-
     
     @Autowired
     private ReviewProductService reviewProductService;
+
+    
 
 
     @Override
@@ -110,7 +112,6 @@ public class ProductServiceImpl implements ProductService {
         } catch (IOException e) {
             throw new Exception("Không thể tải lên hình ảnh: " + e.getMessage());
         }
-
     }    @Override
     public List<ProductComparisonDTO> compareProductsByCategory(Long categoryId) {
         List<Product> products = this.productRepository.findByCategoryId(categoryId);
@@ -182,6 +183,5 @@ public class ProductServiceImpl implements ProductService {
         }
         
         return result;
-
     }
 }

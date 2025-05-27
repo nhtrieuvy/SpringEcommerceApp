@@ -7,8 +7,8 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import java.util.Set;
+import java.util.HashSet;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "products")
@@ -36,10 +36,15 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonIgnoreProperties("products")
-    private Category category;    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
-    @Cache(usage = CacheConcurrencyStrategy.READ_ONLY)
-    @JsonIgnore
-    private Set<Review> reviews;
+    private Category category;    /**
+     * Reviews for this product.
+     * 
+     * Note: This field is @Transient as the reviews are stored in the review_products table
+     * instead of the reviews table. The actual reviews are loaded dynamically from the
+     * ReviewProductService when needed rather than through Hibernate's relationships.
+     */
+    @Transient
+    private Set<ReviewProduct> reviews;
 
     public Long getId() {
         return id;
@@ -111,13 +116,26 @@ public class Product {
 
     public void setCategory(Category category) {
         this.category = category;
-    }
-
-    public Set<Review> getReviews() {
+    }    public Set<ReviewProduct> getReviews() {
+        // Reviews are now loaded on-demand from the database using ReviewProductRepository
+        // This will be empty unless explicitly populated
         return reviews;
     }
 
-    public void setReviews(Set<Review> reviews) {
+    public void setReviews(Set<ReviewProduct> reviews) {
         this.reviews = reviews;
+    }
+
+    /**
+     * Loads reviews for this product from the given ReviewProductService.
+     * Call this method to manually initialize reviews before using them.
+     * 
+     * @param reviewService the ReviewProductService to load reviews from
+     */
+    public void loadReviews(com.ecommerce.services.ReviewProductService reviewService) {
+        if (this.id != null) {
+            java.util.List<ReviewProduct> reviewList = reviewService.getReviewsByProductId(this.id);
+            this.reviews = new java.util.HashSet<>(reviewList);
+        }
     }
 }

@@ -210,6 +210,7 @@ const Profile = () => {  const [user, dispatch] = useContext(MyUserContext);
     // Cập nhật form từ thông tin user hiện tại
   useEffect(() => {
     if (user) {
+      
       setProfileData({
         fullname: user.fullname || '',
         email: user.email || '',
@@ -538,6 +539,8 @@ const Profile = () => {  const [user, dispatch] = useContext(MyUserContext);
   }
   
   return (
+    console.log("User data:", user),
+    console.log("User roles:", user.roles),
     <Container maxWidth="md" sx={{ py: 4 }} className="fade-in">
       <Card className="custom-card" sx={{ overflow: 'visible', borderRadius: 3 }}>
         {/* Header section */}

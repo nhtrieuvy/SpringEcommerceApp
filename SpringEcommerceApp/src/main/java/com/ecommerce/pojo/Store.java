@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -24,13 +25,16 @@ public class Store {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
-
-    private String description;
+    private String name;    private String description;
     private String address;
     private String logo;
 
     private boolean active = true;
+    
+    @Column(name = "created_date")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdDate;
+    
     @ManyToOne
     @JoinColumn(name = "seller_id")
     @JsonIgnoreProperties({ "stores", "password", "roles" })
@@ -190,13 +194,30 @@ public class Store {
      */
     public Set<Product> getProducts() {
         return products;
-    }
-
-    /**
+    }    /**
      * @param products the products to set
      */
     public void setProducts(Set<Product> products) {
         this.products = products;
+    }
+
+    /**
+     * @return the createdDate
+     */
+    public Date getCreatedDate() {
+        return createdDate;
+    }    /**
+     * @param createdDate the createdDate to set
+     */
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdDate == null) {
+            createdDate = new Date();
+        }
     }
 
 }

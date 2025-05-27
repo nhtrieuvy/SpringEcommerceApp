@@ -22,7 +22,9 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
             JwtSecurityConfig.class,
             ThymeleafConfig.class,
             MailConfig.class,
-            CacheConfig.class
+            CacheConfig.class,
+            PaypalConfig.class,
+            MomoConfig.class,
         };
     }
 

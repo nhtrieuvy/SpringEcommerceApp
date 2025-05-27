@@ -1,0 +1,105 @@
+/* Loading Animations */
+.page-transition-enter {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+}
+
+.page-transition-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.page-transition-exit-active {
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+}
+
+/* Loading Spinner Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Page layout improvements */
+.page-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-content {
+    flex: 1;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.page-content.loading {
+    opacity: 0.7;
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Prevent scroll jumping */
+body {
+    overflow-x: hidden;
+}
+
+/* Header sticky behavior improvements */
+.app-header {
+    position: sticky !important;
+    top: 0;
+    z-index: 1100;
+}
+
+/* Smooth page transitions */
+.route-transition {
+    transition: all 0.3s ease-in-out;
+}
+
+.route-enter {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.route-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.route-exit {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.route-exit-active {
+    opacity: 0;
+    transform: translateY(-10px);
+}

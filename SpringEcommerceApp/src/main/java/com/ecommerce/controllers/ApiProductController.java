@@ -1,8 +1,6 @@
 package com.ecommerce.controllers;
 
-
 import com.ecommerce.dtos.ProductComparisonDTO;
-
 import com.ecommerce.pojo.Category;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Store;
@@ -200,7 +198,6 @@ public class ApiProductController {
         }
     }
 
-
     @GetMapping("/compare")
     public ResponseEntity<?> compareProductsByCategory(@RequestParam Long categoryId) {
         try {
@@ -273,5 +270,4 @@ public class ApiProductController {
                     .body("Error fetching product recommendations: " + e.getMessage());
         }
     }
-
 }

@@ -30,7 +30,9 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     public void delete(Long id) {
         Session session = sessionFactory.getCurrentSession();
         Payment payment = session.get(Payment.class, id);
-        if (payment != null) session.remove(payment);
+        if (payment != null) {
+            session.remove(payment);
+        }
     }
 
     @Override
@@ -51,5 +53,13 @@ public class PaymentRepositoryImpl implements PaymentRepository {
         Query<Payment> query = session.createQuery("FROM Payment WHERE order.id = :orderId", Payment.class);
         query.setParameter("orderId", orderId);
         return query.uniqueResult();
+    }
+
+    @Override
+    public Payment findByTransactionId(String transactionId) {
+        Session session = sessionFactory.getCurrentSession();
+        Query<Payment> query = session.createQuery("FROM Payment p WHERE p.transactionId = :transactionId", Payment.class);
+        query.setParameter("transactionId", transactionId);
+        return query.uniqueResultOptional().orElse(null);
     }
 }

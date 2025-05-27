@@ -4,9 +4,7 @@ import com.ecommerce.pojo.ReviewReply;
 import com.ecommerce.repositories.ReviewReplyRepository;
 import java.util.List;
 
-
 import org.hibernate.Session;
-
 
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +15,9 @@ public class ReviewReplyRepositoryImpl implements ReviewReplyRepository {
 
     @Autowired
 
-    private SessionFactory sessionFactory;    @Override
+    private SessionFactory sessionFactory;
+
+    @Override
     public void addReply(ReviewReply reply) {
         Session session = this.sessionFactory.getCurrentSession();
         try {
@@ -29,7 +29,7 @@ public class ReviewReplyRepositoryImpl implements ReviewReplyRepository {
             throw e; // Re-throw to handle at service level
         }
     }
-    
+
     @Override
     public void deleteReply(Long id) {
         Session session = this.sessionFactory.getCurrentSession();
@@ -38,7 +38,7 @@ public class ReviewReplyRepositoryImpl implements ReviewReplyRepository {
             session.remove(reply);
         }
     }
-    
+
     @Override
     public ReviewReply getReplyById(Long id) {
         return this.sessionFactory.getCurrentSession().get(ReviewReply.class, id);

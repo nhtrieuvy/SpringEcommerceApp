@@ -41,8 +41,6 @@ public class ApiReviewController {
     private UserService userService;// API cho đánh giá sản phẩm
 
 
-    @Autowired
-    private UserService userService;// API cho đánh giá sản phẩm
 
     @PostMapping("/product")
     public ResponseEntity<?> addProductReview(@RequestBody ReviewProduct review) {

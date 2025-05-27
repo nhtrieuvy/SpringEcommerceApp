@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     Typography,
     Container,
@@ -13,7 +13,6 @@ import {
     Divider,
     TextField,
     InputAdornment,
-
     Chip,
     Rating,
     Skeleton,
@@ -52,458 +51,293 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SortIcon from '@mui/icons-material/Sort';
 
-import defaultApi from '../configs/Apis';
+import { defaultApi, authApi, endpoint } from '../configs/Apis';
+import { useAuth } from '../configs/MyContexts';
 
-const Home = () => {
-    const theme = useTheme();
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [favorites, setFavorites] = useState([]);
-    const [searchQuery, setSearchQuery] = useState(""); const [categories, setCategories] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [openFilters, setOpenFilters] = useState(false);
-    const [showNewProductsAlert, setShowNewProductsAlert] = useState(true);
-    const [expandedFAQ, setExpandedFAQ] = useState(null);
-    const [cardHeight, setCardHeight] = useState(null);
-    const cardsRef = useRef([]);
-    const [priceRange, setPriceRange] = useState([0, 10000000]);
-    const [selectedStore, setSelectedStore] = useState(null);
-    const [sortOption, setSortOption] = useState('default');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(20);
-    const [stores, setStores] = useState([]);
-    const [priceMin, setPriceMin] = useState(0);
-    const [priceMax, setPriceMax] = useState(10000000);
+// Định nghĩa các hàm API trực tiếp trong component
+const getWishlistItems = async () => {
+    try {
+        const res = await authApi().get(endpoint.GET_WISHLIST);
+        return res.data;
+    } catch (error) {
+        console.error('Error fetching wishlist items:', error);
+        throw error;
+    }
+};
 
-    // Define filteredProducts at the top level
-    const filteredProducts = products.filter(product => {
-        const matchesSearch = !searchQuery ||
-            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
-
-        const matchesCategory = !selectedCategory ||
-            (product.category && product.category.name === selectedCategory);
-
-        const matchesPrice =
-            (!priceRange[0] || (product.price >= priceRange[0])) &&
-            (!priceRange[1] || (product.price <= priceRange[1]));
-
-        const matchesStore = !selectedStore ||
-            (product.store && product.store.id === selectedStore);
-
-        return matchesSearch && matchesCategory && matchesPrice && matchesStore;
-    });
-
-    // Sort products based on selected sorting option
-    const sortedProducts = useMemo(() => {
-        const productsToSort = [...filteredProducts];
-        switch (sortOption) {
-            case 'nameAsc':
-                return productsToSort.sort((a, b) => a.name.localeCompare(b.name));
-            case 'nameDesc':
-                return productsToSort.sort((a, b) => b.name.localeCompare(a.name));
-            case 'priceAsc':
-                return productsToSort.sort((a, b) => a.price - b.price);
-            case 'priceDesc':
-                return productsToSort.sort((a, b) => b.price - a.price);
-            default:
-                return productsToSort;
-        }
-    }, [filteredProducts, sortOption]);
-
-    // Paginate products
-    const paginatedProducts = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
-    }, [sortedProducts, currentPage, itemsPerPage]);
-
-    // Get top rated products
-    const topRatedProducts = [...products]
-        .sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5))
-        .slice(0, 3);
-
-    // Get newest products (using id as a proxy for recency)
-    const newestProducts = [...products]
-        .sort((a, b) => b.id - a.id)
-        .slice(0, 4);
-
-    // Function to normalize card heights
-    const normalizeCardHeights = () => {
-        if (cardsRef.current.length > 0) {
-            // Reset heights first to get actual content height
-            cardsRef.current.forEach(card => {
-                if (card) card.style.height = 'auto';
-            });
-
-            // Delay measurement to ensure DOM is updated
-            setTimeout(() => {
-                const heights = cardsRef.current.map(card => card ? card.offsetHeight : 0);
-                const maxHeight = Math.max(...heights);
-                if (maxHeight > 0) {
-                    setCardHeight(maxHeight);
-                    cardsRef.current.forEach(card => {
-                        if (card) card.style.height = `${maxHeight}px`;
-                    });
-                }
-            }, 100);
-        }
-    };
-
-    // Update card heights when products change
-    useEffect(() => {
-        if (!loading && filteredProducts.length > 0) {
-            cardsRef.current = cardsRef.current.slice(0, filteredProducts.length);
-            normalizeCardHeights();
-
-            // Also normalize on window resize
-            window.addEventListener('resize', normalizeCardHeights);
-            return () => window.removeEventListener('resize', normalizeCardHeights);
-        }
-    }, [loading, filteredProducts]);
-
-    // Reset card refs when filtered products change
-    useEffect(() => {
-        cardsRef.current = Array(filteredProducts.length).fill(null);
-    }, [filteredProducts.length]); useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true);
-            try {
-                const response = await defaultApi.get('/api/products');
-                setProducts(response.data);
-
-                // Extract unique categories
-                const uniqueCategories = [...new Set(response.data
-                    .filter(product => product.category)
-                    .map(product => product.category.name))];
-                setCategories(uniqueCategories);
-
-                // Extract unique stores and their IDs
-                const uniqueStores = [...new Set(response.data
-                    .filter(product => product.store)
-                    .map(product => ({
-                        id: product.store.id,
-                        name: product.store.name
-                    })))];
-
-                // Remove duplicates based on store ID
-                const storeMap = new Map();
-                uniqueStores.forEach(store => {
-                    if (!storeMap.has(store.id)) {
-                        storeMap.set(store.id, store);
-                    }
-                });
-
-                setStores(Array.from(storeMap.values()));
-
-                // Find min and max prices for price filter
-                const prices = response.data
-                    .map(product => product.price)
-                    .filter(price => price !== undefined && price !== null);
-
-                if (prices.length > 0) {
-                    const minPrice = Math.floor(Math.min(...prices));
-                    const maxPrice = Math.ceil(Math.max(...prices));
-                    setPriceMin(minPrice);
-                    setPriceMax(maxPrice);
-                    setPriceRange([minPrice, maxPrice]);
-                }
-
-            } catch (error) {
-                console.error("Error fetching products:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProducts();
-    }, []);
-}
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
-import {
-    Typography,
-    Container,
-    Box,
-    Grid,
-    Card,
-    CardContent,
-    CardMedia,
-    Button,
-    Paper,
-    Divider,
-    TextField,
-    InputAdornment,
-
-    Chip,
-    Rating,
-    Skeleton,
-    IconButton,
-    Pagination,
-    useTheme,
-    alpha,
-
-    Collapse,
-    Slider,
-    FormControl,
-   
-    Select,
-    MenuItem
-    
-} from "@mui/material";
-import SearchIcon from '@mui/icons-material/Search';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-
-import FilterListIcon from '@mui/icons-material/FilterList';
-import NewReleasesIcon from '@mui/icons-material/NewReleases';
-import CloseIcon from '@mui/icons-material/Close';
-import InfoIcon from '@mui/icons-material/Info';
-import ExploreIcon from '@mui/icons-material/Explore';
-import CategoryIcon from '@mui/icons-material/Category';
-import StoreMallDirectoryIcon from '@mui/icons-material/StoreMallDirectory';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import SortIcon from '@mui/icons-material/Sort';
-
-import defaultApi from '../configs/Apis';
-
-const Home = () => {
-    const theme = useTheme();
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [favorites, setFavorites] = useState([]);
-    const [searchQuery, setSearchQuery] = useState(""); const [categories, setCategories] = useState([]);
-    const [selectedCategory, setSelectedCategory] = useState(null);
-    const [openFilters, setOpenFilters] = useState(false);
-    const [showNewProductsAlert, setShowNewProductsAlert] = useState(true);
-    const [expandedFAQ, setExpandedFAQ] = useState(null);
-    const [cardHeight, setCardHeight] = useState(null);
-    const cardsRef = useRef([]);
-    const [priceRange, setPriceRange] = useState([0, 10000000]);
-    const [selectedStore, setSelectedStore] = useState(null);
-    const [sortOption, setSortOption] = useState('default');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(20);
-    const [stores, setStores] = useState([]);
-    const [priceMin, setPriceMin] = useState(0);
-    const [priceMax, setPriceMax] = useState(10000000);
-
-    // Define filteredProducts at the top level
-    const filteredProducts = products.filter(product => {
-        const matchesSearch = !searchQuery ||
-            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
-
-        const matchesCategory = !selectedCategory ||
-            (product.category && product.category.name === selectedCategory);
-
-        const matchesPrice =
-            (!priceRange[0] || (product.price >= priceRange[0])) &&
-            (!priceRange[1] || (product.price <= priceRange[1]));
-
-        const matchesStore = !selectedStore ||
-            (product.store && product.store.id === selectedStore);
-
-        return matchesSearch && matchesCategory && matchesPrice && matchesStore;
-    });
-
-    // Sort products based on selected sorting option
-    const sortedProducts = useMemo(() => {
-        const productsToSort = [...filteredProducts];
-        switch (sortOption) {
-            case 'nameAsc':
-                return productsToSort.sort((a, b) => a.name.localeCompare(b.name));
-            case 'nameDesc':
-                return productsToSort.sort((a, b) => b.name.localeCompare(a.name));
-            case 'priceAsc':
-                return productsToSort.sort((a, b) => a.price - b.price);
-            case 'priceDesc':
-                return productsToSort.sort((a, b) => b.price - a.price);
-            default:
-                return productsToSort;
-        }
-    }, [filteredProducts, sortOption]);
-
-    // Paginate products
-    const paginatedProducts = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
-    }, [sortedProducts, currentPage, itemsPerPage]);
-
-    // Get top rated products
-    const topRatedProducts = [...products]
-        .sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5))
-        .slice(0, 3);
-
-    // Get newest products (using id as a proxy for recency)
-    const newestProducts = [...products]
-        .sort((a, b) => b.id - a.id)
-        .slice(0, 4);
-
-    // Function to normalize card heights
-    const normalizeCardHeights = () => {
-        if (cardsRef.current.length > 0) {
-            // Reset heights first to get actual content height
-            cardsRef.current.forEach(card => {
-                if (card) card.style.height = 'auto';
-            });
-
-            // Delay measurement to ensure DOM is updated
-            setTimeout(() => {
-                const heights = cardsRef.current.map(card => card ? card.offsetHeight : 0);
-                const maxHeight = Math.max(...heights);
-                if (maxHeight > 0) {
-                    setCardHeight(maxHeight);
-                    cardsRef.current.forEach(card => {
-                        if (card) card.style.height = `${maxHeight}px`;
-                    });
-                }
-            }, 100);
-        }
-    };
-
-    // Update card heights when products change
-    useEffect(() => {
-        if (!loading && filteredProducts.length > 0) {
-            cardsRef.current = cardsRef.current.slice(0, filteredProducts.length);
-            normalizeCardHeights();
-
-            // Also normalize on window resize
-            window.addEventListener('resize', normalizeCardHeights);
-            return () => window.removeEventListener('resize', normalizeCardHeights);
-        }
-    }, [loading, filteredProducts]);
-
-    // Reset card refs when filtered products change
-    useEffect(() => {
-        cardsRef.current = Array(filteredProducts.length).fill(null);
-    }, [filteredProducts.length]); useEffect(() => {
-        const fetchProducts = async () => {
-            setLoading(true);
-            try {
-                const response = await defaultApi.get('/api/products');
-                setProducts(response.data);
-
-                // Extract unique categories
-                const uniqueCategories = [...new Set(response.data
-                    .filter(product => product.category)
-                    .map(product => product.category.name))];
-                setCategories(uniqueCategories);
-
-                // Extract unique stores and their IDs
-                const uniqueStores = [...new Set(response.data
-                    .filter(product => product.store)
-                    .map(product => ({
-                        id: product.store.id,
-                        name: product.store.name
-                    })))];
-
-                // Remove duplicates based on store ID
-                const storeMap = new Map();
-                uniqueStores.forEach(store => {
-                    if (!storeMap.has(store.id)) {
-                        storeMap.set(store.id, store);
-                    }
-                });
-
-                setStores(Array.from(storeMap.values()));
-
-                // Find min and max prices for price filter
-                const prices = response.data
-                    .map(product => product.price)
-                    .filter(price => price !== undefined && price !== null);
-
-                if (prices.length > 0) {
-                    const minPrice = Math.floor(Math.min(...prices));
-                    const maxPrice = Math.ceil(Math.max(...prices));
-                    setPriceMin(minPrice);
-                    setPriceMax(maxPrice);
-                    setPriceRange([minPrice, maxPrice]);
-                }
-
-            } catch (error) {
-                console.error("Error fetching products:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProducts();
-    }, []);
-
-    const toggleFavorite = (productId) => {
-        if (favorites.includes(productId)) {
-            setFavorites(favorites.filter(id => id !== productId));
-        } else {
-            setFavorites([...favorites, productId]);
-        }
-    }; const toggleFAQ = (index) => {
-        setExpandedFAQ(expandedFAQ === index ? null : index);
-    };
-
-    // Functions for filtering, sorting and pagination
-    const handlePageChange = (event, value) => {
-        setCurrentPage(value);
-        // Scroll to top of product section when page changes
-        window.scrollTo({
-            top: document.getElementById('products-section').offsetTop - 100,
-            behavior: 'smooth'
+const addToWishlist = async (productId) => {
+    try {
+        const res = await authApi().post(endpoint.ADD_TO_WISHLIST, {
+            productId: productId
         });
-    };
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+        
+        return res.data;
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        throw error;
+    }
+};
 
-    const handlePriceRangeChange = (event, newValue) => {
-        setPriceRange(newValue);
-    };
+const removeFromWishlist = async (productId) => {
+    try {
+        const res = await authApi().delete(endpoint.REMOVE_FROM_WISHLIST(productId));
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+        
+        return true;
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
+        throw error;
+    }
+};
 
-    const handleSortChange = (event) => {
-        setSortOption(event.target.value);
-    };
+const isInWishlist = async (productId) => {
+    try {
+        const wishlistItems = await getWishlistItems();
+        return wishlistItems.some(item => item.product.id === productId);
+    } catch (error) {
+        console.error('Error checking if product is in wishlist:', error);
+        return false;
+    }
+};
 
-    const handleStoreChange = (event) => {
-        setSelectedStore(event.target.value);
-    };
+const Home = () => {
+    const theme = useTheme();
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [favorites, setFavorites] = useState([]);
+    const [searchQuery, setSearchQuery] = useState(""); const [categories, setCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [openFilters, setOpenFilters] = useState(false);
+    const [showNewProductsAlert, setShowNewProductsAlert] = useState(true);
+    const [expandedFAQ, setExpandedFAQ] = useState(null);
+    const [cardHeight, setCardHeight] = useState(null);
+    const cardsRef = useRef([]);
+    const [priceRange, setPriceRange] = useState([0, 10000000]);
+    const [selectedStore, setSelectedStore] = useState(null);
+    const [sortOption, setSortOption] = useState('default');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(20);
+    const [stores, setStores] = useState([]);
+    const [priceMin, setPriceMin] = useState(0);
+    const [priceMax, setPriceMax] = useState(10000000);
 
-    const resetFilters = () => {
-        setSearchQuery("");
-        setSelectedCategory(null);
-        setPriceRange([priceMin, priceMax]);
-        setSelectedStore(null);
-        setSortOption('default');
-        setCurrentPage(1);
-    };
+    // Define filteredProducts at the top level
+    const filteredProducts = products.filter(product => {
+        const matchesSearch = !searchQuery ||
+            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // FAQ data
-    const faqData = [
-        {
-            question: "Làm thế nào để đặt hàng?",
-            answer: "Bạn có thể dễ dàng đặt hàng bằng cách thêm sản phẩm vào giỏ hàng, sau đó tiến hành thanh toán. Chúng tôi hỗ trợ nhiều phương thức thanh toán khác nhau."
-        },
-        {
-            question: "Chính sách đổi trả như thế nào?",
-            answer: "Chúng tôi chấp nhận đổi trả trong vòng 30 ngày kể từ ngày mua hàng. Sản phẩm phải còn nguyên trạng và đầy đủ phụ kiện kèm theo."
-        },
-        {
-            question: "Thời gian giao hàng mất bao lâu?",
-            answer: "Thời gian giao hàng thông thường từ 2-5 ngày làm việc tùy thuộc vào khu vực của bạn. Đối với các khu vực xa, thời gian có thể kéo dài hơn."
-        },
-        {
-            question: "Làm thế nào để theo dõi đơn hàng?",
-            answer: "Sau khi đặt hàng thành công, bạn sẽ nhận được email xác nhận kèm mã đơn hàng. Bạn có thể sử dụng mã này để theo dõi trạng thái đơn hàng trong tài khoản của mình."
+        const matchesCategory = !selectedCategory ||
+            (product.category && product.category.name === selectedCategory);
+
+        const matchesPrice =
+            (!priceRange[0] || (product.price >= priceRange[0])) &&
+            (!priceRange[1] || (product.price <= priceRange[1]));
+
+        const matchesStore = !selectedStore ||
+            (product.store && product.store.id === selectedStore);
+
+        return matchesSearch && matchesCategory && matchesPrice && matchesStore;
+    });
+
+    // Sort products based on selected sorting option
+    const sortedProducts = useMemo(() => {
+        const productsToSort = [...filteredProducts];
+        switch (sortOption) {
+            case 'nameAsc':
+                return productsToSort.sort((a, b) => a.name.localeCompare(b.name));
+            case 'nameDesc':
+                return productsToSort.sort((a, b) => b.name.localeCompare(a.name));
+            case 'priceAsc':
+                return productsToSort.sort((a, b) => a.price - b.price);
+            case 'priceDesc':
+                return productsToSort.sort((a, b) => b.price - a.price);
+            default:
+                return productsToSort;
         }
-    ];
+    }, [filteredProducts, sortOption]);
 
-    const toggleFavorite = (productId) => {
-        if (favorites.includes(productId)) {
-            setFavorites(favorites.filter(id => id !== productId));
-        } else {
-            setFavorites([...favorites, productId]);
+    // Paginate products
+    const paginatedProducts = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
+    }, [sortedProducts, currentPage, itemsPerPage]);
+
+    // Get top rated products
+    const topRatedProducts = [...products]
+        .sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5))
+        .slice(0, 3);
+
+    // Get newest products (using id as a proxy for recency)
+    const newestProducts = [...products]
+        .sort((a, b) => b.id - a.id)
+        .slice(0, 4);
+
+    // Function to normalize card heights
+    const normalizeCardHeights = () => {
+        if (cardsRef.current.length > 0) {
+            // Reset heights first to get actual content height
+            cardsRef.current.forEach(card => {
+                if (card) card.style.height = 'auto';
+            });
+
+            // Delay measurement to ensure DOM is updated
+            setTimeout(() => {
+                const heights = cardsRef.current.map(card => card ? card.offsetHeight : 0);
+                const maxHeight = Math.max(...heights);
+                if (maxHeight > 0) {
+                    setCardHeight(maxHeight);
+                    cardsRef.current.forEach(card => {
+                        if (card) card.style.height = `${maxHeight}px`;
+                    });
+                }
+            }, 100);
         }
-    }; const toggleFAQ = (index) => {
+    };
+
+    // Update card heights when products change
+    useEffect(() => {
+        if (!loading && filteredProducts.length > 0) {
+            cardsRef.current = cardsRef.current.slice(0, filteredProducts.length);
+            normalizeCardHeights();
+
+            // Also normalize on window resize
+            window.addEventListener('resize', normalizeCardHeights);
+            return () => window.removeEventListener('resize', normalizeCardHeights);
+        }    }, [loading, filteredProducts]);
+
+    // Reset card refs when filtered products change
+    useEffect(() => {
+        cardsRef.current = Array(filteredProducts.length).fill(null);
+    }, [filteredProducts.length]);      // Get authentication object
+    const auth = useAuth();
+    
+    // Fetch wishlist items and update favorites
+    useEffect(() => {        
+        const fetchWishlistItems = async () => {
+            if (!auth.isAuthenticated) {
+                // Clear favorites if not authenticated
+                setFavorites([]);
+                return;
+            }
+              try {
+                const wishlistItems = await getWishlistItems();
+                // Extract product IDs from wishlist items
+                const favoriteIds = wishlistItems.map(item => item.product.id);
+                setFavorites(favoriteIds);
+            } catch (error) {
+                console.error("Error fetching wishlist items:", error);
+            }
+        };
+        
+        fetchWishlistItems();
+        
+        // Listen for wishlist updates
+        const handleWishlistUpdate = () => {
+            fetchWishlistItems();
+        };
+          window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+        
+        return () => {
+            window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+        };
+    }, [auth.isAuthenticated]);useEffect(() => {
+        const fetchProducts = async () => {
+            setLoading(true);
+            try {
+                const response = await defaultApi.get('/api/products');
+                setProducts(response.data);
+
+                // Extract unique categories
+                const uniqueCategories = [...new Set(response.data
+                    .filter(product => product.category)
+                    .map(product => product.category.name))];
+                setCategories(uniqueCategories);
+
+                // Extract unique stores and their IDs
+                const uniqueStores = [...new Set(response.data
+                    .filter(product => product.store)
+                    .map(product => ({
+                        id: product.store.id,
+                        name: product.store.name
+                    })))];
+
+                // Remove duplicates based on store ID
+                const storeMap = new Map();
+                uniqueStores.forEach(store => {
+                    if (!storeMap.has(store.id)) {
+                        storeMap.set(store.id, store);
+                    }
+                });
+
+                setStores(Array.from(storeMap.values()));
+
+                // Find min and max prices for price filter
+                const prices = response.data
+                    .map(product => product.price)
+                    .filter(price => price !== undefined && price !== null);
+
+                if (prices.length > 0) {
+                    const minPrice = Math.floor(Math.min(...prices));
+                    const maxPrice = Math.ceil(Math.max(...prices));
+                    setPriceMin(minPrice);
+                    setPriceMax(maxPrice);
+                    setPriceRange([minPrice, maxPrice]);
+                }
+
+            } catch (error) {
+                console.error("Error fetching products:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProducts();    }, []);    
+    const navigate = useNavigate();
+
+
+    const toggleFavorite = async (productId) => {
+        // Check if user is authenticated
+        if (!auth.isAuthenticated) {
+            // Redirect to login if not authenticated
+            navigate('/login', { state: { from: window.location.pathname } });
+            return;
+        }
+        
+        try {
+            // Find the full product object from the products array
+            const product = products.find(p => p.id === productId);
+            
+            if (!product) {
+                console.error("Product not found in the products list");
+                return;
+            }
+              // Check if it's in the wishlist
+            const isInWishlistResult = await isInWishlist(productId);
+            
+            if (isInWishlistResult) {
+                // Remove from wishlist
+                await removeFromWishlist(productId);
+            } else {
+                // Add to wishlist
+                await addToWishlist(product.id);
+            }
+            
+            // Update local state to reflect the change immediately
+            if (isInWishlist) {
+                setFavorites(favorites.filter(id => id !== productId));
+            } else {
+                setFavorites([...favorites, productId]);
+            }
+        } catch (error) {
+            console.error("Error toggling wishlist:", error);
+        }
+    };const toggleFAQ = (index) => {
         setExpandedFAQ(expandedFAQ === index ? null : index);
     };
 
@@ -1014,10 +848,13 @@ const Home = () => {
                                                     transform: 'scale(1.05)'
                                                 }
                                             }}
-                                        />
-                                        <IconButton
+                                        />                                        <IconButton
                                             aria-label="add to favorites"
-                                            onClick={() => toggleFavorite(product.id)}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toggleFavorite(product.id);
+                                            }}
                                             sx={{
                                                 position: 'absolute',
                                                 top: 8,

@@ -30,7 +30,7 @@ import { styled } from "@mui/system";
 import { MyUserContext } from "../configs/MyContexts";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { endpoint } from "../configs/Apis";
-import defaultApi from "../configs/Apis";
+import { defaultApi } from "../configs/Apis";
 import axios from 'axios';
 
 // Styled component cho icon header

@@ -6,6 +6,7 @@ import com.ecommerce.pojo.OrderStatusHistory;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Role;
 import com.ecommerce.pojo.User;
+import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.services.CategoryService;
 import com.ecommerce.services.OrderService;
 import com.ecommerce.services.ProductService;
@@ -32,7 +33,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,8 +46,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin")
-@PreAuthorize("hasAuthority('ADMIN')")
-public class AdminController {    @Autowired
+public class AdminController {@Autowired
     private UserService userService;
 
     @Autowired
@@ -60,13 +59,14 @@ public class AdminController {    @Autowired
     private CategoryService categoryService;
 
     @Autowired
-    private RoleService roleService;
-
-    @Autowired
+    private RoleService roleService;    @Autowired
     private StoreService storeService;
 
     @Autowired
     private ReportService reportService;
+    
+    @Autowired
+    private OrderRepository orderRepository;
 
     @GetMapping("")
     public String adminDashboard(Model model) {
@@ -810,13 +810,11 @@ public class AdminController {    @Autowired
                     }
                 } catch (Exception e) {
                     // Không xử lý nếu không thể lấy thông tin người dùng
-                }
-
+                }                // Cập nhật đơn hàng mà không tạo lịch sử (để tránh bị trùng lặp)
+                orderService.updateWithoutHistory(order);
+                
                 // Thêm lịch sử trạng thái với ghi chú
                 orderService.addOrderStatusHistory(order, status, note, userId);
-
-                // Lưu đơn hàng
-                orderService.update(order);
 
                 // Nếu trạng thái là completed, có thể thực hiện các hành động bổ sung
                 if ("COMPLETED".equals(status)) {

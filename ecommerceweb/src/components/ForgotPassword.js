@@ -14,7 +14,7 @@ import {
   Grow
 } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';
-import defaultApi, { endpoint } from '../configs/Apis';
+import { defaultApi, endpoint } from '../configs/Apis';
 import { styled } from "@mui/system";
 import EmailIcon from '@mui/icons-material/Email';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';

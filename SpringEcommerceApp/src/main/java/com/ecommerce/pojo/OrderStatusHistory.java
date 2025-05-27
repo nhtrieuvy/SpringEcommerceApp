@@ -2,33 +2,43 @@ package com.ecommerce.pojo;
 
 import java.util.Date;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/**
+ * Entity representing the history of status changes for an order in the
+ * e-commerce system.
+ * This tracks the progression of an order through its lifecycle, storing
+ * information
+ * about each status change, when it occurred, who performed it, and any notes.
+ * It maintains a many-to-one relationship with the Order entity.
+ */
 @Entity
 @Table(name = "order_status_history")
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class OrderStatusHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonIgnoreProperties({ "statusHistory", "orderDetails", "payment", "hibernateLazyInitializer", "handler" })
     private Order order;
-    
-    @Column(name = "status", nullable = false)
+
+    @Column(name = "status", nullable = false, length = 50)
     private String status;
-    
-    @Column(name = "note")
+
+    @Column(name = "note", length = 1000)
     private String note;
-    
+
     @Column(name = "created_at", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
-    
-    @ManyToOne
-    @JoinColumn(name = "created_by")
-    private User createdBy;
 
-    public OrderStatusHistory() {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    @JsonIgnoreProperties({ "orders", "password", "role", "hibernateLazyInitializer", "handler" })
+    private User createdBy;    public OrderStatusHistory() {
     }
 
     public OrderStatusHistory(Order order, String status, String note, User createdBy) {
@@ -37,6 +47,16 @@ public class OrderStatusHistory {
         this.note = note;
         this.createdBy = createdBy;
         this.createdAt = new Date();
+    }
+
+    // Constructor for DTO-like usage (without relationships)
+    public OrderStatusHistory(Long id, String status, String note, Date createdAt) {
+        this.id = id;
+        this.status = status;
+        this.note = note;
+        this.createdAt = createdAt;
+        this.order = null;
+        this.createdBy = null;
     }
 
     public Long getId() {
