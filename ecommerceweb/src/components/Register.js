@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { endpoint } from "../configs/Apis";
+import { endpoint, defaultApi } from "../configs/Apis";
 import {
   Box,
   Button,
@@ -180,11 +180,7 @@ export default function Register() {
     if (!validateForm()) {
       setLoading(false);
       return;
-    }
-
-    try {
-      // Import APIs để sử dụng axios đã được cấu hình đúng
-      const { default: API } = await import("../configs/Apis");
+    }    try {
       console.log("Đang gửi request đăng ký đến:", endpoint.REGISTER);
       
       // Chuẩn bị dữ liệu để gửi
@@ -201,7 +197,7 @@ export default function Register() {
       }
       
       // Gửi dữ liệu dưới dạng application/json
-      const response = await API.post(endpoint.REGISTER, requestData);
+      const response = await defaultApi.post(endpoint.REGISTER, requestData);
 
       const data = response.data;
       console.log("Kết quả đăng ký:", data);

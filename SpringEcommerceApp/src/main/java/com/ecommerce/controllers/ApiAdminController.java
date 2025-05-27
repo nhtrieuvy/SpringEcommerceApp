@@ -12,7 +12,6 @@ import com.ecommerce.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -32,11 +31,8 @@ public class ApiAdminController {
     private ProductService productService;
 
     @Autowired
-    private StoreService storeService;
-
-    // API để lấy danh sách người dùng với phân trang và lọc
+    private StoreService storeService;    // API để lấy danh sách người dùng với phân trang và lọc
     @GetMapping("/users")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -85,9 +81,7 @@ public class ApiAdminController {
         }
     }
 
-    // API để lấy thông tin chi tiết của một người dùng
-    @GetMapping("/users/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
+    // API để lấy thông tin chi tiết của một người dùng    @GetMapping("/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
             User user = userService.findById(id);
@@ -103,11 +97,8 @@ public class ApiAdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy thông tin người dùng: " + e.getMessage()));
         }
-    }
-
-    // API để cập nhật thông tin người dùng (bao gồm kích hoạt/khóa tài khoản)
+    }    // API để cập nhật thông tin người dùng (bao gồm kích hoạt/khóa tài khoản)
     @PutMapping("/users/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
         try {
             User user = userService.findById(id);
@@ -147,11 +138,8 @@ public class ApiAdminController {
                     .body(Map.of("success", false, "message",
                             "Lỗi khi cập nhật thông tin người dùng: " + e.getMessage()));
         }
-    }
-
-    // API để lấy danh sách tất cả các quyền
+    }    // API để lấy danh sách tất cả các quyền
     @GetMapping("/roles")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> getAllRoles() {
         try {
             List<Role> roles = roleService.findAll();
@@ -192,7 +180,6 @@ public class ApiAdminController {
 
     // API để cập nhật quyền cho người dùng
     @PutMapping("/users/{userId}/roles")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> updateUserRoles(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
         try {
             User user = userService.findById(userId);
@@ -307,7 +294,6 @@ public class ApiAdminController {
 
     // Xóa quyền của người dùng
     @DeleteMapping("/users/{userId}/roles/{roleId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> removeRoleFromUser(@PathVariable Long userId, @PathVariable Long roleId) {
         try {
             User user = userService.findById(userId);
@@ -398,7 +384,6 @@ public class ApiAdminController {
 
     // API để lấy danh sách người dùng theo vai trò
     @GetMapping("/users/role/{roleName}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'STAFF')")
     public ResponseEntity<?> getUsersByRole(@PathVariable String roleName) {
         try {
             List<User> users = userService.findByRole(roleName);
@@ -449,7 +434,6 @@ public class ApiAdminController {
 
     // Add role-based access control for creating products and stores
     @PostMapping("/products")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SELLER')")
     public ResponseEntity<?> createProduct(@RequestBody Product product) {
         try {
             productService.save(product);
@@ -461,7 +445,6 @@ public class ApiAdminController {
     }
 
     @PostMapping("/stores")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SELLER')")
     public ResponseEntity<?> createStore(@RequestBody Store store) {
         try {
             storeService.save(store);

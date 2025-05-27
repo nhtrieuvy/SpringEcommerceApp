@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
     Typography,
@@ -66,9 +66,69 @@ import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import ReadMoreIcon from '@mui/icons-material/ReadMore';
 
-import defaultApi from '../configs/Apis';
-import { authApi, endpoint } from '../configs/Apis';
+import { defaultApi, authApi, endpoint } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
+import '../styles/CartStyles.css';
+import { formatCurrency } from '../utils/FormatUtils';
+
+// Định nghĩa các hàm API trực tiếp trong component
+const addToCart = async (product, quantity = 1) => {
+    try {
+        const res = await authApi().post(endpoint.ADD_TO_CART, {
+            productId: product.id,
+            quantity: quantity
+        });
+        
+        // Dispatch custom event to notify components about cart update
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
+        
+        return res.data;
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        throw error;
+    }
+};
+
+const addToWishlist = async (productId) => {
+    try {
+        const res = await authApi().post(endpoint.ADD_TO_WISHLIST, {
+            productId: productId
+        });
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+        
+        return res.data;
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        throw error;
+    }
+};
+
+const removeFromWishlist = async (productId) => {
+    try {
+        const res = await authApi().delete(endpoint.REMOVE_FROM_WISHLIST(productId));
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+        
+        return true;
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
+        throw error;
+    }
+};
+
+const isInWishlist = async (productId) => {
+    try {
+        const res = await authApi().get(endpoint.GET_WISHLIST);
+        const wishlistItems = res.data;
+        return wishlistItems.some(item => item.product.id === productId);
+    } catch (error) {
+        console.error('Error checking if product is in wishlist:', error);
+        return false;
+    }
+};
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -76,6 +136,10 @@ const ProductDetail = () => {
     const theme = useTheme();
     const { user, isAuthenticated } = useAuth();
     
+    // Refs for cart animation
+    const productImageRef = useRef(null);
+    const cartIconRef = useRef(null);
+    const addToCartButtonRef = useRef(null);
     // State for product data
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -114,9 +178,22 @@ const ProductDetail = () => {
                 const response = await defaultApi.get(`/api/products/${id}`);
                 setProduct(response.data);
                 
-                // Check if the product is in favorites (from localStorage)
-                const favoritesFromStorage = JSON.parse(localStorage.getItem('favorites') || '[]');
-                setIsFavorite(favoritesFromStorage.includes(response.data.id));
+                // Check if the product is in wishlist via API instead of localStorage
+                if (isAuthenticated) {
+                    try {
+                        const isFav = await isInWishlist(response.data.id);
+                        setIsFavorite(isFav);
+                    } catch (err) {
+                        console.error("Error checking wishlist status:", err);
+                        // Fall back to localStorage for backward compatibility
+                        const favoritesFromStorage = JSON.parse(localStorage.getItem('favorites') || '[]');
+                        setIsFavorite(favoritesFromStorage.includes(response.data.id));
+                    }
+                } else {
+                    // Not authenticated, fall back to localStorage
+                    const favoritesFromStorage = JSON.parse(localStorage.getItem('favorites') || '[]');
+                    setIsFavorite(favoritesFromStorage.includes(response.data.id));
+                }
                 
                 // Fetch related products based on category
                 if (response.data.category) {
@@ -152,7 +229,7 @@ const ProductDetail = () => {
         if (id) {
             fetchProductDetail();
         }
-    }, [id, productsPerPage]); // Added productsPerPage to dependency array
+    }, [id, productsPerPage, isAuthenticated]); // Added isAuthenticated to dependency array
     // Fetch product reviews
     const fetchProductReviews = async () => {
         setReviewsLoading(true);
@@ -210,30 +287,58 @@ const ProductDetail = () => {
     };
     
     // Toggle favorite status
-    const toggleFavorite = () => {
-        const newStatus = !isFavorite;
-        setIsFavorite(newStatus);
-        
-        // Update localStorage
-        const favoritesFromStorage = JSON.parse(localStorage.getItem('favorites') || '[]');
-        let updatedFavorites;
-          if (newStatus) {
-            updatedFavorites = [...favoritesFromStorage, product.id];
+    const toggleFavorite = async () => {
+        if (!isAuthenticated) {
             setSnackbar({
                 open: true,
-                message: 'Đã thêm vào danh sách yêu thích',
-                severity: 'success'
+                message: 'Vui lòng đăng nhập để thêm vào danh sách yêu thích',
+                severity: 'warning'
             });
-        } else {
-            updatedFavorites = favoritesFromStorage.filter(id => id !== product.id);
+            return;
+        }
+
+        try {
+            const newStatus = !isFavorite;
+            
+            if (newStatus) {
+                // Add to wishlist using API
+                await addToWishlist(product.id);
+                setSnackbar({
+                    open: true,
+                    message: 'Đã thêm vào danh sách yêu thích',
+                    severity: 'success'
+                });
+            } else {
+                // Remove from wishlist using API
+                await removeFromWishlist(product.id);
+                setSnackbar({
+                    open: true,
+                    message: 'Đã xóa khỏi danh sách yêu thích',
+                    severity: 'success'
+                });
+            }
+            
+            setIsFavorite(newStatus);
+            
+            // Update localStorage for backward compatibility
+            const favoritesFromStorage = JSON.parse(localStorage.getItem('favorites') || '[]');
+            let updatedFavorites;
+            
+            if (newStatus) {
+                updatedFavorites = [...favoritesFromStorage, product.id];
+            } else {
+                updatedFavorites = favoritesFromStorage.filter(id => id !== product.id);
+            }
+            
+            localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+        } catch (error) {
+            console.error("Error updating wishlist:", error);
             setSnackbar({
                 open: true,
-                message: 'Đã xóa khỏi danh sách yêu thích',
-                severity: 'success'
+                message: 'Đã xảy ra lỗi khi cập nhật danh sách yêu thích',
+                severity: 'error'
             });
         }
-        
-        localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
     };
     
     // Handle opening review dialog
@@ -549,9 +654,8 @@ const ProductDetail = () => {
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
     const currentRelatedProducts = relatedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-    
-    // Hàm xử lý thêm sản phẩm vào giỏ hàng
-    const handleAddToCart = () => {
+      // Hàm xử lý thêm sản phẩm vào giỏ hàng
+    const handleAddToCart = async () => {
         if (!product) return;
         
         if (!isAuthenticated) {
@@ -574,29 +678,11 @@ const ProductDetail = () => {
         }
         
         try {
-            // Lấy giỏ hàng từ localStorage hoặc tạo mới nếu chưa có
-            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            // Add to cart using direct API function instead of CartService
+            await addToCart(product, quantity);
             
-            // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
-            const existingItemIndex = cart.findIndex(item => item.id === product.id);
-            
-            if (existingItemIndex >= 0) {
-                // Nếu có, cập nhật số lượng
-                cart[existingItemIndex].quantity += quantity;
-            } else {
-                // Nếu chưa, thêm mới vào giỏ hàng
-                cart.push({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    image: product.image,
-                    quantity: quantity,
-                    store: product.store ? product.store.name : null
-                });
-            }
-            
-            // Lưu giỏ hàng vào localStorage
-            localStorage.setItem('cart', JSON.stringify(cart));
+            // Trigger animation
+            animateAddToCart();
             
             // Hiển thị thông báo thành công
             setSnackbar({
@@ -604,9 +690,6 @@ const ProductDetail = () => {
                 message: 'Đã thêm sản phẩm vào giỏ hàng',
                 severity: 'success'
             });
-            
-            // Cập nhật số lượng sản phẩm trong giỏ hàng ở header (nếu có)
-            // Thông báo cho các component khác thông qua context hoặc redux (nếu có)
         } catch (error) {
             console.error("Error adding product to cart:", error);
             setSnackbar({
@@ -615,6 +698,52 @@ const ProductDetail = () => {
                 severity: 'error'
             });
         }
+    };
+      // Cart animation functions
+    const animateAddToCart = () => {
+        // If we don't have necessary refs, just return
+        if (!productImageRef.current || !cartIconRef.current || !addToCartButtonRef.current) return;
+        
+        // Clone the product image for animation
+        const imgRect = productImageRef.current.getBoundingClientRect();
+        const cartRect = cartIconRef.current.getBoundingClientRect();
+        
+        // Create a flying item element
+        const flyingItem = document.createElement('div');
+        flyingItem.className = 'cart-item-flying';
+        flyingItem.style.width = '80px';
+        flyingItem.style.height = '80px';
+        flyingItem.style.backgroundImage = `url(${product?.image || "https://via.placeholder.com/80"})`;
+        flyingItem.style.backgroundSize = 'contain';
+        flyingItem.style.backgroundPosition = 'center';
+        flyingItem.style.backgroundRepeat = 'no-repeat';
+        
+        // Position the flying item at the product image location
+        flyingItem.style.top = `${imgRect.top}px`;
+        flyingItem.style.left = `${imgRect.left}px`;
+        
+        // Append to body and animate
+        document.body.appendChild(flyingItem);
+        
+        // After animation completes, remove the element and animate the cart icon
+        setTimeout(() => {
+            document.body.removeChild(flyingItem);
+            
+            // Animate cart icon
+            if (cartIconRef.current) {
+                cartIconRef.current.classList.add('cart-animation');
+                setTimeout(() => {
+                    cartIconRef.current.classList.remove('cart-animation');
+                }, 600);
+            }
+            
+        }, 800);
+        
+        // Animate the button 
+        addToCartButtonRef.current.classList.add('button-added-to-cart');
+        setTimeout(() => {
+            addToCartButtonRef.current.classList.remove('button-added-to-cart');
+        }, 2000);
     };
     
     // Placeholder images for product gallery
@@ -750,9 +879,9 @@ const ProductDetail = () => {
                                     justifyContent: 'center',
                                     backgroundColor: '#f5f5f5' 
                                 }}
-                            >
-                                <Box 
+                            >                                <Box 
                                     component="img" 
+                                    ref={productImageRef}
                                     src={productImages[selectedImage]} 
                                     alt={product.name}
                                     sx={{ 
@@ -961,9 +1090,8 @@ const ProductDetail = () => {
                                     </IconButton>
                                 </Box>
                             </Box>
-                            
-                            {/* Action Buttons */}
-                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>                                <Button
+                              {/* Action Buttons */}                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>                                <Button
+                                    ref={addToCartButtonRef}
                                     variant="contained"
                                     color="primary"
                                     size="large"
@@ -983,6 +1111,24 @@ const ProductDetail = () => {
                                     }}
                                 >
                                     Thêm vào giỏ hàng
+                                </Button>
+                                
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    size="large"
+                                    startIcon={<ReadMoreIcon />}
+                                    onClick={() => navigate(`/products/compare?productId=${id}`)}
+                                    sx={{
+                                        borderRadius: 2,
+                                        py: 1.5,
+                                        px: 3,
+                                        borderWidth: 2,
+                                        textTransform: 'none',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    So sánh sản phẩm tương tự
                                 </Button>
                                 
                                 <Button

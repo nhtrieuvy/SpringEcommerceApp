@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     Typography,
     Container,
@@ -13,7 +13,6 @@ import {
     Divider,
     TextField,
     InputAdornment,
-
     Chip,
     Rating,
     Skeleton,
@@ -52,7 +51,59 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SortIcon from '@mui/icons-material/Sort';
 
-import defaultApi from '../configs/Apis';
+import { defaultApi, authApi, endpoint } from '../configs/Apis';
+import { useAuth } from '../configs/MyContexts';
+
+// Định nghĩa các hàm API trực tiếp trong component
+const getWishlistItems = async () => {
+    try {
+        const res = await authApi().get(endpoint.GET_WISHLIST);
+        return res.data;
+    } catch (error) {
+        console.error('Error fetching wishlist items:', error);
+        throw error;
+    }
+};
+
+const addToWishlist = async (productId) => {
+    try {
+        const res = await authApi().post(endpoint.ADD_TO_WISHLIST, {
+            productId: productId
+        });
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+        
+        return res.data;
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        throw error;
+    }
+};
+
+const removeFromWishlist = async (productId) => {
+    try {
+        const res = await authApi().delete(endpoint.REMOVE_FROM_WISHLIST(productId));
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+        
+        return true;
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
+        throw error;
+    }
+};
+
+const isInWishlist = async (productId) => {
+    try {
+        const wishlistItems = await getWishlistItems();
+        return wishlistItems.some(item => item.product.id === productId);
+    } catch (error) {
+        console.error('Error checking if product is in wishlist:', error);
+        return false;
+    }
+};
 
 const Home = () => {
     const theme = useTheme();
@@ -158,13 +209,44 @@ const Home = () => {
             // Also normalize on window resize
             window.addEventListener('resize', normalizeCardHeights);
             return () => window.removeEventListener('resize', normalizeCardHeights);
-        }
-    }, [loading, filteredProducts]);
+        }    }, [loading, filteredProducts]);
 
     // Reset card refs when filtered products change
     useEffect(() => {
         cardsRef.current = Array(filteredProducts.length).fill(null);
-    }, [filteredProducts.length]); useEffect(() => {
+    }, [filteredProducts.length]);      // Get authentication object
+    const auth = useAuth();
+    
+    // Fetch wishlist items and update favorites
+    useEffect(() => {        
+        const fetchWishlistItems = async () => {
+            if (!auth.isAuthenticated) {
+                // Clear favorites if not authenticated
+                setFavorites([]);
+                return;
+            }
+              try {
+                const wishlistItems = await getWishlistItems();
+                // Extract product IDs from wishlist items
+                const favoriteIds = wishlistItems.map(item => item.product.id);
+                setFavorites(favoriteIds);
+            } catch (error) {
+                console.error("Error fetching wishlist items:", error);
+            }
+        };
+        
+        fetchWishlistItems();
+        
+        // Listen for wishlist updates
+        const handleWishlistUpdate = () => {
+            fetchWishlistItems();
+        };
+          window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+        
+        return () => {
+            window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+        };
+    }, [auth.isAuthenticated]);useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
@@ -214,16 +296,46 @@ const Home = () => {
                 setLoading(false);
             }
         };
-        fetchProducts();
-    }, []);
+        fetchProducts();    }, []);    
+    const navigate = useNavigate();
 
-    const toggleFavorite = (productId) => {
-        if (favorites.includes(productId)) {
-            setFavorites(favorites.filter(id => id !== productId));
-        } else {
-            setFavorites([...favorites, productId]);
+    const toggleFavorite = async (productId) => {
+        // Check if user is authenticated
+        if (!auth.isAuthenticated) {
+            // Redirect to login if not authenticated
+            navigate('/login', { state: { from: window.location.pathname } });
+            return;
         }
-    }; const toggleFAQ = (index) => {
+        
+        try {
+            // Find the full product object from the products array
+            const product = products.find(p => p.id === productId);
+            
+            if (!product) {
+                console.error("Product not found in the products list");
+                return;
+            }
+              // Check if it's in the wishlist
+            const isInWishlistResult = await isInWishlist(productId);
+            
+            if (isInWishlistResult) {
+                // Remove from wishlist
+                await removeFromWishlist(productId);
+            } else {
+                // Add to wishlist
+                await addToWishlist(product.id);
+            }
+            
+            // Update local state to reflect the change immediately
+            if (isInWishlist) {
+                setFavorites(favorites.filter(id => id !== productId));
+            } else {
+                setFavorites([...favorites, productId]);
+            }
+        } catch (error) {
+            console.error("Error toggling wishlist:", error);
+        }
+    };const toggleFAQ = (index) => {
         setExpandedFAQ(expandedFAQ === index ? null : index);
     };
 
@@ -734,10 +846,13 @@ const Home = () => {
                                                     transform: 'scale(1.05)'
                                                 }
                                             }}
-                                        />
-                                        <IconButton
+                                        />                                        <IconButton
                                             aria-label="add to favorites"
-                                            onClick={() => toggleFavorite(product.id)}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                toggleFavorite(product.id);
+                                            }}
                                             sx={{
                                                 position: 'absolute',
                                                 top: 8,

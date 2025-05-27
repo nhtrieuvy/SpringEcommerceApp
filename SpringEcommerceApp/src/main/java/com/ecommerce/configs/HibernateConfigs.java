@@ -45,13 +45,12 @@ public class HibernateConfigs {
         dataSource.setUsername(env.getProperty("hibernate.connection.username"));
         dataSource.setPassword(env.getProperty("hibernate.connection.password"));
         return dataSource;
-    }
-
-    private Properties hibernateProperties() {
+    }    private Properties hibernateProperties() {
         Properties props = new Properties();
         // Cơ bản
         props.setProperty("hibernate.dialect", env.getProperty("hibernate.dialect"));
         props.setProperty("hibernate.show_sql", env.getProperty("hibernate.showSql"));
+        props.setProperty("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
         
         // Tối ưu hóa bộ nhớ
         props.setProperty("hibernate.jdbc.batch_size", "50");

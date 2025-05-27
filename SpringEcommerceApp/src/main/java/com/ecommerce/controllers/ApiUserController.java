@@ -459,4 +459,31 @@ public class ApiUserController {
 
         return null;
     }
+
+    // Endpoint để xóa cache user
+    @PostMapping("/clear-cache/{username}")
+    public ResponseEntity<?> clearUserCache(@PathVariable String username) {
+        try {
+            userService.clearUserCache(username);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Cache cleared for user: " + username));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error clearing cache: " + e.getMessage()));
+        }
+    }    // Endpoint để xóa tất cả cache (bao gồm Hibernate cache)
+    @PostMapping("/clear-all-cache")
+    public ResponseEntity<?> clearAllCache() {
+        try {
+            // Clear tất cả user cache có thể
+            List<User> allUsers = userService.findAll();
+            for (User user : allUsers) {
+                userService.clearUserCache(user.getUsername());
+            }
+            
+            return ResponseEntity.ok(Map.of("success", true, "message", "All user caches cleared successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error clearing all caches: " + e.getMessage()));
+        }
+    }
 }

@@ -1,6 +1,8 @@
 package com.ecommerce.services;
 
+import com.ecommerce.dtos.ProductComparisonDTO;
 import com.ecommerce.pojo.Product;
+
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
@@ -20,4 +22,6 @@ public interface ProductService {
                                  String sortBy, String sortDir, int page, int size);
     
     String uploadProductImage(MultipartFile imageFile) throws Exception;
+
+    List<ProductComparisonDTO> compareProductsByCategory(Long categoryId);
 }

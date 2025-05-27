@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef, Fragment } from 'react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     AppBar,
@@ -17,7 +17,13 @@ import {
     Badge,
     Slide,
     InputBase,
-    alpha
+    alpha,
+    Divider,
+    List,    ListItem,
+    ListItemText,
+    ListItemAvatar,
+    ListItemSecondaryAction,
+    Paper
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -28,22 +34,69 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import InsightsIcon from '@mui/icons-material/Insights';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { endpoint, authApi } from '../configs/Apis';
 import { MyUserContext } from '../configs/MyContexts';
+import '../styles/CartStyles.css';
+import { formatCurrency } from '../utils/FormatUtils';
+
+// Định nghĩa các hàm API trực tiếp trong component
+const getCartItems = async () => {
+    try {
+        const res = await authApi().get(endpoint.GET_CART);
+        return res.data;
+    } catch (error) {
+        console.error('Error fetching cart items:', error);
+        throw error;
+    }
+};
+
+const removeFromCart = async (productId) => {
+    try {
+        const res = await authApi().delete(endpoint.REMOVE_FROM_CART(productId));
+        
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
+        
+        return true;
+    } catch (error) {
+        console.error('Error removing item from cart:', error);
+        throw error;
+    }
+};
+
+const getWishlistItems = async () => {
+    try {
+        const res = await authApi().get(endpoint.GET_WISHLIST);
+        return res.data;
+    } catch (error) {
+        console.error('Error fetching wishlist items:', error);
+        throw error;
+    }
+};
 
 const Header = () => {
     const [user, dispatch] = useContext(MyUserContext);
     const [anchorEl, setAnchorEl] = useState(null);
     const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+    const [cartMenuAnchor, setCartMenuAnchor] = useState(null);    
     const [scrolled, setScrolled] = useState(false);
+    const [cartItems, setCartItems] = useState([]);
+    const [cartItemCount, setCartItemCount] = useState(0);
+    const [wishlistCount, setWishlistCount] = useState(0);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
-    const location = useLocation();
-
+    const location = useLocation();    
+    const cartIconRef = useRef(null);
+    
     // Theo dõi scroll để thay đổi kiểu header
     useEffect(() => {
         const handleScroll = () => {
@@ -57,7 +110,67 @@ const Header = () => {
         return () => {
             window.removeEventListener('scroll', handleScroll);
         };
-    }, [scrolled]);
+    }, [scrolled]);    
+
+    // Load cart items using direct API function instead of CartService
+    useEffect(() => {
+        const loadCartItems = async () => {
+            try {
+                if (user) {
+                    // Use direct API function
+                    const items = await getCartItems();
+                    setCartItems(items);
+                    
+                    // Calculate total quantity
+                    const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+                    setCartItemCount(totalItems);
+                } else {
+                    setCartItems([]);
+                    setCartItemCount(0);
+                }
+            } catch (error) {
+                console.error("Error loading cart items:", error);
+                setCartItems([]);
+                setCartItemCount(0);
+            }
+        };
+
+        loadCartItems();
+        
+        // Listen for cart updates
+        window.addEventListener('cartUpdated', loadCartItems);
+        
+        return () => {
+            window.removeEventListener('cartUpdated', loadCartItems);
+        };
+    }, [user]);
+
+    // Load wishlist count using direct API function instead of WishlistService
+    useEffect(() => {
+        const loadWishlistCount = async () => {
+            try {
+                if (user) {
+                    // Use direct API function to get wishlist items and count them
+                    const items = await getWishlistItems();
+                    setWishlistCount(items.length);
+                } else {
+                    setWishlistCount(0);
+                }
+            } catch (error) {
+                console.error("Error loading wishlist count:", error);
+                setWishlistCount(0);
+            }
+        };
+        
+        loadWishlistCount();
+        
+        // Listen for wishlist updates
+        window.addEventListener('wishlistUpdated', loadWishlistCount);
+        
+        return () => {
+            window.removeEventListener('wishlistUpdated', loadWishlistCount);
+        };
+    }, [user]);
 
     const handleMenu = (event) => {
         setAnchorEl(event.currentTarget);
@@ -70,8 +183,7 @@ const Header = () => {
     const handleUserMenu = (event) => {
         setUserMenuAnchor(event.currentTarget);
     };
-    
-    const handleUserMenuClose = () => {
+      const handleUserMenuClose = () => {
         setUserMenuAnchor(null);
     };
     
@@ -83,7 +195,44 @@ const Header = () => {
         navigate('/');
     };
 
-    return (
+    // Giỏ hàng
+    const handleCartMenu = (event) => {
+        setCartMenuAnchor(event.currentTarget);
+    };
+    
+    const handleCartMenuClose = () => {
+        setCartMenuAnchor(null);
+    };
+    
+    const handleRemoveFromCart = async (itemId) => {
+        try {
+            // Use direct API function instead of CartService
+            await removeFromCart(itemId);
+            // The cartUpdated event will be dispatched by the API function,
+            // which will trigger our cart loader useEffect
+        } catch (error) {
+            console.error("Error removing item from cart:", error);
+        }
+    };
+      const handleViewCart = () => {
+        handleCartMenuClose();
+        navigate('/cart');
+    };
+    
+    const handleCheckout = () => {
+        handleCartMenuClose();
+        navigate('/checkout');
+    };
+    
+    // Tính tổng giá trị giỏ hàng
+    const calculateTotal = () => {
+        return cartItems.reduce((total, item) => {
+            // Handle both API response structure and localStorage structure
+            const price = item.product ? item.product.price : item.price;
+            return total + (price * item.quantity);
+        }, 0);
+    };
+      return (
         <Slide appear={false} direction="down" in={!scrolled}>
             <AppBar 
                 position="sticky" 
@@ -152,20 +301,37 @@ const Header = () => {
                                     }}
                                 />
                             </Box>
-                        )}
-
-                        {isMobile ? (
-                            <>
-                                {/* Mobile menu */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    {user && (
-                                        <Tooltip title="Giỏ hàng">
-                                            <IconButton color="inherit">
-                                                <Badge badgeContent={3} color="error">
-                                                    <ShoppingCartIcon />
-                                                </Badge>
-                                            </IconButton>
-                                        </Tooltip>
+                        )}                        {isMobile ? (
+                            <Fragment>                                {/* Mobile menu */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>                                    {user && (
+                                        <Fragment>
+                                            <Tooltip title="Danh sách yêu thích">
+                                                <IconButton 
+                                                    color="inherit" 
+                                                    component={RouterLink} 
+                                                    to="/wishlist"
+                                                    className="wishlist-icon-wrapper"
+                                                >
+                                                    <Badge 
+                                                        badgeContent={wishlistCount} 
+                                                        color="error"
+                                                        className={wishlistCount > 0 ? "quantity-badge-updated" : ""}
+                                                    >
+                                                        <FavoriteIcon />
+                                                    </Badge>
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Giỏ hàng">
+                                                <IconButton color="inherit" onClick={handleCartMenu} className="cart-icon-wrapper">
+                                                    <Badge 
+                                                        badgeContent={cartItemCount} 
+                                                        color="error"
+                                                        className={cartItemCount > 0 ? "quantity-badge-updated" : ""}
+                                                    >
+                                                        <ShoppingCartIcon ref={cartIconRef} />
+                                                    </Badge>
+                                                </IconButton>
+                                            </Tooltip>                                        </Fragment>
                                     )}
                                     <IconButton
                                         size="large"
@@ -206,9 +372,9 @@ const Header = () => {
                                         Trang chủ
                                     </MenuItem>
                                     
-                                    {user ? (
-                                        // Menu items khi đã đăng nhập
-                                        <>                                            <MenuItem 
+                                    {user ? (                                        // Menu items khi đã đăng nhập
+                                        <Fragment>
+                                            <MenuItem
                                                 component={RouterLink}
                                                 to="/profile"
                                                 onClick={handleClose}
@@ -220,7 +386,7 @@ const Header = () => {
                                             >                                                <AccountCircleIcon fontSize="small" />
                                                 Tài khoản
                                             </MenuItem>                                            {user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
-                                                <>
+                                                <Fragment>
                                                     <MenuItem 
                                                         component={RouterLink}
                                                         to="/seller/dashboard"
@@ -255,12 +421,35 @@ const Header = () => {
                                                             gap: 1,
                                                             color: location.pathname === '/seller/products' ? 'var(--primary-main)' : 'inherit',
                                                             fontWeight: location.pathname === '/seller/products' ? 600 : 400
+                                                        }}                                                    >                                                        <ShoppingBasketIcon fontSize="small" />
+                                                        Quản lý sản phẩm
+                                                    </MenuItem>                                                    <MenuItem 
+                                                        component={RouterLink}
+                                                        to="/seller/orders"
+                                                        onClick={handleClose}
+                                                        sx={{ 
+                                                            gap: 1,
+                                                            color: location.pathname === '/seller/orders' ? 'var(--primary-main)' : 'inherit',
+                                                            fontWeight: location.pathname === '/seller/orders' ? 600 : 400
                                                         }}
                                                     >
-                                                        <ShoppingBasketIcon fontSize="small" />
-                                                        Quản lý sản phẩm
+                                                        <LocalShippingIcon fontSize="small" />
+                                                        Quản lý đơn hàng
                                                     </MenuItem>
-                                                </>
+                                                    <MenuItem 
+                                                        component={RouterLink}
+                                                        to="/seller/statistics"
+                                                        onClick={handleClose}
+                                                        sx={{ 
+                                                            gap: 1,
+                                                            color: location.pathname === '/seller/statistics' ? 'var(--primary-main)' : 'inherit',
+                                                            fontWeight: location.pathname === '/seller/statistics' ? 600 : 400
+                                                        }}
+                                                    >
+                                                        <InsightsIcon fontSize="small" />
+                                                        Thống kê
+                                                    </MenuItem>
+                                                </Fragment>
                                             )}
                                             {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
                                                 <MenuItem 
@@ -279,12 +468,10 @@ const Header = () => {
                                             )}
                                             <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
                                                 <LogoutIcon fontSize="small" />
-                                                Đăng xuất
-                                            </MenuItem>
-                                        </>
-                                    ) : (
-                                        // Menu items khi chưa đăng nhập
-                                        <>
+                                                Đăng xuất                                            </MenuItem>
+                                        </Fragment>
+                                    ) : (                                        // Menu items khi chưa đăng nhập
+                                        <Fragment>
                                             <MenuItem
                                                 component={RouterLink}
                                                 to="/login"
@@ -311,10 +498,9 @@ const Header = () => {
                                                 <HowToRegIcon fontSize="small" />
                                                 Đăng ký
                                             </MenuItem>
-                                        </>
-                                    )}
-                                </Menu>
-                            </>
+                                        </Fragment>
+                                    )}                                </Menu>
+                            </Fragment>
                         ) : (
                             // Desktop menu
                             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -330,29 +516,239 @@ const Header = () => {
                                 >
                                     Trang chủ
                                 </Button>
-                                
-                                {user ? (
-                                    <>
-                                        {/* Nút wishlist */}
+                                  {user ? (
+                                    <Fragment>                                        {/* Nút wishlist */}
                                         <Tooltip title="Danh sách yêu thích">
-                                            <IconButton className="hover-scale">
-                                                <Badge badgeContent={2} color="error">
+                                            <IconButton 
+                                                component={RouterLink} 
+                                                to="/wishlist"
+                                                className="hover-scale wishlist-icon-wrapper"
+                                            >
+                                                <Badge 
+                                                    badgeContent={wishlistCount} 
+                                                    color="error"
+                                                    className={wishlistCount > 0 ? "quantity-badge-updated" : ""}
+                                                >
                                                     <FavoriteIcon sx={{ color: scrolled ? 'white' : '#f44336' }} />
                                                 </Badge>
                                             </IconButton>
                                         </Tooltip>
-                                        
-                                        {/* Nút giỏ hàng */}
-                                        <Tooltip title="Giỏ hàng">
-                                            <IconButton className="hover-scale">
-                                                <Badge badgeContent={3} color="error">
-                                                    <ShoppingCartIcon sx={{ color: scrolled ? 'white' : 'var(--primary-main)' }} />
+                                          {/* Nút giỏ hàng */}                                        <Tooltip title="Giỏ hàng">
+                                            <IconButton className="hover-scale cart-icon-wrapper" onClick={handleCartMenu}>
+                                                <Badge 
+                                                    badgeContent={cartItemCount} 
+                                                    color="error"
+                                                    className={cartItemCount > 0 ? "quantity-badge-updated" : ""}
+                                                >
+                                                    <ShoppingCartIcon 
+                                                        ref={cartIconRef}
+                                                        sx={{ color: scrolled ? 'white' : 'var(--primary-main)' }} 
+                                                    />
                                                 </Badge>
                                             </IconButton>
                                         </Tooltip>
                                         
                                         {/* Menu người dùng */}
-                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>                                            {/* Cart Menu */}                                            <Menu
+                                                id="cart-menu"
+                                                anchorEl={cartMenuAnchor}
+                                                anchorOrigin={{
+                                                    vertical: 'bottom',
+                                                    horizontal: 'right',
+                                                }}
+                                                keepMounted
+                                                transformOrigin={{
+                                                    vertical: 'top',
+                                                    horizontal: 'right',
+                                                }}
+                                                open={Boolean(cartMenuAnchor)}
+                                                onClose={handleCartMenuClose}
+                                                slotProps={{
+                                                    paper: {
+                                                        elevation: 3,
+                                                        className: isMobile ? 'mobile-cart-menu' : '',
+                                                        sx: { 
+                                                            width: isMobile ? '100%' : 320,
+                                                            maxHeight: isMobile ? '80vh' : 400,
+                                                            overflow: 'auto',
+                                                            mt: 1.5,
+                                                            borderRadius: isMobile ? 0 : 2,
+                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                <Box sx={{ p: 2, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+                                                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                                                        Giỏ hàng của bạn
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {cartItems.length > 0 
+                                                            ? `${cartItems.length} sản phẩm (${cartItemCount} món)` 
+                                                            : 'Chưa có sản phẩm nào'
+                                                        }
+                                                    </Typography>
+                                                </Box>
+                                                  {cartItems.length === 0 ? (
+                                                    <Box sx={{ p: 2, textAlign: 'center' }} className="empty-cart-container">
+                                                        <ShoppingCartIcon sx={{ fontSize: 50, color: 'action.disabled', mb: 1 }} className="empty-cart-icon" />
+                                                        <Typography variant="body1" sx={{ mb: 2, color: 'text.secondary' }}>
+                                                            Giỏ hàng của bạn đang trống
+                                                        </Typography>
+                                                        <Button 
+                                                            variant="outlined" 
+                                                            color="primary"
+                                                            component={RouterLink}
+                                                            to="/"
+                                                            onClick={handleCartMenuClose}
+                                                            sx={{ borderRadius: 2, px: 3 }}
+                                                            startIcon={<HomeIcon />}
+                                                        >
+                                                            Mua sắm ngay
+                                                        </Button>
+                                                    </Box>                                                ) : (
+                                                    <Fragment>
+                                                        <List sx={{ py: 0 }}>
+                                                            {cartItems.map((item) => {
+    // Determine product structure (API or localStorage)
+    const product = item.product || item;
+    const productId = item.productId || product.id;
+    const productName = product.name;
+    const productImage = product.image || "https://via.placeholder.com/60";
+    const productPrice = product.price;
+    const quantity = item.quantity;
+
+    return (
+        <ListItem 
+            key={productId} 
+            sx={{ 
+                py: 2, 
+                borderBottom: '1px solid rgba(0,0,0,0.06)',
+                transition: 'all 0.2s ease'
+            }}
+            className="cart-menu-item cart-item-enter cart-item-enter-active"
+        >
+            <ListItemAvatar>
+                <Avatar 
+                    variant="rounded"
+                    src={productImage}
+                    alt={productName}
+                    sx={{ 
+                        width: 50, 
+                        height: 50, 
+                        borderRadius: 1,
+                        border: '1px solid rgba(0,0,0,0.1)',
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                            transform: 'scale(1.05)'
+                        }
+                    }}
+                />
+            </ListItemAvatar>
+            <ListItemText
+                primary={
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            fontWeight: 'medium',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            mb: 0.5,
+                            cursor: 'pointer',
+                            '&:hover': {
+                                color: 'primary.main'
+                            }
+                        }}
+                        onClick={() => {
+                            handleCartMenuClose();
+                            navigate(`/products/${productId}`);
+                        }}
+                    >
+                        {productName}
+                    </Typography>
+                }
+                secondary={
+                    <Box>
+                        <Typography variant="body2" color="text.secondary">
+                            {formatCurrency(productPrice)} × {quantity}
+                        </Typography>
+                        <Typography variant="body2" color="primary.main" fontWeight="bold">
+                            {formatCurrency(productPrice * quantity)}
+                        </Typography>
+                    </Box>
+                }
+            />
+            <ListItemSecondaryAction>
+                <IconButton 
+                    edge="end" 
+                    size="small"
+                    onClick={() => handleRemoveFromCart(productId)}
+                    sx={{ 
+                        color: 'error.main',
+                        '&:hover': {
+                            backgroundColor: 'rgba(211, 47, 47, 0.04)'
+                        }
+                    }}
+                >
+                    <DeleteIcon fontSize="small" />
+                </IconButton>
+            </ListItemSecondaryAction>
+        </ListItem>
+    );
+})}                                                        </List>
+                                                        
+                                                        <Box 
+                                                            sx={{ 
+                                                                p: 2, 
+                                                                borderTop: '1px solid rgba(0,0,0,0.08)',
+                                                                position: 'sticky',
+                                                                bottom: 0,
+                                                                bgcolor: 'background.paper',
+                                                                zIndex: 1
+                                                            }}
+                                                            className={isMobile ? 'mobile-cart-action-buttons' : ''}
+                                                        >
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                                <Typography variant="subtitle1">Tổng tiền:</Typography>
+                                                <Typography variant="subtitle1" fontWeight="bold" color="primary.main">
+                                                    {formatCurrency(calculateTotal())}
+                                                </Typography>
+                                            </Box>
+                                            
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                <Button
+                                                    fullWidth
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    onClick={handleViewCart}
+                                                    sx={{ 
+                                                        borderRadius: 2,
+                                                        py: 1
+                                                    }}
+                                                >
+                                                    Xem giỏ hàng
+                                                </Button>
+                                                <Button
+                                                    fullWidth
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={handleCheckout}
+                                                    className={cartItems.length > 0 ? "checkout-button-pulse" : ""}
+                                                    sx={{ 
+                                                        borderRadius: 2,
+                                                        py: 1,
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                >
+                                                    Thanh toán
+                                                </Button>
+                                            </Box>                                        </Box>
+                                                    </Fragment>
+                                                )}
+                                            </Menu>
+
                                             <Typography variant="body1" sx={{ mr: 1, color: scrolled ? 'white' : 'var(--text-primary)' }}>
                                                 {user.fullname || user.name || user.username}
                                             </Typography>
@@ -403,13 +799,24 @@ const Header = () => {
                                                         gap: 1,
                                                         color: location.pathname === '/profile' ? 'var(--primary-main)' : 'inherit'
                                                     }}
-                                                >                                                    <AccountCircleIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
-                                                    Tài khoản
+                                                >                                                    <AccountCircleIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />                                                    Tài khoản
+                                                </MenuItem>
+                                                <MenuItem 
+                                                    component={RouterLink} 
+                                                    to="/orders" 
+                                                    onClick={handleUserMenuClose}
+                                                    sx={{ 
+                                                        gap: 1,
+                                                        color: location.pathname === '/orders' ? 'var(--primary-main)' : 'inherit'
+                                                    }}
+                                                >
+                                                    <ShoppingBagIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                    Đơn hàng của tôi
                                                 </MenuItem>                                                {user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
-                                                    <>
+                                                    <Fragment>
                                                         <MenuItem 
                                                             component={RouterLink} 
-                                                            to="/seller/dashboard" 
+                                                            to="/seller/dashboard"
                                                             onClick={handleUserMenuClose}
                                                             sx={{ 
                                                                 gap: 1,
@@ -439,11 +846,10 @@ const Header = () => {
                                                                 gap: 1,
                                                                 color: location.pathname === '/seller/products' ? 'var(--primary-main)' : 'inherit'
                                                             }}
-                                                        >
-                                                            <ShoppingBasketIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                        >                                                            <ShoppingBasketIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
                                                             Quản lý sản phẩm
                                                         </MenuItem>
-                                                    </>
+                                                    </Fragment>
                                                 )}
                                                 {user && user.roles && user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF') && (
                                                     <MenuItem 
@@ -462,13 +868,11 @@ const Header = () => {
                                                 <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
                                                     <LogoutIcon fontSize="small" sx={{ color: 'var(--error)' }} />
                                                     Đăng xuất
-                                                </MenuItem>
-                                            </Menu>
+                                                </MenuItem>                                            </Menu>
                                         </Box>
-                                    </>
-                                ) : (
+                                    </Fragment>                                ) : (
                                     // Hiện nút đăng nhập và đăng ký khi chưa đăng nhập
-                                    <>
+                                    <Fragment>
                                         <Button
                                             className="custom-btn"
                                             variant={scrolled ? "outlined" : "text"}
@@ -495,11 +899,10 @@ const Header = () => {
                                                 '&:hover': {
                                                     bgcolor: scrolled ? 'white' : 'var(--primary-dark)',
                                                 }
-                                            }}
-                                        >
+                                            }}                                        >
                                             Đăng ký
                                         </Button>
-                                    </>
+                                    </Fragment>
                                 )}
                             </Box>
                         )}

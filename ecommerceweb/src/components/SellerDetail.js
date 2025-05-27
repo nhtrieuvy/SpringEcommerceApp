@@ -42,7 +42,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import LoyaltyIcon from '@mui/icons-material/Loyalty';
 
-import defaultApi from '../configs/Apis';
+import { defaultApi } from '../configs/Apis';
 import { authApi, endpoint } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
 // import { hasRole, ROLES, canModifyReview } from '../configs/Roles';

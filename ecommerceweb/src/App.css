@@ -1,3 +1,6 @@
+/* Import page transition styles */
+@import './styles/PageTransition.css';
+
 .App {
   text-align: center;
 }
@@ -262,3 +265,39 @@ body {
   color: white;
   text-decoration: none;
 }
+
+/* Global cart animation styles */
+@keyframes quantityPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.quantity-badge-updated {
+  animation: quantityPulse 0.6s ease-in-out;
+}
+
+@keyframes checkoutPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+  }
+}
+
+.checkout-button-pulse {
+  animation: checkoutPulse 1.5s infinite;
+}
+
+/* Import cart styles from dedicated file */
+@import './styles/CartStyles.css';

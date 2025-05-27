@@ -56,9 +56,10 @@ public class JwtSecurityConfig extends BaseSecurityConfig {
                         .permitAll()
                         .requestMatchers("/api/products/**", "/api/categories/**", "/api/review/product/**",
                                 "/api/review/reply/**")
-                        .permitAll()
+                        .permitAll()                        
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "STAFF") // Cho phép ADMIN và STAFF
                                                                                             // truy cập API admin
+                        .requestMatchers("/api/seller/requests/**").hasAnyAuthority("ADMIN", "STAFF") // Chỉ ADMIN và STAFF có thể quản lý yêu cầu seller
                         .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN") // Cho phép SELLER và
                                                                                               // ADMIN truy cập API
                                                                                               // seller

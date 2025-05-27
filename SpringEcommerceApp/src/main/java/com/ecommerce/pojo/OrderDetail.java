@@ -8,28 +8,36 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
+/**
+ * Entity representing the details of an order in the e-commerce system.
+ * Each OrderDetail contains information about a specific product in an order,
+ * including quantity and price. It has a many-to-one relationship with the
+ * Order entity.
+ */
 @Entity
 @Table(name = "order_details")
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class OrderDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", nullable = false)
     @JsonBackReference
     private Order order;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "product_id")
-    @JsonIgnoreProperties({"category", "reviews", "store"})
+    @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnoreProperties({ "category", "reviews", "store" })
     private Product product;
 
+    @Column(nullable = false)
     private int quantity;
+
+    @Column(nullable = false)
     private double price;
 
     public Long getId() {
@@ -71,6 +79,5 @@ public class OrderDetail {
     public void setPrice(double price) {
         this.price = price;
     }
-    
-    
+
 }

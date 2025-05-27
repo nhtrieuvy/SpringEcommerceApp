@@ -15,7 +15,7 @@ import {
   LinearProgress
 } from '@mui/material';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import defaultApi, { endpoint } from '../configs/Apis';
+import { defaultApi, endpoint } from '../configs/Apis';
 import { styled } from "@mui/system";
 import LockResetIcon from '@mui/icons-material/LockReset';
 import LockIcon from '@mui/icons-material/Lock';
