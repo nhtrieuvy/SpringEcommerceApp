@@ -78,7 +78,8 @@ public class ProductRepositoryImpl implements ProductRepository {
                 .createQuery(hql, Product.class)
                 .setParameter("catId", categoryId)
                 .getResultList();
-// Initialize the store for each product to avoid LazyInitializationException
+        
+        // Initialize the store for each product to avoid LazyInitializationException
         for (Product product : products) {
             if (product.getStore() != null) {
                 product.getStore().getName(); // Force initialization
@@ -146,7 +147,8 @@ public class ProductRepositoryImpl implements ProductRepository {
         if (storeId != null) {
             hql.append(" AND p.store.id = :storeId");
         }
-        if (minPrice != null) {hql.append(" AND p.price >= :minPrice");
+        if (minPrice != null) {
+            hql.append(" AND p.price >= :minPrice");
         }
         if (maxPrice != null) {
             hql.append(" AND p.price <= :maxPrice");
