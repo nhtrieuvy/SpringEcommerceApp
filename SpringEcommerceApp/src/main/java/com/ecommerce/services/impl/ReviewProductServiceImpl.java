@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,10 +18,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Transactional
+
 public class ReviewProductServiceImpl implements ReviewProductService {
 
     @Autowired
     private ReviewProductRepository reviewRepo;
+
     
     // Temporary storage for reviews until full database implementation
     private final Map<Long, ReviewProduct> reviews = new ConcurrentHashMap<>();
@@ -173,5 +176,6 @@ public class ReviewProductServiceImpl implements ReviewProductService {
                 .sum();
         
         return sum / productReviews.size();
+
     }
 }

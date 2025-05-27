@@ -194,6 +194,7 @@ const ProductDetail = () => {
                     const favoritesFromStorage = JSON.parse(localStorage.getItem('favorites') || '[]');
                     setIsFavorite(favoritesFromStorage.includes(response.data.id));
                 }
+
                 
                 // Fetch related products based on category
                 if (response.data.category) {
@@ -229,7 +230,9 @@ const ProductDetail = () => {
         if (id) {
             fetchProductDetail();
         }
+
     }, [id, productsPerPage, isAuthenticated]); // Added isAuthenticated to dependency array
+
     // Fetch product reviews
     const fetchProductReviews = async () => {
         setReviewsLoading(true);

@@ -4,6 +4,7 @@ import com.ecommerce.pojo.ReviewProduct;
 import java.util.List;
 
 public interface ReviewProductService {
+
     /**
      * Thêm đánh giá cho sản phẩm
      * @param review Thông tin đánh giá
@@ -45,4 +46,5 @@ public interface ReviewProductService {
      * @return Điểm đánh giá trung bình
      */
     double getAverageRatingByProductId(Long productId);
+
 }

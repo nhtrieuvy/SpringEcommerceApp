@@ -432,6 +432,7 @@ public class ApiAdminController {
         return null;
     }
 
+
     // Add role-based access control for creating products and stores
     @PostMapping("/products")
     public ResponseEntity<?> createProduct(@RequestBody Product product) {
@@ -439,8 +440,12 @@ public class ApiAdminController {
             productService.save(product);
             return ResponseEntity.ok(Map.of("success", true, "message", "Product created successfully"));
         } catch (Exception e) {
+
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
+
+
         }
     }
 
@@ -450,8 +455,11 @@ public class ApiAdminController {
             storeService.save(store);
             return ResponseEntity.ok(Map.of("success", true, "message", "Store created successfully"));
         } catch (Exception e) {
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
+
     }
+
 }

@@ -24,4 +24,5 @@ public interface ReviewReplyService {
      * @return true nếu xoá thành công, false nếu thất bại
      */
     boolean deleteReply(Long replyId);
+
 }

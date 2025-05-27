@@ -296,8 +296,10 @@ const Home = () => {
                 setLoading(false);
             }
         };
+
         fetchProducts();    }, []);    
     const navigate = useNavigate();
+
 
     const toggleFavorite = async (productId) => {
         // Check if user is authenticated

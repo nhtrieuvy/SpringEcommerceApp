@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -16,10 +19,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Transactional
+
 public class ReviewReplyServiceImpl implements ReviewReplyService {
 
     @Autowired
     private ReviewReplyRepository replyRepo;
+
     
     // Temporary storage for replies until full database implementation
     private final Map<Long, ReviewReply> replies = new ConcurrentHashMap<>();
@@ -64,10 +69,12 @@ public class ReviewReplyServiceImpl implements ReviewReplyService {
         }
         
         return reply;
+
     }
 
     @Override
     public List<ReviewReply> getRepliesByReviewId(Long reviewId) {
+
         // Try to get from repository first
         try {
             List<ReviewReply> dbReplies = replyRepo.getRepliesByReviewId(reviewId);
@@ -99,5 +106,6 @@ public class ReviewReplyServiceImpl implements ReviewReplyService {
             return true;
         }
         return false;
+
     }
 }

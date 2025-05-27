@@ -1,6 +1,7 @@
 package com.ecommerce.pojo;
 
 import jakarta.persistence.*;
+
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -16,6 +17,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
  */
 @Entity
 @Table(name = "order_details")
+
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })

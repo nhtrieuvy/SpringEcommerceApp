@@ -14,8 +14,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "stores")
+
 @NoArgsConstructor
 @AllArgsConstructor
+
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Store {
     @Id
@@ -26,6 +28,7 @@ public class Store {
     private String name;    private String description;
     private String address;
     private String logo;
+
     private boolean active = true;
     
     @Column(name = "created_date")
@@ -86,6 +89,7 @@ public class Store {
             return store;
         }
     }
+
 
     /**
      * @return the id
