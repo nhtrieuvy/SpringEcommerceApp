@@ -195,14 +195,14 @@ const SellerOrders = () => {
       textColor: '#9c27b0'
     },
     { 
-      value: "SHIPPED",
-      label: "Đã giao hàng",
+      value: "SHIPPING",
+      label: "Đang giao hàng",
       icon: <ShippingIcon fontSize="small" />,
       bgColor: alpha('#3f51b5', 0.1),
       textColor: '#3f51b5'
     },
     { 
-      value: "DELIVERED",
+      value: "COMPLETED",
       label: "Đã nhận hàng",
       icon: <CheckCircleIcon fontSize="small" />,
       bgColor: alpha('#4caf50', 0.1),
