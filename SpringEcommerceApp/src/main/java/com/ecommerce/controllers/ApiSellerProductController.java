@@ -6,8 +6,10 @@ import com.ecommerce.pojo.Store;
 import com.ecommerce.pojo.User;
 import com.ecommerce.services.CategoryService;
 import com.ecommerce.services.ProductService;
+import com.ecommerce.services.RecentActivityService;
 import com.ecommerce.services.StoreService;
 import com.ecommerce.services.UserService;
+import com.ecommerce.utils.IpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +31,7 @@ import java.util.Map;
         "Authorization" }, exposedHeaders = { "Access-Control-Allow-Origin",
                 "Access-Control-Allow-Credentials" }, methods = { RequestMethod.GET, RequestMethod.POST,
                         RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }, maxAge = 3600)
-public class ApiSellerProductController {
-
-    @Autowired
+public class ApiSellerProductController {    @Autowired
     private ProductService productService;
 
     @Autowired
@@ -41,6 +42,9 @@ public class ApiSellerProductController {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private RecentActivityService recentActivityService;
 
     @GetMapping("")
     public ResponseEntity<?> getProductsForSeller(@AuthenticationPrincipal UserDetails userDetails) {
@@ -118,14 +122,13 @@ public class ApiSellerProductController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @PostMapping(value = "", consumes = { MediaType.APPLICATION_JSON_VALUE, "application/json;charset=UTF-8", "*/*" })
+    }    @PostMapping(value = "", consumes = { MediaType.APPLICATION_JSON_VALUE, "application/json;charset=UTF-8", "*/*" })
     public ResponseEntity<Product> createProduct(
             @RequestBody Product product,
             @RequestParam("storeId") Long storeId,
             @RequestParam("categoryId") Long categoryId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest request) {
         try {
             // Log incoming request for debugging
             System.out.println("Received createProduct request with product: " + product);
@@ -151,12 +154,17 @@ public class ApiSellerProductController {
             if (category == null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            product.setCategory(category);
-
-            // Ensure the product is active by default
+            product.setCategory(category);            // Ensure the product is active by default
             product.setActive(true);
 
-            Product createdProduct = productService.save(product);
+            Product createdProduct = productService.save(product);            // Log product creation activity
+            recentActivityService.logProductAdded(
+                currentUser.getEmail(),
+                currentUser.getFullname() != null ? currentUser.getFullname() : currentUser.getUsername(),
+                createdProduct.getId(),
+                createdProduct.getName(),
+                IpUtils.getClientIpAddress(request)
+            );
 
             // Force initialize relationships to avoid lazy loading issues
             if (createdProduct.getStore() != null) {
@@ -171,9 +179,7 @@ public class ApiSellerProductController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @PostMapping(value = "/{id}/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    }    @PostMapping(value = "/{id}/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
             @RequestParam("name") String name,
@@ -182,7 +188,8 @@ public class ApiSellerProductController {
             @RequestParam("quantity") Integer quantity,
             @RequestParam("categoryId") Long categoryId,
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest request) {
         try {
             // Log incoming request for debugging
             System.out.println("Received product update request");
@@ -228,6 +235,15 @@ public class ApiSellerProductController {
 
             Product updatedProduct = productService.update(existingProduct);
 
+            // Log product update activity
+            recentActivityService.logProductUpdated(
+                currentUser.getEmail(),
+                currentUser.getFullname() != null ? currentUser.getFullname() : currentUser.getUsername(),
+                updatedProduct.getId(),
+                updatedProduct.getName(),
+                IpUtils.getClientIpAddress(request)
+            );
+
             // Force initialize relationships to avoid lazy loading issues
             if (updatedProduct.getStore() != null) {
                 updatedProduct.getStore().getName();
@@ -249,12 +265,11 @@ public class ApiSellerProductController {
             errorResponse.put("success", false);
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @DeleteMapping("/{id}")
+    }    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(
             @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest request) {
         try {
             User currentUser = userService.findByUsername(userDetails.getUsername());
             if (currentUser == null) {
@@ -272,8 +287,22 @@ public class ApiSellerProductController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
 
+            // Store product details for activity logging before deletion
+            String productName = existingProduct.getName();
+            Long productId = existingProduct.getId();
+
             // Delete the product
             productService.delete(id);
+
+            // Log product deletion activity
+            recentActivityService.logProductDeleted(
+                currentUser.getEmail(),
+                currentUser.getFullname() != null ? currentUser.getFullname() : currentUser.getUsername(),
+                productId,
+                productName,
+                IpUtils.getClientIpAddress(request)
+            );
+
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             e.printStackTrace();

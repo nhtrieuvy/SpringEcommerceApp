@@ -294,10 +294,15 @@ const Cart = () => {
             severity: 'info'
         });
     };
-    
-    // Proceed to checkout
+      // Proceed to checkout
     const proceedToCheckout = () => {
-        navigate('/checkout');
+        // Pass coupon information to checkout page via navigation state
+        const checkoutState = {
+            couponApplied,
+            discount,
+            couponCode: couponApplied ? couponCode : ''
+        };
+        navigate('/checkout', { state: checkoutState });
     };
     
     // Handle snackbar close

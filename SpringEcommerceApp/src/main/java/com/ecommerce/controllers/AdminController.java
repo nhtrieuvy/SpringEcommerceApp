@@ -5,6 +5,7 @@ import com.ecommerce.pojo.Order;
 import com.ecommerce.pojo.OrderStatusHistory;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Role;
+import com.ecommerce.pojo.Store;
 import com.ecommerce.pojo.User;
 import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.services.CategoryService;
@@ -13,8 +14,11 @@ import com.ecommerce.services.ProductService;
 import com.ecommerce.services.RoleService;
 import com.ecommerce.services.UserService;
 import com.ecommerce.services.StoreService;
+import com.ecommerce.utils.IpUtils;
 
 import com.ecommerce.services.ReportService;
+import com.ecommerce.services.RecentActivityService;
+import com.ecommerce.pojo.RecentActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,6 +37,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,6 +49,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/admin")
@@ -60,10 +68,11 @@ public class AdminController {@Autowired
 
     @Autowired
     private RoleService roleService;    @Autowired
-    private StoreService storeService;
-
-    @Autowired
+    private StoreService storeService;    @Autowired
     private ReportService reportService;
+    
+    @Autowired
+    private RecentActivityService recentActivityService;
     
     @Autowired
     private OrderRepository orderRepository;
@@ -98,10 +107,12 @@ public class AdminController {@Autowired
 
         // Thống kê doanh thu theo tháng cho biểu đồ
         Map<String, Object> revenueData = reportService.generateSalesReport("monthly", fromDate, toDate);
-        model.addAttribute("revenueData", revenueData.get("revenueByPeriod"));
-
-        // Thống kê đơn hàng theo trạng thái
+        model.addAttribute("revenueData", revenueData.get("revenueByPeriod"));        // Thống kê đơn hàng theo trạng thái
         model.addAttribute("orderStatusData", revenueData.get("orderStatus"));
+
+        // Lấy hoạt động gần đây
+        List<RecentActivity> recentActivities = recentActivityService.getRecentActivities(10);
+        model.addAttribute("recentActivities", recentActivities);
 
         // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "dashboard");
@@ -208,14 +219,12 @@ public class AdminController {@Autowired
         int start = page * size;
         int end = Math.min(start + size, allProducts.size());
 
-        List<Product> paginatedProducts = allProducts.subList(start, end);
-
-        // Lấy danh sách danh mục và người dùng có role Seller
+        List<Product> paginatedProducts = allProducts.subList(start, end);        // Lấy danh sách danh mục và stores
         List<Category> categories = categoryService.findAll();
-        List<User> sellers = userService.findByRole("SELLER");
+        List<Store> stores = storeService.findAll(); // Lấy tất cả các cửa hàng thay vì sellers
         model.addAttribute("products", paginatedProducts);
         model.addAttribute("categories", categories);
-        model.addAttribute("sellers", sellers);
+        model.addAttribute("stores", stores); // Truyền stores thay vì sellers
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", (int) Math.ceil((double) allProducts.size() / size));
         // Thêm menu active để đánh dấu menu hiện tại
@@ -307,23 +316,14 @@ public class AdminController {@Autowired
 
         if (toDate == null) {
             toDate = new Date(); // Ngày hiện tại
-        }
-
-        // Lấy dữ liệu báo cáo thống kê từ service
+        }        // Lấy dữ liệu báo cáo thống kê từ service
         Map<String, Object> reportData;
-
         switch (reportType) {
             case "sales":
                 reportData = reportService.generateSalesReport(periodType, fromDate, toDate);
                 break;
-            case "products":
-                reportData = reportService.generateProductReport(fromDate, toDate);
-                break;
-            case "customers":
-                reportData = reportService.generateCustomerReport(fromDate, toDate);
-                break;
-            case "inventory":
-                reportData = reportService.generateInventoryReport();
+            case "sellers":
+                reportData = reportService.generateSellerReport(fromDate, toDate);
                 break;
             default:
                 reportData = reportService.generateSalesReport(periodType, fromDate, toDate);
@@ -614,22 +614,32 @@ public class AdminController {@Autowired
         return "redirect:/admin/users";
     }
 
-    // ==================== Product Management Methods ====================
-
-    @PostMapping("/products/add")
-    public String addProduct(@ModelAttribute Product product,
+    // ==================== Product Management Methods ====================    @PostMapping("/products/add")
+    public String addProduct(@AuthenticationPrincipal UserDetails userDetails,
+            @ModelAttribute Product product,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam Long categoryId,
             @RequestParam(required = false) Long storeId,
+            HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
-        try {
-            // Thiết lập danh mục
+        try {            // Thiết lập danh mục
             Category category = categoryService.findById(categoryId);
             if (category != null) {
                 product.setCategory(category);
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Danh mục không tồn tại!");
                 return "redirect:/admin/products";
+            }
+            
+            // Thiết lập cửa hàng
+            if (storeId != null) {
+                com.ecommerce.pojo.Store store = storeService.findById(storeId);
+                if (store != null) {
+                    product.setStore(store);
+                } else {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Cửa hàng không tồn tại!");
+                    return "redirect:/admin/products";
+                }
             }
 
             // Xử lý tải lên hình ảnh nếu có
@@ -644,7 +654,22 @@ public class AdminController {@Autowired
             product.setActive(true);
 
             // Lưu sản phẩm
-            productService.save(product);
+            Product savedProduct = productService.save(product);
+
+            // Log activity if user is authenticated
+            if (userDetails != null) {
+                User currentUser = userService.findByUsername(userDetails.getUsername());
+                if (currentUser != null) {
+                    String ipAddress = IpUtils.getClientIpAddress(request);
+                    recentActivityService.logProductAdded(
+                        currentUser.getFullname(),
+                        currentUser.getEmail(),
+                        savedProduct.getId(),
+                        savedProduct.getName(),
+                        ipAddress
+                    );
+                }
+            }
 
             redirectAttributes.addFlashAttribute("successMessage", "Thêm sản phẩm thành công!");
         } catch (Exception e) {
@@ -671,13 +696,14 @@ public class AdminController {@Autowired
         model.addAttribute("content", "edit-product :: content");
 
         return "admin";
-    }
-
-    @PostMapping("/products/edit/{id}")
-    public String updateProduct(@PathVariable Long id,
+    }    @PostMapping("/products/edit/{id}")
+    public String updateProduct(@AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
             @ModelAttribute Product product,
             @RequestParam Long categoryId,
+            @RequestParam(required = false) Long storeId,
             @RequestParam(value = "image", required = false) MultipartFile image,
+            HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         try {
             // Lấy thông tin sản phẩm hiện tại
@@ -699,6 +725,14 @@ public class AdminController {@Autowired
             if (category != null) {
                 existingProduct.setCategory(category);
             }
+            
+            // Cập nhật cửa hàng nếu có
+            if (storeId != null) {
+                com.ecommerce.pojo.Store store = storeService.findById(storeId);
+                if (store != null) {
+                    existingProduct.setStore(store);
+                }
+            }
 
             // Xử lý tải lên hình ảnh mới nếu có
             if (image != null && !image.isEmpty()) {
@@ -707,7 +741,22 @@ public class AdminController {@Autowired
             }
 
             // Lưu sản phẩm đã cập nhật
-            productService.update(existingProduct);
+            Product updatedProduct = productService.update(existingProduct);
+
+            // Log activity if user is authenticated
+            if (userDetails != null) {
+                User currentUser = userService.findByUsername(userDetails.getUsername());
+                if (currentUser != null) {
+                    String ipAddress = IpUtils.getClientIpAddress(request);
+                    recentActivityService.logProductUpdated(
+                        currentUser.getFullname(),
+                        currentUser.getEmail(),
+                        updatedProduct.getId(),
+                        updatedProduct.getName(),
+                        ipAddress
+                    );
+                }
+            }
 
             redirectAttributes.addFlashAttribute("successMessage", "Cập nhật sản phẩm thành công!");
         } catch (Exception e) {
@@ -779,12 +828,12 @@ public class AdminController {@Autowired
         }
     }
 
-    // ==================== Order Management Methods ====================
-
-    @PostMapping("/orders/update-status")
-    public String updateOrderStatus(@RequestParam Long orderId,
+    // ==================== Order Management Methods ====================    @PostMapping("/orders/update-status")
+    public String updateOrderStatus(@AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam Long orderId,
             @RequestParam String status,
             @RequestParam(required = false) String note,
+            HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         try {
             Order order = orderService.findById(orderId);
@@ -796,6 +845,7 @@ public class AdminController {@Autowired
 
                 // Lưu thông tin người dùng thực hiện thao tác (nếu có authentication)
                 Long userId = null;
+                User currentUser = null;
                 try {
                     // Lấy thông tin người dùng đang đăng nhập từ Spring Security
                     Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext()
@@ -803,7 +853,7 @@ public class AdminController {@Autowired
                     if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
                         String username = ((org.springframework.security.core.userdetails.UserDetails) principal)
                                 .getUsername();
-                        User currentUser = userService.findByUsername(username);
+                        currentUser = userService.findByUsername(username);
                         if (currentUser != null) {
                             userId = currentUser.getId();
                         }
@@ -814,7 +864,17 @@ public class AdminController {@Autowired
                 orderService.updateWithoutHistory(order);
                 
                 // Thêm lịch sử trạng thái với ghi chú
-                orderService.addOrderStatusHistory(order, status, note, userId);
+                orderService.addOrderStatusHistory(order, status, note, userId);                // Log activity if user is authenticated
+                if (userDetails != null && currentUser != null) {
+                    String ipAddress = IpUtils.getClientIpAddress(request);
+                    recentActivityService.logOrderStatusChanged(
+                        currentUser.getEmail(),
+                        currentUser.getFullname(),
+                        order.getId(),
+                        status,
+                        ipAddress
+                    );
+                }
 
                 // Nếu trạng thái là completed, có thể thực hiện các hành động bổ sung
                 if ("COMPLETED".equals(status)) {

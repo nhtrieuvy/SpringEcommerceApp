@@ -1,0 +1,20 @@
+// Firestore Security Rules for Ecommerce Chat
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write access to conversations for any user (for testing)
+    match /conversations/{conversationId} {
+      allow read, write: if true;
+    }
+    
+    // Allow read/write access to messages within conversations (for testing)
+    match /conversations/{conversationId}/messages/{messageId} {
+      allow read, write: if true;
+    }
+    
+    // For testing purposes - allow all access
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -18,7 +18,8 @@ import java.util.Set;
  */
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     
-    private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationSuccessHandler.class);    @Override
+    private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationSuccessHandler.class);    
+    @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
         

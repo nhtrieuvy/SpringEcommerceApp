@@ -4,23 +4,29 @@ import com.ecommerce.dtos.ProductComparisonDTO;
 import com.ecommerce.pojo.Category;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Store;
+import com.ecommerce.pojo.User;
 import com.ecommerce.services.CategoryService;
 import com.ecommerce.services.ProductService;
+import com.ecommerce.services.RecentActivityService;
 import com.ecommerce.services.StoreService;
+import com.ecommerce.services.UserService;
+import com.ecommerce.utils.IpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/products")
 @CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", maxAge = 3600)
-public class ApiProductController {
-
-    @Autowired
+public class ApiProductController {    @Autowired
     private ProductService productService;
 
     @Autowired
@@ -28,6 +34,12 @@ public class ApiProductController {
 
     @Autowired
     private StoreService storeService;
+
+    @Autowired
+    private RecentActivityService recentActivityService;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping("")
     public ResponseEntity<?> getAllProducts(@RequestParam(value = "q", required = false) String keyword) {
@@ -59,13 +71,13 @@ public class ApiProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching product: " + e.getMessage());
         }
-    }
-
-    @PostMapping(value = "", consumes = { MediaType.APPLICATION_JSON_VALUE, "application/json" })
+    }    @PostMapping(value = "", consumes = { MediaType.APPLICATION_JSON_VALUE, "application/json" })
     public ResponseEntity<Product> createProduct(
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Product product,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long storeId) {
+            @RequestParam(required = false) Long storeId,
+            HttpServletRequest request) {
         try {
             // Log incoming request data for debugging
             System.out.println("Received product: " + product);
@@ -98,19 +110,34 @@ public class ApiProductController {
                 savedProduct.getCategory().getName();
             }
 
+            // Log activity if user is authenticated
+            if (userDetails != null) {
+                User currentUser = userService.findByUsername(userDetails.getUsername());
+                if (currentUser != null) {
+                    String ipAddress = IpUtils.getClientIpAddress(request);
+                    recentActivityService.logProductAdded(
+                        currentUser.getFullname(),
+                        currentUser.getEmail(),
+                        savedProduct.getId(),
+                        savedProduct.getName(),
+                        ipAddress
+                    );
+                }
+            }
+
             return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @PutMapping(value = "/{id}", consumes = { MediaType.APPLICATION_JSON_VALUE })
+    }    @PutMapping(value = "/{id}", consumes = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<Product> updateProduct(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
             @RequestBody Product product,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long storeId) {
+            @RequestParam(required = false) Long storeId,
+            HttpServletRequest request) {
         try {
             // Check if product exists
             Product existingProduct = productService.findById(id);
@@ -153,15 +180,31 @@ public class ApiProductController {
                 updatedProduct.getCategory().getName();
             }
 
+            // Log activity if user is authenticated
+            if (userDetails != null) {
+                User currentUser = userService.findByUsername(userDetails.getUsername());
+                if (currentUser != null) {
+                    String ipAddress = IpUtils.getClientIpAddress(request);
+                    recentActivityService.logProductUpdated(
+                        currentUser.getFullname(),
+                        currentUser.getEmail(),
+                        updatedProduct.getId(),
+                        updatedProduct.getName(),
+                        ipAddress
+                    );
+                }
+            }
+
             return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+    }    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long id,
+            HttpServletRequest request) {
         try {
             // Check if product exists
             Product existingProduct = productService.findById(id);
@@ -169,7 +212,26 @@ public class ApiProductController {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
+            // Capture product details before deletion for activity logging
+            String productName = existingProduct.getName();
+
             productService.delete(id);
+
+            // Log activity if user is authenticated
+            if (userDetails != null) {
+                User currentUser = userService.findByUsername(userDetails.getUsername());
+                if (currentUser != null) {
+                    String ipAddress = IpUtils.getClientIpAddress(request);
+                    recentActivityService.logProductDeleted(
+                        currentUser.getFullname(),
+                        currentUser.getEmail(),
+                        id,
+                        productName,
+                        ipAddress
+                    );
+                }
+            }
+
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             e.printStackTrace();

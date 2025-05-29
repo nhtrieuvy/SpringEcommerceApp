@@ -1,6 +1,7 @@
 package com.ecommerce.services.impl;
 
 import com.ecommerce.pojo.Order;
+import com.ecommerce.pojo.OrderDetail;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.User;
 import com.ecommerce.services.OrderService;
@@ -11,8 +12,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 @Transactional
@@ -66,11 +78,16 @@ public class ReportServiceImpl implements ReportService {
         
         // Doanh thu theo danh mục
         Map<String, Double> categoryRevenue = orderService.getRevenueByCategoryDateRange(fromDate, toDate);
-        reportData.put("categoryRevenue", convertToChartData(categoryRevenue));
+        reportData.put("categoryRevenue", convertToChartData(categoryRevenue));        // Top sản phẩm bán chạy (cho biểu đồ)
+        Map<String, Integer> topProductsChart = orderService.getTopSellingProducts(5);
+        reportData.put("topProductsChart", convertToChartData(topProductsChart));
+          // Chi tiết thống kê theo danh mục
+        List<Map<String, Object>> categoryStats = generateCategoryStats(orders, totalRevenue);
+        reportData.put("categoryStats", categoryStats != null ? categoryStats : new ArrayList<>());
         
-        // Top sản phẩm bán chạy
-        Map<String, Integer> topProducts = orderService.getTopSellingProducts(5);
-        reportData.put("topProducts", convertToChartData(topProducts));
+        // Chi tiết top sản phẩm bán chạy 
+        List<Map<String, Object>> topProductsDetails = generateTopProductsDetails(orders, totalRevenue);
+        reportData.put("topProducts", topProductsDetails != null ? topProductsDetails : new ArrayList<>());
         
         return reportData;
     }
@@ -82,34 +99,74 @@ public class ReportServiceImpl implements ReportService {
         // Lấy tất cả sản phẩm
         List<Product> products = productService.findAll();
         
-        // Tính số lượng sản phẩm theo trạng thái
-        long activeProducts = products.stream().filter(Product::isActive).count();
-        long inactiveProducts = products.size() - activeProducts;
+        // Tổng số sản phẩm
+        int totalProducts = products.size();
+        reportData.put("totalProducts", totalProducts);
         
-        Map<String, Long> productStatus = new HashMap<>();
-        productStatus.put("Đang bán", activeProducts);
-        productStatus.put("Ngừng bán", inactiveProducts);
+        // Sản phẩm hết hàng
+        long outOfStockProducts = products.stream()
+                .filter(p -> p.getQuantity() <= 0)
+                .count();
+        reportData.put("outOfStockProducts", outOfStockProducts);
         
-        reportData.put("totalProducts", products.size());
-        reportData.put("activeProducts", activeProducts);
-        reportData.put("inactiveProducts", inactiveProducts);
-        reportData.put("productStatus", convertToChartData(productStatus));
+        // Sản phẩm sắp hết hàng (< 10)
+        long lowStockProducts = products.stream()
+                .filter(p -> p.getQuantity() > 0 && p.getQuantity() < 10)
+                .count();
+        reportData.put("lowStockProducts", lowStockProducts);
         
-        // Thông tin chi tiết sản phẩm tồn kho thấp
-        List<Map<String, Object>> lowStockProducts = products.stream()
-                .filter(p -> p.getQuantity() < 5 && p.isActive())
-                .map(p -> {
-                    Map<String, Object> productMap = new HashMap<>();
-                    productMap.put("id", p.getId());
-                    productMap.put("name", p.getName());
-                    productMap.put("category", p.getCategory() != null ? p.getCategory().getName() : "Không có danh mục");
-                    productMap.put("price", p.getPrice());
-                    productMap.put("quantity", p.getQuantity());
-                    return productMap;
+        // Giá trị tồn kho
+        double totalInventoryValue = products.stream()
+                .mapToDouble(p -> p.getPrice() * p.getQuantity())
+                .sum();
+        reportData.put("totalInventoryValue", totalInventoryValue);
+        
+        // Lấy đơn hàng trong khoảng thời gian để tính sản phẩm bán chạy
+        List<Order> orders = orderService.findByStatusAndDateRange("COMPLETED", fromDate, toDate);
+        
+        // Thống kê sản phẩm bán chạy
+        Map<Long, Integer> productSales = new HashMap<>();
+        Map<Long, Double> productRevenue = new HashMap<>();
+        
+        for (Order order : orders) {
+            order.getOrderDetails().forEach(detail -> {
+                Long productId = detail.getProduct().getId();
+                int quantity = detail.getQuantity();
+                double revenue = detail.getPrice() * quantity;
+                
+                productSales.merge(productId, quantity, Integer::sum);
+                productRevenue.merge(productId, revenue, Double::sum);
+            });
+        }
+        
+        // Top 10 sản phẩm bán chạy
+        List<Map<String, Object>> topProducts = productSales.entrySet().stream()
+                .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
+                .limit(10)
+                .map(entry -> {
+                    Product product = productService.findById(entry.getKey());
+                    Map<String, Object> productData = new HashMap<>();
+                    productData.put("id", product.getId());
+                    productData.put("name", product.getName());
+                    productData.put("quantitySold", entry.getValue());
+                    productData.put("revenue", productRevenue.get(entry.getKey()));
+                    productData.put("image", product.getImage());
+                    productData.put("categoryName", product.getCategory() != null ? product.getCategory().getName() : "Không xác định");
+                    return productData;
                 })
                 .collect(Collectors.toList());
         
-        reportData.put("lowStockProducts", lowStockProducts);
+        reportData.put("topProducts", topProducts);
+        
+        // Thống kê theo danh mục
+        Map<String, Integer> categoryStats = products.stream()
+                .filter(p -> p.getCategory() != null)
+                .collect(Collectors.groupingBy(
+                        p -> p.getCategory().getName(),
+                        Collectors.summingInt(p -> 1)
+                ));
+        
+        reportData.put("categoryStats", convertToChartData(categoryStats));
         
         return reportData;
     }
@@ -118,47 +175,186 @@ public class ReportServiceImpl implements ReportService {
     public Map<String, Object> generateCustomerReport(Date fromDate, Date toDate) {
         Map<String, Object> reportData = new HashMap<>();
         
-        // Lấy tất cả người dùng
-        List<User> users = userService.findAll();
+        // Lấy tất cả khách hàng (users với role CUSTOMER)
+        List<User> customers = userService.findByRole("CUSTOMER");
         
-        // Số lượng người dùng
-        reportData.put("totalUsers", users.size());
+        // Nếu không có CUSTOMER role, lấy tất cả users trừ ADMIN
+        if (customers.isEmpty()) {
+            customers = userService.findAll().stream()
+                    .filter(user -> !user.getRoles().stream()
+                            .anyMatch(role -> "ADMIN".equals(role.getName())))
+                    .collect(Collectors.toList());
+        }
         
-        // Số lượng người dùng mới trong khoảng thời gian
-        long newUsers = users.stream()
-                .filter(u -> u.getCreatedDate() != null && 
-                           u.getCreatedDate().after(fromDate) && 
-                           u.getCreatedDate().before(toDate))
+        // Tổng số khách hàng
+        int totalCustomers = customers.size();
+        reportData.put("totalCustomers", totalCustomers);
+          // Lấy tất cả đơn hàng và lọc theo ngày
+        List<Order> allOrders = orderService.findAll();
+        List<Order> orders = allOrders.stream()
+                .filter(order -> 
+                    order.getOrderDate() != null &&
+                    (order.getOrderDate().after(fromDate) || order.getOrderDate().equals(fromDate)) && 
+                    (order.getOrderDate().before(toDate) || order.getOrderDate().equals(toDate))
+                )
+                .collect(Collectors.toList());
+        
+        // Khách hàng có đơn hàng trong kỳ
+        Set<Long> activeCustomerIds = orders.stream()
+                .map(order -> order.getUser().getId())
+                .collect(Collectors.toSet());
+        
+        int activeCustomers = activeCustomerIds.size();
+        reportData.put("activeCustomers", activeCustomers);
+        
+        // Khách hàng mới (đăng ký trong kỳ)
+        long newCustomers = customers.stream()
+                .filter(customer -> customer.getCreatedDate() != null)
+                .filter(customer -> 
+                    (customer.getCreatedDate().after(fromDate) || customer.getCreatedDate().equals(fromDate)) && 
+                    (customer.getCreatedDate().before(toDate) || customer.getCreatedDate().equals(toDate))
+                )
                 .count();
+        reportData.put("newCustomers", newCustomers);
         
-        reportData.put("newUsers", newUsers);
+        // Tổng doanh thu từ khách hàng
+        double totalRevenue = orders.stream()
+                .filter(order -> "COMPLETED".equals(order.getStatus()))
+                .mapToDouble(Order::getTotalAmount)
+                .sum();
+        reportData.put("totalRevenue", totalRevenue);
         
-        // Tìm top khách hàng có đơn hàng nhiều nhất
-        Map<Long, Long> userOrderCounts = orderService.findAll().stream()
-                .filter(o -> o.getUser() != null)
-                .collect(Collectors.groupingBy(o -> o.getUser().getId(), Collectors.counting()));
+        // Doanh thu trung bình per khách hàng
+        double avgRevenuePerCustomer = activeCustomers > 0 ? totalRevenue / activeCustomers : 0;
+        reportData.put("avgRevenuePerCustomer", avgRevenuePerCustomer);
         
-        List<Map<String, Object>> topCustomers = userOrderCounts.entrySet().stream()
-                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
-                .limit(5)
+        // Top 10 khách hàng VIP
+        Map<Long, Double> customerRevenue = new HashMap<>();
+        Map<Long, Integer> customerOrders = new HashMap<>();
+        
+        for (Order order : orders) {
+            if ("COMPLETED".equals(order.getStatus())) {
+                Long customerId = order.getUser().getId();
+                customerRevenue.merge(customerId, order.getTotalAmount(), Double::sum);
+                customerOrders.merge(customerId, 1, Integer::sum);
+            }
+        }
+        
+        List<Map<String, Object>> topCustomers = customerRevenue.entrySet().stream()
+                .sorted(Map.Entry.<Long, Double>comparingByValue().reversed())
+                .limit(10)
                 .map(entry -> {
-                    User user = userService.findById(entry.getKey());
-                    Map<String, Object> customerMap = new HashMap<>();
-                    customerMap.put("id", user.getId());
-                    customerMap.put("name", user.getFullname() != null ? user.getFullname() : user.getUsername());
-                    customerMap.put("orderCount", entry.getValue());
-                    
-                    // Tính tổng chi tiêu
-                    double totalSpent = orderService.findByUserId(user.getId()).stream()
-                            .mapToDouble(Order::getTotalAmount)
-                            .sum();
-                    
-                    customerMap.put("totalSpent", totalSpent);
-                    return customerMap;
+                    User customer = userService.findById(entry.getKey());
+                    Map<String, Object> customerData = new HashMap<>();
+                    customerData.put("id", customer.getId());
+                    customerData.put("name", customer.getFullname() != null ? customer.getFullname() : customer.getUsername());
+                    customerData.put("email", customer.getEmail());
+                    customerData.put("revenue", entry.getValue());
+                    customerData.put("orderCount", customerOrders.get(entry.getKey()));
+                    return customerData;
                 })
                 .collect(Collectors.toList());
         
         reportData.put("topCustomers", topCustomers);
+        
+        return reportData;
+    }    @Override
+    public Map<String, Object> generateSellerReport(Date fromDate, Date toDate) {
+        Map<String, Object> reportData = new HashMap<>();
+        
+        // Lấy tất cả người bán (users với role SELLER)
+        List<User> sellers = userService.findByRole("SELLER");
+        
+        System.out.println("DEBUG: Found " + sellers.size() + " sellers with SELLER role");
+        
+        // Nếu không có SELLER, thử lấy tất cả users
+        if (sellers.isEmpty()) {
+            List<User> allUsers = userService.findAll();
+            System.out.println("DEBUG: No SELLER role users found, checking all " + allUsers.size() + " users");
+            sellers = allUsers;
+        }
+        
+        // Tổng số người bán
+        reportData.put("totalSellers", sellers.size());
+        
+        // Tính doanh thu theo từng người bán
+        List<Map<String, Object>> sellerStatsList = new ArrayList<>();
+        Map<String, Double> revenueMap = new HashMap<>();
+        Map<String, Integer> ordersMap = new HashMap<>();
+        double totalRevenue = 0;
+        int totalOrders = 0;
+        int totalProducts = 0;
+        
+        for (User seller : sellers) {
+            List<Order> sellerOrders = orderService.findOrdersBySellerId(seller.getId());
+            
+            // Lọc đơn hàng trong khoảng thời gian
+            List<Order> filteredOrders = sellerOrders.stream()
+                    .filter(order -> 
+                        order.getOrderDate() != null &&
+                        (order.getOrderDate().after(fromDate) || order.getOrderDate().equals(fromDate)) && 
+                        (order.getOrderDate().before(toDate) || order.getOrderDate().equals(toDate))
+                    )
+                    .collect(Collectors.toList());
+            
+            if (!filteredOrders.isEmpty()) {
+                String sellerName = seller.getFullname() != null ? seller.getFullname() : seller.getUsername();
+                double sellerRevenue = filteredOrders.stream()
+                        .mapToDouble(Order::getTotalAmount)
+                        .sum();
+                
+                int orderCount = filteredOrders.size();
+                int productCount = filteredOrders.stream()
+                        .mapToInt(order -> order.getOrderDetails().size())
+                        .sum();
+                  Map<String, Object> sellerStats = new HashMap<>();
+                sellerStats.put("name", sellerName);
+                sellerStats.put("email", seller.getEmail() != null ? seller.getEmail() : "N/A");
+                sellerStats.put("orderCount", orderCount);
+                sellerStats.put("productCount", productCount);
+                sellerStats.put("revenue", sellerRevenue);
+                sellerStats.put("avgRevenue", orderCount > 0 ? sellerRevenue / orderCount : 0);
+                
+                sellerStatsList.add(sellerStats);
+                revenueMap.put(sellerName, sellerRevenue);
+                ordersMap.put(sellerName, orderCount);
+                
+                totalRevenue += sellerRevenue;
+                totalOrders += orderCount;
+                totalProducts += productCount;
+            }
+        }
+        
+        // Tính phần trăm cho mỗi người bán
+        for (Map<String, Object> sellerStats : sellerStatsList) {
+            double revenue = (Double) sellerStats.get("revenue");
+            double percentage = totalRevenue > 0 ? (revenue / totalRevenue) : 0;
+            sellerStats.put("percentage", percentage);
+        }
+        
+        // Sắp xếp theo doanh thu giảm dần
+        sellerStatsList.sort((s1, s2) -> Double.compare((Double) s2.get("revenue"), (Double) s1.get("revenue")));
+        
+        // Top 5 người bán
+        List<Map<String, Object>> topSellers = sellerStatsList.stream()
+                .limit(5)
+                .collect(Collectors.toList());
+        
+        // Số người bán hoạt động
+        long activeSellers = sellerStatsList.size();
+        
+        reportData.put("activeSellers", activeSellers);
+        reportData.put("totalSellerRevenue", totalRevenue);
+        reportData.put("avgRevenuePerSeller", activeSellers > 0 ? totalRevenue / activeSellers : 0);
+        reportData.put("totalOrders", totalOrders);
+        reportData.put("totalProductsSold", totalProducts);
+        
+        // Dữ liệu cho template
+        reportData.put("revenueBySeller", sellerStatsList);
+        reportData.put("topSellers", topSellers);
+        
+        // Dữ liệu cho biểu đồ
+        reportData.put("ordersBySeller", sellerStatsList);
         
         return reportData;
     }
@@ -192,9 +388,184 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public byte[] exportReportToExcel(String reportType, Date fromDate, Date toDate) {
-        // Implementation should use Apache POI to create Excel report
-        // For now, return empty byte array
-        return new byte[0];
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Báo cáo " + getReportTypeName(reportType));
+            
+            // Create header style
+            XSSFCellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            XSSFFont headerFont = workbook.createFont();
+            headerFont.setFontHeightInPoints((short) 12);
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            
+            // Create data based on report type
+            Map<String, Object> reportData = null;
+            
+            switch (reportType) {
+                case "sales":
+                    reportData = generateSalesReport("monthly", fromDate, toDate);
+                    createSalesReportSheet(sheet, headerStyle, reportData);
+                    break;
+                
+                default:
+                    reportData = generateSalesReport("monthly", fromDate, toDate);
+                    createSalesReportSheet(sheet, headerStyle, reportData);
+                    break;
+            }
+            
+            // Auto-size all columns
+            for (int i = 0; i < 10; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            // Write to output stream
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new byte[0];
+        }
+    }
+    
+    private void createSalesReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"Kỳ báo cáo", "Doanh thu (VNĐ)", "Số đơn hàng", "Giá trị trung bình"};
+        
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+        
+        // Add data rows
+        Map<String, Double> revenue = (Map<String, Double>) data.get("revenueByPeriod");
+        Map<String, Integer> orderCounts = (Map<String, Integer>) data.get("orderCountByPeriod");
+        
+        int rowNum = 1;
+        for (Map.Entry<String, Double> entry : revenue.entrySet()) {
+            Row row = sheet.createRow(rowNum++);
+            String period = entry.getKey();
+            Double value = entry.getValue();
+            Integer orderCount = orderCounts.getOrDefault(period, 0);
+            
+            row.createCell(0).setCellValue(period);
+            row.createCell(1).setCellValue(value);
+            row.createCell(2).setCellValue(orderCount);
+            
+            if (orderCount > 0) {
+                row.createCell(3).setCellValue(value / orderCount);
+            } else {
+                row.createCell(3).setCellValue(0);
+            }
+        }
+    }
+    
+    private void createProductReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"Sản phẩm", "Số lượng đã bán", "Doanh thu (VNĐ)"};
+        
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+        
+        // Add data rows
+        Map<String, Integer> topProducts = (Map<String, Integer>) data.get("topProducts");
+        Map<String, Double> productRevenue = (Map<String, Double>) data.get("productRevenue");
+        
+        int rowNum = 1;
+        for (Map.Entry<String, Integer> entry : topProducts.entrySet()) {
+            Row row = sheet.createRow(rowNum++);
+            String productName = entry.getKey();
+            Integer quantity = entry.getValue();
+            Double revenue = productRevenue.getOrDefault(productName, 0.0);
+            
+            row.createCell(0).setCellValue(productName);
+            row.createCell(1).setCellValue(quantity);
+            row.createCell(2).setCellValue(revenue);
+        }
+    }
+    
+    private void createCategoryReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"Danh mục", "Doanh thu (VNĐ)", "Phần trăm"};
+        
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+        
+        // Add data rows
+        Map<String, Double> categoryRevenue = (Map<String, Double>) data.get("categoryRevenue");
+        
+        // Calculate total for percentage
+        double total = categoryRevenue.values().stream().mapToDouble(Double::doubleValue).sum();
+        
+        int rowNum = 1;
+        for (Map.Entry<String, Double> entry : categoryRevenue.entrySet()) {
+            Row row = sheet.createRow(rowNum++);
+            String category = entry.getKey();
+            Double revenue = entry.getValue();
+            double percentage = (total > 0) ? (revenue / total) * 100 : 0;
+            
+            row.createCell(0).setCellValue(category);
+            row.createCell(1).setCellValue(revenue);
+            row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
+        }
+    }
+    
+    private void createUserReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+        // Create header row
+        Row headerRow = sheet.createRow(0);
+        String[] headers = {"Loại người dùng", "Số lượng", "Phần trăm"};
+        
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+        }
+        
+        // Add data rows
+        Map<String, Integer> userCounts = (Map<String, Integer>) data.get("userCountsByRole");
+        
+        // Calculate total for percentage
+        int total = userCounts.values().stream().mapToInt(Integer::intValue).sum();
+        
+        int rowNum = 1;
+        for (Map.Entry<String, Integer> entry : userCounts.entrySet()) {
+            Row row = sheet.createRow(rowNum++);
+            String role = entry.getKey();
+            Integer count = entry.getValue();
+            double percentage = (total > 0) ? ((double)count / total) * 100 : 0;
+            
+            row.createCell(0).setCellValue(role);
+            row.createCell(1).setCellValue(count);
+            row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
+        }
+    }
+    
+    private String getReportTypeName(String reportType) {
+        switch (reportType) {
+            case "sales":
+                return "Doanh thu";
+            case "products":
+                return "Sản phẩm";
+            case "categories":
+                return "Danh mục";
+            case "users":
+                return "Người dùng";
+            default:
+                return "Doanh thu";
+        }
     }
     
     /**
@@ -211,10 +582,91 @@ public class ReportServiceImpl implements ReportService {
             labels.add(entry.getKey().toString());
             values.add(entry.getValue());
         }
-        
-        chartData.put("labels", labels);
+          chartData.put("labels", labels);
         chartData.put("values", values);
         
         return chartData;
+    }
+    
+    /**
+     * Generate detailed category statistics for sales reports
+     */
+    private List<Map<String, Object>> generateCategoryStats(List<Order> orders, double totalRevenue) {
+        Map<String, Integer> categoryOrderCount = new HashMap<>();
+        Map<String, Integer> categoryProductCount = new HashMap<>();
+        Map<String, Double> categoryRevenue = new HashMap<>();
+        
+        for (Order order : orders) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                String categoryName = detail.getProduct().getCategory() != null 
+                    ? detail.getProduct().getCategory().getName() 
+                    : "Không xác định";
+                
+                categoryOrderCount.merge(categoryName, 1, Integer::sum);
+                categoryProductCount.merge(categoryName, detail.getQuantity(), Integer::sum);
+                categoryRevenue.merge(categoryName, detail.getPrice() * detail.getQuantity(), Double::sum);
+            }
+        }
+        
+        List<Map<String, Object>> categoryStats = new ArrayList<>();
+        for (String categoryName : categoryRevenue.keySet()) {
+            Map<String, Object> categoryData = new HashMap<>();
+            double revenue = categoryRevenue.get(categoryName);
+            
+            categoryData.put("name", categoryName);
+            categoryData.put("orderCount", categoryOrderCount.get(categoryName));
+            categoryData.put("productCount", categoryProductCount.get(categoryName));
+            categoryData.put("revenue", revenue);
+            categoryData.put("percentage", totalRevenue > 0 ? revenue / totalRevenue : 0.0);
+            
+            categoryStats.add(categoryData);
+        }
+        
+        // Sort by revenue descending
+        categoryStats.sort((a, b) -> Double.compare((Double) b.get("revenue"), (Double) a.get("revenue")));
+        
+        return categoryStats;
+    }
+    
+    /**
+     * Generate detailed top products statistics for sales reports
+     */
+    private List<Map<String, Object>> generateTopProductsDetails(List<Order> orders, double totalRevenue) {
+        Map<Long, Integer> productQuantities = new HashMap<>();
+        Map<Long, Double> productRevenues = new HashMap<>();
+        Map<Long, Product> productMap = new HashMap<>();
+        
+        for (Order order : orders) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                Long productId = detail.getProduct().getId();
+                productQuantities.merge(productId, detail.getQuantity(), Integer::sum);
+                productRevenues.merge(productId, detail.getPrice() * detail.getQuantity(), Double::sum);
+                productMap.put(productId, detail.getProduct());
+            }
+        }
+        
+        List<Map<String, Object>> topProducts = new ArrayList<>();
+        
+        // Sort products by quantity sold and take top 10
+        productQuantities.entrySet().stream()
+            .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
+            .limit(10)
+            .forEach(entry -> {
+                Long productId = entry.getKey();
+                Product product = productMap.get(productId);
+                double revenue = productRevenues.get(productId);
+                
+                Map<String, Object> productData = new HashMap<>();
+                productData.put("name", product.getName());
+                productData.put("categoryName", product.getCategory() != null ? product.getCategory().getName() : "Không xác định");
+                productData.put("quantitySold", entry.getValue());
+                productData.put("revenue", revenue);
+                productData.put("percentage", totalRevenue > 0 ? revenue / totalRevenue : 0.0);
+                productData.put("image", product.getImage());
+                
+                topProducts.add(productData);
+            });
+        
+        return topProducts;
     }
 }

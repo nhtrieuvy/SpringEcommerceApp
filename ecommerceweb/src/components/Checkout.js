@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -46,8 +46,15 @@ import { formatCurrency } from "../utils/FormatUtils";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const orderCompleteRef = useRef(false);
+
+  // Get coupon information from navigation state
+  const couponInfo = location.state || {};
+  const [couponApplied, setCouponApplied] = useState(couponInfo.couponApplied || false);
+  const [discount, setDiscount] = useState(couponInfo.discount || 0);
+  const [couponCode, setCouponCode] = useState(couponInfo.couponCode || '');
 
   // API Helper Functions
   const getCartItems = async () => {
@@ -123,18 +130,8 @@ const Checkout = () => {
         severity: "error",
       });
       throw error;
-    }
-  };
+    }  };
 
-  const validateCoupon = async (code) => {
-    try {
-      const res = await authApi().post(endpoint.VALIDATE_COUPON, { code });
-      return res.data;
-    } catch (error) {
-      console.error("Error validating coupon:", error);
-      throw error;
-    }
-  };
   // State variables
   const [cartItems, setCartItems] = useState([]);
   const [activeStep, setActiveStep] = useState(0);
@@ -280,20 +277,28 @@ const Checkout = () => {
   // Handle payment method change
   const handlePaymentMethodChange = (method) => {
     setPaymentMethod(method);
-  };
-  // Calculate subtotal from cart items
+  };  // Calculate subtotal from cart items (returns original subtotal without discount)
   const calculateSubtotal = () => {
     return getSubtotal();
+  };
+  
+  // Calculate final total after applying coupon discount
+  const calculateSubtotalWithDiscount = () => {
+    const subtotal = getSubtotal();
+    if (couponApplied && discount > 0) {
+      const discountAmount = subtotal * (discount / 100);
+      return subtotal - discountAmount;
+    }
+    return subtotal;
   };
 
   // Calculate shipping cost
   const calculateShipping = () => {
     return selectedShipping ? selectedShipping.price : 0;
   };
-
   // Calculate total
   const calculateTotal = () => {
-    return calculateSubtotal() + calculateShipping();
+    return calculateSubtotalWithDiscount() + calculateShipping();
   };
   // Format currency to VND
   const formatCurrency = (amount) => {
@@ -400,11 +405,9 @@ const Checkout = () => {
       productId: item.product.id,
       quantity: item.quantity,
       price: item.product.price,
-    }));
-
-    return {
+    }));    return {
       items: simplifiedItems,
-      subtotal: calculateSubtotal(),
+      subtotal: calculateSubtotalWithDiscount(),
       shipping: calculateShipping(),
       shippingMethod: selectedShipping
         ? {
@@ -412,8 +415,12 @@ const Checkout = () => {
             name: selectedShipping.name,
             price: selectedShipping.price,
           }
-        : null,
-      total: calculateTotal(),
+        : null,      total: calculateTotal(),
+      couponInfo: couponApplied ? {
+        couponCode: couponCode,
+        discount: discount,
+        discountAmount: calculateSubtotal() * (discount / 100)
+      } : null,
       shippingInfo: {
         fullName: shippingInfo.fullName,
         phone: shippingInfo.phone,
@@ -957,11 +964,10 @@ const Checkout = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-            }}
-          >
+            }}          >
             <Typography variant="h6">Tổng cộng:</Typography>
             <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-              {formatCurrency(calculateSubtotal())}
+              {formatCurrency(calculateTotal())}
             </Typography>
           </Box>
         </Paper>
@@ -1308,8 +1314,7 @@ const Checkout = () => {
                     p: 2,
                     borderRadius: 2,
                   }}
-                >
-                  <Box
+                >                  <Box
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -1321,6 +1326,25 @@ const Checkout = () => {
                       {formatCurrency(calculateSubtotal())}
                     </Typography>
                   </Box>
+                  
+                  {/* Coupon discount display */}
+                  {couponApplied && discount > 0 && (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 2,
+                      }}
+                    >
+                      <Typography variant="body1">
+                        Giảm giá ({discount}%) - {couponCode}:
+                      </Typography>
+                      <Typography variant="body1" color="error.main" fontWeight="medium">
+                        -{formatCurrency(calculateSubtotal() * (discount / 100))}
+                      </Typography>
+                    </Box>
+                  )}
+                  
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >

@@ -15,8 +15,10 @@ import com.ecommerce.services.OrderDetailService;
 import com.ecommerce.services.ProductService;
 import com.ecommerce.services.UserService;
 import com.ecommerce.services.EmailService;
+import com.ecommerce.services.RecentActivityService;
 import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.utils.JwtUtils;
+import com.ecommerce.utils.IpUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -52,10 +54,11 @@ public class ApiOrderController {
     private ProductService productService;
 
     @Autowired
-    private PaymentService paymentService;
+    private PaymentService paymentService;    @Autowired
+    private EmailService emailService;
 
     @Autowired
-    private EmailService emailService;
+    private RecentActivityService recentActivityService;
 
     @GetMapping("")
     public ResponseEntity<?> getAllOrders(
@@ -213,7 +216,7 @@ public class ApiOrderController {
             // Set initial status if not provided
             if (order.getStatus() == null || order.getStatus().isEmpty()) {
                 order.setStatus("PENDING");
-            } // Save the order
+            }            // Save the order
             orderService.save(order);
 
             // Add order status history
@@ -222,6 +225,15 @@ public class ApiOrderController {
 
             if (user != null) {
                 orderService.addOrderStatusHistory(order, order.getStatus(), "Order created", user.getId());
+                
+                // Log order creation activity
+                String ipAddress = IpUtils.getClientIpAddress(request);
+                recentActivityService.logOrderCreated(
+                    user.getEmail(),
+                    user.getFullname() != null ? user.getFullname() : user.getUsername(),
+                    order.getId(),
+                    ipAddress
+                );
             }
 
             // Send order confirmation email
@@ -350,6 +362,18 @@ public class ApiOrderController {
             else {
                 // Let the orderService.update method create the default history entry with user ID
                 orderService.update(order, userId);
+            }
+            
+            // Log order status change activity
+            if (user != null) {
+                String ipAddress = IpUtils.getClientIpAddress(httpRequest);
+                recentActivityService.logOrderStatusChanged(
+                    user.getEmail(),
+                    user.getFullname() != null ? user.getFullname() : user.getUsername(),
+                    order.getId(),
+                    status,
+                    ipAddress
+                );
             }
             
             // Send status update email
@@ -666,11 +690,19 @@ public class ApiOrderController {
 
             // Create initial order status history entry directly using the helper method
             OrderStatusHistory initialStatus = new OrderStatusHistory(order, order.getStatus(), "Order created", user);
-            order.addStatusHistory(initialStatus);
-            // Save the order with all its relationships in one transaction
+            order.addStatusHistory(initialStatus);            // Save the order with all its relationships in one transaction
             // With proper cascade settings, this will save order details and payment
             // automatically
             orderService.save(order);
+
+            // Log order creation activity
+            String ipAddress = IpUtils.getClientIpAddress(request);
+            recentActivityService.logOrderCreated(
+                user.getEmail(),
+                user.getFullname() != null ? user.getFullname() : user.getUsername(),
+                order.getId(),
+                ipAddress
+            );
 
             // Send order confirmation email
             try {

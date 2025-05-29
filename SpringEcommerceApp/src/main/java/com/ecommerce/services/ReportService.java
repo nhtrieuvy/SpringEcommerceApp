@@ -24,14 +24,21 @@ public interface ReportService {
      * @return Map containing report data
      */
     Map<String, Object> generateProductReport(Date fromDate, Date toDate);
-    
-    /**
+      /**
      * Generate customer report data
      * @param fromDate Start date
      * @param toDate End date
      * @return Map containing report data
      */
     Map<String, Object> generateCustomerReport(Date fromDate, Date toDate);
+    
+    /**
+     * Generate seller report data
+     * @param fromDate Start date
+     * @param toDate End date
+     * @return Map containing report data
+     */
+    Map<String, Object> generateSellerReport(Date fromDate, Date toDate);
     
     /**
      * Generate inventory report data

@@ -17,9 +17,9 @@ public interface UserService extends UserDetailsService {
     User findById(Long id);
     List<User> findAll();
     User findByUsername(String username);
-    User findByEmail(String email);
-    List<User> findByActiveStatus(boolean isActive);
+    User findByEmail(String email);    List<User> findByActiveStatus(boolean isActive);
     List<User> findByRole(String roleName);
+    List<User> searchUsers(String keyword);
     
     // Phương thức mới cho chức năng profile
     void updateAvatar(User user, MultipartFile avatar);
