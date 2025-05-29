@@ -209,15 +209,75 @@ const OrderDetails = () => {
             hour: '2-digit',
             minute: '2-digit'
         });
-    };
-
-    const formatHistoryDate = (dateString) => {
+    };    const formatHistoryDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return {
             date: date.toLocaleDateString('vi-VN'),
             time: date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
         };
+    };    // Helper function to get the correct price for an order item
+    const getItemPrice = (detail) => {
+        // First check if there's a direct price on the order detail
+        if (detail.price && detail.price > 0) return detail.price;
+        
+        // Then check if there's a product with a price
+        if (detail.product && detail.product.price && detail.product.price > 0) 
+            return detail.product.price;
+            
+        // If we have order info with total, try to estimate per-item price
+        if (order && order.totalAmount && order.orderDetails && order.orderDetails.length > 0) {
+            // Calculate an estimated price based on order total and shipping
+            const shippingFee = order.shippingFee || 0;
+            const totalItems = order.orderDetails.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            if (totalItems > 0) {
+                return (order.totalAmount - shippingFee) / totalItems;
+            }
+        }
+        
+        // Last resort, check if we have a "total" on the detail itself
+        if (detail.total && detail.quantity && detail.quantity > 0) {
+            return detail.total / detail.quantity;
+        }
+        
+        // Fallback
+        return 0;
+    };
+    
+    // Helper function to calculate order subtotal from various sources
+    const calculateOrderSubtotal = (orderData) => {
+        // If we don't have order data, return 0
+        if (!orderData) return 0;
+        
+        // Always check if we have a direct total amount and use that as fallback
+        const totalAmount = orderData.totalAmount || 0;
+        
+        // If the order has original subtotal or subtotal directly, use it
+        if (orderData.originalSubtotal && orderData.originalSubtotal > 0) return orderData.originalSubtotal;
+        if (orderData.subtotal && orderData.subtotal > 0) return orderData.subtotal;
+        
+        // If the order has order details, calculate from them
+        if (orderData.orderDetails && orderData.orderDetails.length > 0) {
+            const calculatedSum = orderData.orderDetails.reduce((sum, detail) => {
+                // Prioritize detail.price as it's likely the stored order price
+                const price = detail.price || (detail.product && detail.product.price) || 0;
+                const quantity = detail.quantity || 1;
+                return sum + (price * quantity);
+            }, 0);
+            
+            // Only return calculated sum if it's greater than 0
+            if (calculatedSum > 0) return calculatedSum;
+        }
+        
+        // If all else fails, check if the total reflects the actual amount
+        // Remove shipping fee if present
+        const shippingFee = orderData.shippingFee || 0;
+        if (totalAmount > shippingFee) {
+            return totalAmount - shippingFee;
+        }
+        
+        // Last resort fallback - use the total amount directly
+        return totalAmount;
     };
 
     // Function to check if the order is cancellable by the user
@@ -575,41 +635,82 @@ const OrderDetails = () => {
                 <Grid item xs={12} lg={4}>
                     {/* Order Summary */}
                     <Card sx={{ mb: 3 }}>
-                        <CardContent>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                        <CardContent>                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
                                 Tóm tắt đơn hàng
                             </Typography>
-                            
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                 <Typography variant="body2">Tạm tính:</Typography>
                                 <Typography variant="body2">
-                                    {formatCurrency(order.subtotal || (order.totalAmount - (order.shippingFee || 0)))}
+                                    {formatCurrency(order.totalAmount || calculateOrderSubtotal(order))}
                                 </Typography>
                             </Box>
+                            
+                            {/* Display coupon discount if available */}
+                            {order.couponInfo && (
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                    <Typography variant="body2" color="error.main">
+                                        Giảm giá{order.couponInfo.couponCode ? ` (${order.couponInfo.couponCode})` : ''}:
+                                    </Typography>
+                                    <Typography variant="body2" color="error.main" fontWeight="medium">
+                                        -{formatCurrency(order.couponInfo.discountAmount || 
+                                        (order.couponInfo.discount ? 
+                                            (order.originalSubtotal || order.subtotal || order.totalAmount) * (order.couponInfo.discount / 100) 
+                                            : 0))}
+                                    </Typography>
+                                </Box>
+                            )}
                             
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                 <Typography variant="body2">Phí vận chuyển:</Typography>
                                 <Typography variant="body2">
-                                    {formatCurrency(order.shippingFee || 0)}
+                                    {order.shippingFee && order.shippingFee > 0 
+                                        ? formatCurrency(order.shippingFee) 
+                                        : <span style={{ color: 'green' }}>Miễn phí</span>}
                                 </Typography>
                             </Box>
                             
                             <Divider sx={{ my: 1 }} />
-                            
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Tổng cộng:</Typography>
                                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                                    {formatCurrency(order.totalAmount)}
+                                    {formatCurrency(order.totalAmount || 0)}
                                 </Typography>
+                            </Box>{/* Payment method and status */}
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                    Phương thức thanh toán:
+                                </Typography>
+                                <Chip
+                                    icon={<PaymentIcon />}
+                                    label={order.payment?.paymentMethod || order.paymentMethod || 'Chưa xác định'}
+                                    color="primary"
+                                    variant="outlined"
+                                    sx={{ width: '100%', mb: 1 }}
+                                />
+                                
+                                {order.payment && (
+                                    <Box sx={{ mt: 1 }}>
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            Trạng thái thanh toán:
+                                        </Typography>
+                                        <Chip
+                                            label={order.payment.status === 'COMPLETED' ? 'Đã thanh toán' : 
+                                                  order.payment.status === 'PENDING' ? 'Chờ thanh toán' : 
+                                                  order.payment.status === 'FAILED' ? 'Thanh toán thất bại' : 'Chưa thanh toán'}
+                                            color={order.payment.status === 'COMPLETED' ? 'success' : 
+                                                  order.payment.status === 'PENDING' ? 'warning' : 
+                                                  order.payment.status === 'FAILED' ? 'error' : 'default'}
+                                            variant="outlined"
+                                            sx={{ width: '100%' }}
+                                        />
+                                        {order.payment.transactionId && (
+                                            <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                                                Mã giao dịch: {order.payment.transactionId}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )}
                             </Box>
-
-                            <Chip
-                                icon={<PaymentIcon />}
-                                label={order.payment?.paymentMethod || order.paymentMethod || 'Chưa xác định'}
-                                color="primary"
-                                variant="outlined"
-                                sx={{ width: '100%' }}
-                            />
                         </CardContent>
                     </Card>
 
@@ -637,45 +738,70 @@ const OrderDetails = () => {
                                 <Typography variant="body2">
                                     {order.user?.phone || order.customerPhone || 'Chưa có SĐT'}
                                 </Typography>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            </Box>                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                 <EmailIcon fontSize="small" color="action" />
                                 <Typography variant="body2">
                                     {order.user?.email || order.customerEmail || 'Chưa có email'}
                                 </Typography>
                             </Box>
+                            
+                            {/* Display customer notes if available */}
+                            {(order.notes || order.shippingInfo?.notes) && (
+                                <Box sx={{ mt: 2, p: 1, bgcolor: 'rgba(0,0,0,0.03)', borderRadius: 1 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                        Ghi chú từ khách hàng:
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontStyle: 'italic', mt: 0.5 }}>
+                                        "{order.notes || order.shippingInfo?.notes}"
+                                    </Typography>
+                                </Box>
+                            )}
                         </CardContent>
                     </Card>
                 </Grid>
-            </Grid>
-
-            {/* Order Items */}
+            </Grid>            {/* Order Items */}
             <Card sx={{ mt: 3 }}>
                 <CardContent>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 3 }}>
-                        Sản phẩm đã đặt ({order.orderDetails?.length || 0} mặt hàng)
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            Sản phẩm đã đặt ({order.orderDetails?.length || 0} mặt hàng)
+                        </Typography>
+                        <Chip 
+                            label={`Mã đơn: #${order.id}`}
+                            color="primary"
+                            variant="outlined"
+                            size="small"
+                        />
+                    </Box>
 
                     {order.orderDetails && order.orderDetails.length > 0 ? (
                         order.orderDetails.map((detail, index) => (
-                            <Box key={index}>
-                                <Grid container spacing={2} alignItems="center">
+                            <Box key={index}>                                <Grid container spacing={2} alignItems="center">
                                     <Grid item xs={12} sm={2}>
                                         <Avatar
-                                            src={detail.product?.image || detail.product?.images?.[0]}
+                                            src={detail.product?.image || detail.product?.images?.[0] || '/images/placeholder.png'}
                                             alt={detail.product?.name}
                                             variant="rounded"
-                                            sx={{ width: 80, height: 80 }}
+                                            sx={{ width: 80, height: 80, bgcolor: 'grey.200' }}
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={4}>
                                         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                            {detail.product?.name || 'Sản phẩm'}
+                                            {detail.product?.name || detail.productName || 'Sản phẩm'}
                                         </Typography>
+                                        {detail.product?.seller && (
+                                            <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                                                Người bán: {detail.product.seller.name || detail.product.seller.username}
+                                            </Typography>
+                                        )}
                                         {detail.product?.category && (
                                             <Typography variant="body2" color="text.secondary">
                                                 Danh mục: {detail.product.category.name}
+                                            </Typography>
+                                        )}
+                                        {detail.productCode && (
+                                            <Typography variant="body2" color="text.secondary">
+                                                Mã sản phẩm: {detail.productCode || detail.product?.code}
                                             </Typography>
                                         )}
                                     </Grid>
@@ -686,13 +812,12 @@ const OrderDetails = () => {
                                         <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                             {detail.quantity}
                                         </Typography>
-                                    </Grid>
-                                    <Grid item xs={6} sm={2}>
+                                    </Grid>                                    <Grid item xs={6} sm={2}>
                                         <Typography variant="body2" color="text.secondary">
                                             Đơn giá:
                                         </Typography>
                                         <Typography variant="body1">
-                                            {formatCurrency(detail.price || detail.product?.price || 0)}
+                                            {formatCurrency(getItemPrice(detail))}
                                         </Typography>
                                     </Grid>
                                     <Grid item xs={12} sm={2}>
@@ -700,7 +825,7 @@ const OrderDetails = () => {
                                             Thành tiền:
                                         </Typography>
                                         <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                                            {formatCurrency((detail.price || detail.product?.price || 0) * detail.quantity)}
+                                            {formatCurrency(getItemPrice(detail) * detail.quantity)}
                                         </Typography>
                                     </Grid>
                                 </Grid>

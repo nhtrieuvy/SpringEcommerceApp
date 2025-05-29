@@ -50,8 +50,8 @@ function initTooltips() {
  * Khởi tạo DataTables nếu có
  */
 function initDataTables() {
-    // Kiểm tra nếu DataTable script đã được load
-    if (typeof $.fn.DataTable !== 'undefined') {
+    // Kiểm tra nếu jQuery và DataTable script đã được load
+    if (typeof $ !== 'undefined' && typeof $.fn.DataTable !== 'undefined') {
         $('.data-table').DataTable({
             responsive: true,
             language: {
@@ -66,6 +66,8 @@ function initDataTables() {
                 }
             }
         });
+    } else {
+        console.warn('jQuery or DataTables not available, skipping DataTables initialization');
     }
 }
 

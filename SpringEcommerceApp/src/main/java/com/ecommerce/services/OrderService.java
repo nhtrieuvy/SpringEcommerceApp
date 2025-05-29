@@ -18,6 +18,7 @@ public interface OrderService {    void save(Order order);
     List<Order> findByStatusAndDateRange(String status, Date fromDate, Date toDate);
     Map<String, Long> getOrderCountByStatus();
     Map<String, Double> getRevenueByDateRange(String groupBy, Date fromDate, Date toDate);
+    Map<String, Integer> getOrderCountByDateRange(String groupBy, Date fromDate, Date toDate);
     Map<String, Integer> getTopSellingProducts(int limit);
     Map<String, Double> getRevenueByCategoryDateRange(Date fromDate, Date toDate);
     byte[] generateOrderExcel(List<Order> orders);

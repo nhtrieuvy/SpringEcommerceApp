@@ -20,8 +20,9 @@ public interface UserRepository {
     User findByUsername(String username);
 
     User findByEmail(String email);
-    
-    List<User> findByActiveStatus(boolean isActive);
+      List<User> findByActiveStatus(boolean isActive);
     
     List<User> findByRole(String roleName);
+    
+    List<User> searchUsers(String keyword);
 }

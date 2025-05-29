@@ -50,20 +50,19 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
-                            <thead class="table-dark">
-                                <tr>
+                            <thead>                                <tr>
                                     <th>ID</th>
                                     <th>Ảnh</th>
                                     <th>Tên sản phẩm</th>
                                     <th>Giá</th>
                                     <th>Danh mục</th>
-                                    <th>Người bán</th>
+                                    <th>Cửa hàng</th>
                                     <th>Trạng thái</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="product : ${products}" style="border: 2px solid red;">
+                                <tr th:each="product : ${products}">
                                     <td th:text="${product.id}"></td>
                                     <td>
                                         <img th:src="${product.image}" class="img-thumbnail" width="50" alt="Product Image">
@@ -71,9 +70,14 @@
                                     <td>
                                         <a th:href="@{/products/{id}(id=${product.id})}" th:text="${product.name}" target="_blank"></a>
                                     </td>
-                                    <td th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
-                                    <td th:text="${product.category != null ? product.category.name : 'Không có'}"></td>
-                                    <td th:text="${product.seller != null && product.seller.store != null ? product.seller.store.name : 'Không có'}"></td>
+                                    <td th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>                                    <td th:text="${product.category != null ? product.category.name : 'Không có'}"></td>
+                                    <td>
+                                        <span th:if="${product.store != null}">
+                                            <strong th:text="${product.store.name}"></strong><br/>
+                                            <small th:if="${product.store.seller != null}" th:text="'Chủ: ' + ${product.store.seller.fullname}"></small>
+                                        </span>
+                                        <span th:unless="${product.store != null}">Không có</span>
+                                    </td>
                                     <td>
                                         <span th:if="${product.active}" class="badge rounded-pill text-bg-success">Đang bán</span>
                                         <span th:unless="${product.active}" class="badge rounded-pill text-bg-danger">Ngừng bán</span>
@@ -146,12 +150,11 @@
                                             <option value="" selected>Chọn danh mục</option>
                                             <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}"></option>
                                         </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="sellerId" class="form-label">Người bán</label>
-                                        <select class="form-select" id="sellerId" name="sellerId" required>
-                                            <option value="" selected>Chọn người bán</option>
-                                            <option th:each="seller : ${sellers}" th:value="${seller.id}" th:text="${seller.store.name}"></option>
+                                    </div>                                    <div class="col-md-6">
+                                        <label for="storeId" class="form-label">Cửa hàng</label>
+                                        <select class="form-select" id="storeId" name="storeId" required>
+                                            <option value="" selected>Chọn cửa hàng</option>
+                                            <option th:each="store : ${stores}" th:value="${store.id}" th:text="${store.name}"></option>
                                         </select>
                                     </div>
                                 </div>
@@ -204,11 +207,10 @@
                                         <select class="form-select" id="editCategory" name="categoryId" required>
                                             <option th:each="category : ${categories}" th:value="${category.id}" th:selected="${product.category != null && product.category.id == category.id}" th:text="${category.name}"></option>
                                         </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="editSellerId" class="form-label">Người bán</label>
-                                        <select class="form-select" id="editSellerId" name="sellerId" required>
-                                            <option th:each="seller : ${sellers}" th:value="${seller.id}" th:selected="${product.seller != null && product.seller.id == seller.id}" th:text="${seller.store.name}"></option>
+                                    </div>                                    <div class="col-md-6">
+                                        <label for="editStoreId" class="form-label">Cửa hàng</label>
+                                        <select class="form-select" id="editStoreId" name="storeId" required>
+                                            <option th:each="store : ${stores}" th:value="${store.id}" th:selected="${product.store != null && product.store.id == store.id}" th:text="${store.name}"></option>
                                         </select>
                                     </div>
                                 </div>

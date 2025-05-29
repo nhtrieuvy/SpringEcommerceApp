@@ -3,9 +3,6 @@ package com.ecommerce.pojo;
 import java.util.Date;
 import jakarta.persistence.*;
 
-
-import jakarta.persistence.*;
-
 @Entity
 @Table(name = "review_replies")
 public class ReviewReply {

@@ -239,12 +239,12 @@ const App = () => {
                   <AuthenticatedRoute>
                     <OrderDetails />
                   </AuthenticatedRoute>
-                } />
-                <Route path="/momo/return" element={
+                } />                <Route path="/momo/return" element={
                   <AuthenticatedRoute>
                     <MoMoReturn />
                   </AuthenticatedRoute>
                 } />
+                
               </Routes>
             </PageLayout>
             <Footer />

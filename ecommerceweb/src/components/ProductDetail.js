@@ -65,11 +65,13 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import ReadMoreIcon from '@mui/icons-material/ReadMore';
+import MessageIcon from '@mui/icons-material/Message';
 
 import { defaultApi, authApi, endpoint } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
 import '../styles/CartStyles.css';
 import { formatCurrency } from '../utils/FormatUtils';
+import ProductChatDialog from './ProductChatDialog';
 
 // Định nghĩa các hàm API trực tiếp trong component
 const addToCart = async (product, quantity = 1) => {
@@ -148,20 +150,25 @@ const ProductDetail = () => {
     const [activeTab, setActiveTab] = useState(0);
     const [selectedImage, setSelectedImage] = useState(0);
     const [relatedProducts, setRelatedProducts] = useState([]);
+    
+    // States for reviews
     const [reviews, setReviews] = useState([]);
+    const [reviewsLoading, setReviewsLoading] = useState(false);
+    const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+    const [editingReview, setEditingReview] = useState(null);
+    const [newReview, setNewReview] = useState({
+        rating: 5,
+        comment: '',
+    });
+    
+    // Chat dialog state
+    const [chatDialogOpen, setChatDialogOpen] = useState(false);
     
     // State for pagination of related products
     const [currentPage, setCurrentPage] = useState(1);
     const [productsPerPage] = useState(4); // Show 4 products per page
     const [totalPages, setTotalPages] = useState(0);
     
-    const [reviewsLoading, setReviewsLoading] = useState(false);
-    const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-    const [newReview, setNewReview] = useState({
-        rating: 5,
-        comment: '',
-    });
-    const [editingReview, setEditingReview] = useState(null);
     const [replyDialogOpen, setReplyDialogOpen] = useState(false);
     const [replyToReviewId, setReplyToReviewId] = useState(null);
     const [replyContent, setReplyContent] = useState('');
@@ -362,30 +369,39 @@ const ProductDetail = () => {
         setReviewDialogOpen(true);
     };
     
-    // Handle closing review dialog
     const handleCloseReviewDialog = () => {
         setReviewDialogOpen(false);
-        setNewReview({ rating: 5, comment: '' });
         setEditingReview(null);
     };
     
-    // Handle review input change
-    const handleReviewChange = (e) => {
-        const { name, value } = e.target;
-        setNewReview(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    // Handle chat dialog
+    const handleOpenChatDialog = () => {
+        if (!isAuthenticated) {
+            setSnackbar({
+                open: true,
+                message: 'Vui lòng đăng nhập để nhắn tin với người bán',
+                severity: 'warning'
+            });
+            return;
+        }
+        
+        if (!product?.store?.seller?.id) {
+            setSnackbar({
+                open: true,
+                message: 'Không thể tìm thấy thông tin người bán',
+                severity: 'error'
+            });
+            return;
+        }
+        
+        setChatDialogOpen(true);
+    };
+
+    const handleCloseChatDialog = () => {
+        setChatDialogOpen(false);
     };
     
-    // Handle review rating change
-    const handleRatingChange = (event, newValue) => {
-        setNewReview(prev => ({
-            ...prev,
-            rating: newValue
-        }));
-    };
-      // Submit product review (CONSOLIDATED AND FINAL VERSION)
+    // Submit product review (CONSOLIDATED AND FINAL VERSION)
     const handleReviewSubmit = async () => {
         if (!isAuthenticated) {
             setSnackbar({
@@ -1133,8 +1149,7 @@ const ProductDetail = () => {
                                 >
                                     So sánh sản phẩm tương tự
                                 </Button>
-                                
-                                <Button
+                                  <Button
                                     variant="outlined"
                                     color="primary"
                                     size="large"
@@ -1154,6 +1169,33 @@ const ProductDetail = () => {
                                 >
                                     Mua ngay
                                 </Button>
+                                
+                                {product?.store?.seller?.id && (
+                                    <Button
+                                        variant="outlined"
+                                        color="secondary"
+                                        size="large"
+                                        startIcon={<MessageIcon />}
+                                        onClick={handleOpenChatDialog}
+                                        sx={{
+                                            borderRadius: 2,
+                                            py: 1.5,
+                                            px: 3,
+                                            borderWidth: 2,
+                                            textTransform: 'none',
+                                            fontWeight: 'bold',
+                                            borderColor: 'secondary.main',
+                                            color: 'secondary.main',
+                                            '&:hover': {
+                                                borderColor: 'secondary.dark',
+                                                bgcolor: 'secondary.light',
+                                                color: 'secondary.dark'
+                                            }
+                                        }}
+                                    >
+                                        Nhắn tin với người bán
+                                    </Button>
+                                )}
                             </Box>
                         </Grid>
                     </Grid>
@@ -1781,8 +1823,15 @@ const ProductDetail = () => {
                         disabled={!replyContent.trim()}
                     >
                         Gửi
-                    </Button>
-                </DialogActions>            </Dialog>
+                    </Button>                </DialogActions>            </Dialog>
+            
+            {/* Product Chat Dialog */}
+            <ProductChatDialog
+                open={chatDialogOpen}
+                onClose={handleCloseChatDialog}
+                product={product}
+                seller={product?.store?.seller}
+            />
             
         </Box>
     );

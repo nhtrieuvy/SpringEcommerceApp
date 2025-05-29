@@ -22,7 +22,6 @@ public class OrderSummaryDTO {
     private String paymentMethod;
     private String paymentStatus;
     private Integer itemCount;
-      // Additional fields for seller order management
     private Long customerId;
     private String customerName;
     private String customerEmail;

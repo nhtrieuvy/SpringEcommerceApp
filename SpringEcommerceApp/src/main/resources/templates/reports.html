@@ -1,11 +1,27 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
-<head>    <title>Báo cáo & Thống kê - Quản trị hệ thống</title>
-    <script th:src="@{/js/reports.js}" defer></script>
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6" 
+      th:replace="base :: html(~{::section})">
+<head>
+    <title>Báo cáo & Thống kê - Quản trị hệ thống</title>
 </head>
 <body>
     <section th:fragment="content">
+        <!-- Reports JS - Placed here to ensure it loads after Chart.js from base.html -->
+        <script th:src="@{/js/reports.js}" defer></script>
+        <!-- Custom styles for charts -->
+        <style>
+            .card-body {
+                min-height: 300px;
+                padding: 20px;
+                position: relative;
+            }
+            canvas {
+                display: block !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+        </style>
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Báo cáo & Thống kê</h2>
                 <div>
@@ -21,13 +37,9 @@
             <!-- Date Range Filter -->
             <div class="card mb-4">
                 <div class="card-body">
-                    <form th:action="@{/admin/reports}" method="get" class="row g-3">
-                        <div class="col-md-3">                            <label for="reportType" class="form-label">Loại báo cáo</label>
-                            <select class="form-select" id="reportType" name="reportType">
+                    <form th:action="@{/admin/reports}" method="get" class="row g-3">                        <div class="col-md-3">                            <label for="reportType" class="form-label">Loại báo cáo</label>                            <select class="form-select" id="reportType" name="reportType">
                                 <option value="sales" th:selected="${reportType == 'sales'}">Doanh số bán hàng</option>
-                                <option value="products" th:selected="${reportType == 'products'}">Sản phẩm</option>
-                                <option value="customers" th:selected="${reportType == 'customers'}">Khách hàng</option>
-                                <option value="inventory" th:selected="${reportType == 'inventory'}">Tồn kho</option>
+                                <option value="sellers" th:selected="${reportType == 'sellers'}">Người bán</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -57,11 +69,10 @@
                     </form>
                 </div>
             </div>
-            
-            <!-- Report Content -->
+              <!-- Report Content -->
             <div id="reportContent">
-                <!-- Summary Cards -->
-                <div class="row mb-4">
+                <!-- Summary Cards for Sales Report -->
+                <div class="row mb-4" th:if="${reportType == 'sales'}">
                     <div class="col-md-3">
                         <div class="stats-card bg-primary text-white">
                             <h5>Tổng doanh thu</h5>
@@ -99,135 +110,324 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Main Charts -->
-                <div class="row mb-4">
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Doanh thu theo thời gian</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="revenueTimeChart" height="300"></canvas>
+
+                <!-- Summary Cards for Seller Report -->
+                <div class="row mb-4" th:if="${reportType == 'sellers'}">
+                    <div class="col-md-3">
+                        <div class="stats-card bg-primary text-white">
+                            <h5>Tổng số người bán</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h2 th:text="${reportData.totalSellers}">0</h2>
+                                <i class="fas fa-store fa-2x"></i>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Doanh thu theo danh mục</h5>
+                    <div class="col-md-3">
+                        <div class="stats-card bg-success text-white">
+                            <h5>Người bán hoạt động</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h2 th:text="${reportData.activeSellers}">0</h2>
+                                <i class="fas fa-user-check fa-2x"></i>
                             </div>
-                            <div class="card-body">
-                                <canvas id="categoryRevenueChart" height="300"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card bg-warning text-dark">
+                            <h5>Tổng doanh thu</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h2 th:text="${#numbers.formatDecimal(reportData.totalSellerRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</h2>
+                                <i class="fas fa-money-bill-wave fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-card bg-danger text-white">
+                            <h5>Doanh thu TB/người bán</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h2 th:text="${#numbers.formatDecimal(reportData.avgRevenuePerSeller, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</h2>
+                                <i class="fas fa-chart-line fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>                </div>                <!-- We've removed the Customer Report Summary Cards section -->
+
+                <!-- We've removed the Inventory Report Summary Cards section -->
+                
+                  <!-- Sales Report Charts -->
+                <div th:if="${reportType != 'sellers'}">
+                    <!-- Main Charts -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Doanh thu theo thời gian</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="revenueTimeChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Doanh thu theo danh mục</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="categoryRevenueChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Secondary Charts -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Đơn hàng theo trạng thái</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="orderStatusChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Top 5 sản phẩm bán chạy</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="topProductsChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                </div>
+                
+                <!-- Seller Report Charts -->
+                <div th:if="${reportType == 'sellers'}">
+                    <!-- Main Charts -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Doanh thu theo người bán</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="sellerRevenueChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Đơn hàng theo người bán</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="sellerOrdersChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Secondary Charts -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Top 5 người bán</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="topSellersChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Hiệu suất bán hàng</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="sellerPerformanceChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>                  <!-- Sales Report Detailed Tables -->
+                <div th:if="${reportType == 'sales'}">
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Chi tiết doanh thu theo danh mục</h5>
+                        </div>
+                        <div class="card-body">                            <div class="table-responsive">
+                                <table class="table table-striped data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Danh mục</th>
+                                            <th class="text-center">Số đơn hàng</th>
+                                            <th class="text-center">Sản phẩm bán ra</th>
+                                            <th class="text-end">Doanh thu</th>
+                                            <th class="text-end">% Tổng doanh thu</th>
+                                        </tr>
+                                    </thead><tbody>
+                                        <tr th:if="${reportData.categoryStats != null}" th:each="category : ${reportData.categoryStats}">
+                                            <td th:text="${category.name}"></td>
+                                            <td class="text-center" th:text="${category.orderCount}"></td>
+                                            <td class="text-center" th:text="${category.productCount}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(category.revenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatPercent(category.percentage, 1, 2)}"></td>
+                                        </tr>
+                                        <tr th:if="${reportData.categoryStats == null}">
+                                            <td colspan="5" class="text-center">Không có dữ liệu</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-bold">
+                                            <td>Tổng cộng</td>
+                                            <td class="text-center" th:text="${reportData.totalOrders}"></td>
+                                            <td class="text-center" th:text="${reportData.totalProductsSold}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(reportData.totalRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                            <td class="text-end">100.00%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Top 10 sản phẩm bán chạy nhất</h5>
+                        </div>                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Sản phẩm</th>
+                                            <th>Danh mục</th>
+                                            <th class="text-center">Số lượng bán</th>
+                                            <th class="text-end">Doanh thu</th>
+                                            <th class="text-end">% Tổng doanh thu</th>
+                                        </tr>
+                                    </thead>                                    <tbody>
+                                        <tr th:each="product : ${reportData.topProducts}">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img th:src="${product.image}" width="40" class="me-2" alt="Product image">
+                                                    <div th:text="${product.name}"></div>
+                                                </div>
+                                            </td>
+                                            <td th:text="${product.categoryName}"></td>
+                                            <td class="text-center" th:text="${product.quantitySold}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(product.revenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatPercent(product.percentage, 1, 2)}"></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-bold">
+                                            <td colspan="2">Tổng cộng</td>
+                                            <td class="text-center" th:text="${reportData.totalProductsSold}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(reportData.totalRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                            <td class="text-end">100.00%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Secondary Charts -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Đơn hàng theo trạng thái</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="orderStatusChart" height="250"></canvas>
+
+                <!-- Seller Report Detailed Tables -->
+                <div th:if="${reportType == 'sellers'}">
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Chi tiết doanh thu theo người bán</h5>
+                        </div>
+                        <div class="card-body">                            <div class="table-responsive">
+                                <table class="table table-striped data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Người bán</th>
+                                            <th>Email</th>
+                                            <th class="text-center">Số đơn hàng</th>
+                                            <th class="text-center">Sản phẩm bán</th>
+                                            <th class="text-end">Doanh thu</th>
+                                            <th class="text-end">% Tổng doanh thu</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="seller : ${reportData.revenueBySeller}">
+                                            <td th:text="${seller.name}"></td>
+                                            <td th:text="${seller.email}"></td>
+                                            <td class="text-center" th:text="${seller.orderCount}"></td>
+                                            <td class="text-center" th:text="${seller.productCount}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(seller.revenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatPercent(seller.percentage, 1, 2)}"></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-bold">
+                                            <td colspan="2">Tổng cộng</td>
+                                            <td class="text-center" th:text="${reportData.totalOrders}"></td>
+                                            <td class="text-center" th:text="${reportData.totalProductsSold}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(reportData.totalSellerRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                            <td class="text-end">100.00%</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-light">
-                                <h5 class="mb-0">Top 5 sản phẩm bán chạy</h5>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Top 10 người bán hàng xuất sắc</h5>
+                        </div>                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Người bán</th>
+                                            <th>Email</th>
+                                            <th class="text-center">Số đơn hàng</th>
+                                            <th class="text-end">Doanh thu</th>
+                                            <th class="text-end">Doanh thu TB/Đơn</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="seller : ${reportData.topSellers}">
+                                            <td th:text="${seller.name}"></td>
+                                            <td th:text="${seller.email}"></td>
+                                            <td class="text-center" th:text="${seller.orderCount}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(seller.revenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                            <td class="text-end" th:text="${#numbers.formatDecimal(seller.avgRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="card-body">
-                                <canvas id="topProductsChart" height="250"></canvas>
-                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Detailed Tables -->
-                <div class="card mb-4">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Chi tiết doanh thu theo danh mục</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Danh mục</th>
-                                        <th class="text-center">Số đơn hàng</th>
-                                        <th class="text-center">Sản phẩm bán ra</th>
-                                        <th class="text-end">Doanh thu</th>
-                                        <th class="text-end">% Tổng doanh thu</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="category : ${reportData.categoryStats}">
-                                        <td th:text="${category.name}"></td>
-                                        <td class="text-center" th:text="${category.orderCount}"></td>
-                                        <td class="text-center" th:text="${category.productCount}"></td>
-                                        <td class="text-end" th:text="${#numbers.formatDecimal(category.revenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
-                                        <td class="text-end" th:text="${#numbers.formatPercent(category.percentage, 1, 2)}"></td>
-                                    </tr>
-                                </tbody>
-                                <tfoot>
-                                    <tr class="fw-bold">
-                                        <td>Tổng cộng</td>
-                                        <td class="text-center" th:text="${reportData.totalOrders}"></td>
-                                        <td class="text-center" th:text="${reportData.totalProductsSold}"></td>
-                                        <td class="text-end" th:text="${#numbers.formatDecimal(reportData.totalRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
-                                        <td class="text-end">100.00%</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card mb-4">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Top 10 sản phẩm bán chạy nhất</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Sản phẩm</th>
-                                        <th>Danh mục</th>
-                                        <th class="text-center">Số lượng bán</th>
-                                        <th class="text-end">Doanh thu</th>
-                                        <th class="text-end">% Tổng doanh thu</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="product : ${reportData.topProducts}">
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <img th:src="${product.image}" width="40" class="me-2" alt="Product image">
-                                                <div th:text="${product.name}"></div>
-                                            </div>
-                                        </td>
-                                        <td th:text="${product.categoryName}"></td>
-                                        <td class="text-center" th:text="${product.quantitySold}"></td>
-                                        <td class="text-end" th:text="${#numbers.formatDecimal(product.revenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
-                                        <td class="text-end" th:text="${#numbers.formatPercent(product.percentage, 1, 2)}"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-              <!-- JavaScript for Charts -->
+                </div>            </div>
+            
+            <!-- JavaScript for Charts -->
             <script th:inline="javascript">
                 // Pass data from Thymeleaf to JavaScript
                 const reportData = /*[[${reportData}]]*/ {};
-            </script>
+                
+                // Debug data to console
+                console.log('Chart.js library status:', typeof Chart !== 'undefined' ? 'Loaded' : 'Not loaded');
+                console.log('Report data available:', reportData);
+                
+                // Ensure charts are recreated after the page is fully rendered
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('DOM fully loaded, ensuring charts are initialized');
+                    setTimeout(function() {
+                        if (typeof initializeCharts === 'function') {
+                            console.log('Initializing charts...');
+                            initializeCharts();
+                        } else {
+                            console.error('initializeCharts function not found!');
+                        }
+                    }, 500);
+                });
             </script>
             
             <style>

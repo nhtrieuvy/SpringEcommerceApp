@@ -474,11 +474,16 @@ public class UserServiceImpl implements UserService {
     public List<User> findByActiveStatus(boolean isActive) {
         return userRepository.findByActiveStatus(isActive);
     }
-    
-    @Override
+      @Override
     @Transactional(readOnly = true)
     public List<User> findByRole(String roleName) {
         return userRepository.findByRole(roleName);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> searchUsers(String keyword) {
+        return userRepository.searchUsers(keyword);
     }
     
     @Override
@@ -573,8 +578,6 @@ public class UserServiceImpl implements UserService {
           // Update the request status
         request.setStatus("REJECTED");
         request.setStatusNotes(reason);
-        request.setReviewedDate(new Date());
-        
-        return true;
+        request.setReviewedDate(new Date());        return true;
     }
 }

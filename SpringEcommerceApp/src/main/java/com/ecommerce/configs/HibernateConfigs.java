@@ -67,9 +67,7 @@ public class HibernateConfigs {
         props.setProperty("hibernate.javax.cache.missing_cache_strategy", "create");
         
         return props;
-    }
-
-    @Bean
+    }    @Bean
     public HibernateTransactionManager transactionManager() {
         HibernateTransactionManager transactionManager = new HibernateTransactionManager();
         transactionManager.setSessionFactory(getSessionFactory().getObject());

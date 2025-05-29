@@ -16,6 +16,17 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.NoSuchElementException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @Service
 @Transactional
@@ -248,6 +259,55 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public Map<String, Integer> getOrderCountByDateRange(String groupBy, Date fromDate, Date toDate) {
+        Map<String, Integer> orderCountByPeriod = new LinkedHashMap<>();
+        List<Object[]> results = orderRepository.findOrderCountByDateRange(groupBy, fromDate, toDate);
+
+        SimpleDateFormat dateFormat;
+        if ("daily".equals(groupBy)) {
+            dateFormat = new SimpleDateFormat("dd/MM");
+        } else if ("weekly".equals(groupBy)) {
+            dateFormat = new SimpleDateFormat("'Week 'w, yyyy");
+        } else if ("monthly".equals(groupBy)) {
+            dateFormat = new SimpleDateFormat("MM/yyyy");
+        } else {
+            dateFormat = new SimpleDateFormat("yyyy");
+        }
+
+        for (Object[] result : results) {
+            // Format the date period label
+            String periodLabel;
+            if (result[0] instanceof Integer && result[1] instanceof Integer) {
+                // For monthly grouping (month, year)
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.MONTH, (Integer) result[0] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.YEAR, (Integer) result[1]);
+                periodLabel = dateFormat.format(cal.getTime());
+            } else if (result[0] instanceof Integer && result[1] instanceof Integer && result[2] instanceof Integer) {
+                // For daily grouping (day, month, year)
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.DAY_OF_MONTH, (Integer) result[0]);
+                cal.set(Calendar.MONTH, (Integer) result[1] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.YEAR, (Integer) result[2]);
+                periodLabel = dateFormat.format(cal.getTime());
+            } else if (result[0] instanceof Integer) {
+                // For yearly grouping (year)
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.YEAR, (Integer) result[0]);
+                periodLabel = dateFormat.format(cal.getTime());
+            } else {
+                // Fallback
+                periodLabel = result[0].toString();
+            }
+
+            Long orderCount = (Long) result[result.length - 1];
+            orderCountByPeriod.put(periodLabel, orderCount.intValue());
+        }
+
+        return orderCountByPeriod;
+    }
+
+    @Override
     public Map<String, Integer> getTopSellingProducts(int limit) {
         Map<String, Integer> topProducts = new LinkedHashMap<>();
         List<Object[]> results = orderRepository.findTopSellingProducts(limit);
@@ -279,9 +339,72 @@ public class OrderServiceImpl implements OrderService {
     public byte[] generateOrderExcel(List<Order> orders) {
         // Implementation using Apache POI to create Excel file
         try {
-            // This would be replaced with actual Apache POI code to generate Excel
-            // For now, we'll return a placeholder
-            return new byte[0];
+            // Create a new workbook
+            try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+                // Create sheet
+                XSSFSheet sheet = workbook.createSheet("Đơn hàng");
+                
+                // Create header row
+                Row headerRow = sheet.createRow(0);
+                String[] headers = {"ID", "Ngày đặt", "Khách hàng", "Email", "SĐT", "Trạng thái", "Địa chỉ", "Tổng tiền"};
+                
+                // Style for header
+                XSSFCellStyle headerStyle = workbook.createCellStyle();
+                headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
+                headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                XSSFFont font = workbook.createFont();
+                font.setFontHeightInPoints((short) 12);
+                font.setBold(true);
+                headerStyle.setFont(font);
+                
+                // Add headers
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Add data rows
+                int rowNum = 1;
+                for (Order order : orders) {
+                    Row row = sheet.createRow(rowNum++);
+                    row.createCell(0).setCellValue(order.getId());
+                    
+                    if (order.getOrderDate() != null) {
+                        Cell dateCell = row.createCell(1);
+                        dateCell.setCellValue(new SimpleDateFormat("dd/MM/yyyy HH:mm").format(order.getOrderDate()));
+                    } else {
+                        row.createCell(1).setCellValue("");
+                    }
+                    
+                    if (order.getUser() != null) {
+                        row.createCell(2).setCellValue(order.getUser().getFullname());
+                        row.createCell(3).setCellValue(order.getUser().getEmail());
+                        row.createCell(4).setCellValue(order.getUser().getPhone());
+                    } else {
+                        row.createCell(2).setCellValue("N/A");
+                        row.createCell(3).setCellValue("N/A");
+                        row.createCell(4).setCellValue("N/A");
+                    }
+                    
+                    row.createCell(5).setCellValue(getStatusDisplayName(order.getStatus()));
+                    row.createCell(6).setCellValue(order.getShippingAddress());
+                    
+                    // Format currency
+                    Cell totalCell = row.createCell(7);
+                    totalCell.setCellValue(order.getTotalAmount());
+                }
+                
+                // Auto-size columns
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+                
+                // Write to ByteArrayOutputStream
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                return outputStream.toByteArray();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return new byte[0];

@@ -1,6 +1,5 @@
 package com.ecommerce.services;
 
-import com.ecommerce.pojo.PasswordResetToken;
 import com.ecommerce.pojo.User;
 
 public interface PasswordResetService {

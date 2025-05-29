@@ -231,9 +231,32 @@ public class UserRepositoryImpl implements UserRepository {
             );
             query.setParameter("roleName", roleName);
             
+            return query.getResultList();        } catch (Exception e) {
+            System.err.println("Error finding users by role: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
+    public List<User> searchUsers(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        String normalizedKeyword = keyword.trim().toLowerCase();
+        
+        try {
+            Session session = sessionFactory.getCurrentSession();            Query<User> query = session.createQuery(
+                "FROM User WHERE (LOWER(username) LIKE :keyword OR LOWER(email) LIKE :keyword OR LOWER(fullname) LIKE :keyword) AND isActive = true", 
+                User.class
+            );
+            query.setParameter("keyword", "%" + normalizedKeyword + "%");
+            query.setCacheable(true); // Enable query cache
+            
             return query.getResultList();
         } catch (Exception e) {
-            System.err.println("Error finding users by role: " + e.getMessage());
+            System.err.println("Error searching users: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }

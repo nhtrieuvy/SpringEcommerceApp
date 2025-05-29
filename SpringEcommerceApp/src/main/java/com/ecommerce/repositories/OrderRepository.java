@@ -19,6 +19,7 @@ public interface OrderRepository {
     List<Order> findByStatusAndDateRange(String status, Date fromDate, Date toDate);
     List<Object[]> findOrderCountByStatus();
     List<Object[]> findRevenueByDateRange(String groupBy, Date fromDate, Date toDate);
+    List<Object[]> findOrderCountByDateRange(String groupBy, Date fromDate, Date toDate);
     List<Object[]> findTopSellingProducts(int limit);
     List<Object[]> findRevenueByCategoryDateRange(Date fromDate, Date toDate);
     

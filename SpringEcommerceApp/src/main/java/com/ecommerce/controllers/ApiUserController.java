@@ -2,7 +2,9 @@ package com.ecommerce.controllers;
 
 import com.ecommerce.pojo.User;
 import com.ecommerce.services.UserService;
+import com.ecommerce.services.RecentActivityService;
 import com.ecommerce.utils.JwtUtils;
+import com.ecommerce.utils.IpUtils;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -49,10 +51,11 @@ public class ApiUserController {
     public static class PasswordChangeRequest {
         public String currentPassword;
         public String newPassword;
-    }
+    }    @Autowired
+    private UserService userService;
 
     @Autowired
-    private UserService userService;
+    private RecentActivityService recentActivityService;
 
     @Autowired
     private Cloudinary cloudinary;
@@ -65,11 +68,9 @@ public class ApiUserController {
     @GetMapping("/{id}")
     public User getUserById(@PathVariable("id") Long id) {
         return userService.findById(id);
-    }
-
-    @PostMapping("/register")
+    }    @PostMapping("/register")
     @CrossOrigin(origins = { "https://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*")
-    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> params) {
+    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> params, HttpServletRequest request) {
         try {
             System.out.println("=== REGISTER DEBUG ===");
             System.out.println("Đã nhận request đăng ký dạng JSON");
@@ -136,9 +137,11 @@ public class ApiUserController {
                     e.printStackTrace();
                     System.err.println("Failed to upload avatar: " + e.getMessage());
                 }
-            }
+            }            User savedUser = userService.addUser(user);
 
-            User savedUser = userService.addUser(user);
+            // Log user registration activity
+            String ipAddress = IpUtils.getClientIpAddress(request);
+            recentActivityService.logUserRegistration(savedUser.getEmail(), savedUser.getUsername(), ipAddress);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công", "user", savedUser));
         } catch (Exception e) {
@@ -146,15 +149,14 @@ public class ApiUserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi đăng ký: " + e.getMessage()));
         }
-    }
-
-    @PostMapping(value = "/register-with-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    }    @PostMapping(value = "/register-with-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @CrossOrigin(origins = { "https://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*")
     public ResponseEntity<?> registerUserWithFile(
             @RequestParam("username") String username,
             @RequestParam("email") String email,
             @RequestParam("password") String password,
-            @RequestParam(name = "avatar", required = false) MultipartFile avatar) {
+            @RequestParam(name = "avatar", required = false) MultipartFile avatar,
+            HttpServletRequest request) {
 
         try {
             System.out.println("=== REGISTER WITH FILE DEBUG ===");
@@ -199,15 +201,14 @@ public class ApiUserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi đăng ký: " + e.getMessage()));
         }
-    }
-
-    @PostMapping(value = "/login", consumes = { MediaType.APPLICATION_JSON_VALUE,
+    }    @PostMapping(value = "/login", consumes = { MediaType.APPLICATION_JSON_VALUE,
             MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE })
     @CrossOrigin
     public ResponseEntity<?> login(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String password,
-            @RequestBody(required = false) LoginRequest loginRequestBody) {
+            @RequestBody(required = false) LoginRequest loginRequestBody,
+            HttpServletRequest request) {
         try {
             System.out.println("=== LOGIN DEBUG ===");
             String loginUsername = username;
@@ -248,11 +249,13 @@ public class ApiUserController {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(new AuthResponse(false, "Lỗi hệ thống: User không tồn tại sau khi xác thực", null,
                                     null));
-                }
-
-                // Cập nhật thời gian đăng nhập cuối cùng
+                }                // Cập nhật thời gian đăng nhập cuối cùng
                 user.setLastLogin(new Date());
                 userService.update(user);
+
+                // Log login activity
+                String ipAddress = IpUtils.getClientIpAddress(request);
+                recentActivityService.logUserLogin(user.getEmail(), user.getUsername(), ipAddress);
 
                 // Sử dụng phương thức static để tạo token
                 String token = JwtUtils.generateToken(user.getUsername());
@@ -480,10 +483,67 @@ public class ApiUserController {
                 userService.clearUserCache(user.getUsername());
             }
             
-            return ResponseEntity.ok(Map.of("success", true, "message", "All user caches cleared successfully"));
-        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("success", true, "message", "All user caches cleared successfully"));        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error clearing all caches: " + e.getMessage()));
+    }
+    }
+      @GetMapping("/users/search")
+    @CrossOrigin(origins = { "https://localhost:3000" }, allowCredentials = "true")
+    public ResponseEntity<?> searchUsers(@RequestParam String q) {
+        try {
+            System.out.println("=== USER SEARCH DEBUG ===");
+            System.out.println("Search query: " + q);
+            
+            if (q == null || q.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Search query cannot be empty"));
+            }
+            
+            // Get the current authenticated user to exclude from results
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = null;
+            if (authentication != null && authentication.isAuthenticated()) {
+                currentUsername = authentication.getName();
+            }
+            
+            List<User> users = userService.searchUsers(q);
+            
+            // Filter out the current user from search results
+            if (currentUsername != null) {
+                final String username = currentUsername;                users = users.stream()
+                        .filter(user -> !username.equals(user.getUsername()))
+                        .collect(java.util.stream.Collectors.toList());
+            }
+            
+            // Limit results to prevent overwhelming the UI
+            if (users.size() > 20) {
+                users = users.subList(0, 20);
+            }
+              // Create a simplified response to avoid sending sensitive data
+            List<Map<String, Object>> userResponse = users.stream()
+                    .map(user -> {
+                        Map<String, Object> userMap = new HashMap<>();
+                        userMap.put("id", user.getId());
+                        userMap.put("username", user.getUsername());
+                        userMap.put("fullname", user.getFullname());
+                        userMap.put("avatar", user.getAvatar());                        return userMap;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+            
+            System.out.println("Found " + userResponse.size() + " users");
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "users", userResponse,
+                "count", userResponse.size()
+            ));
+            
+        } catch (Exception e) {
+            System.err.println("Error searching users: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error searching users: " + e.getMessage()));
         }
     }
 }

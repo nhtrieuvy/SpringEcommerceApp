@@ -37,6 +37,7 @@ import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import ChatIcon from '@mui/icons-material/Chat';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import InsightsIcon from '@mui/icons-material/Insights';
@@ -46,6 +47,7 @@ import { endpoint, authApi } from '../configs/Apis';
 import { MyUserContext } from '../configs/MyContexts';
 import '../styles/CartStyles.css';
 import { formatCurrency } from '../utils/FormatUtils';
+import ChatNotifications from '../components/ChatNotifications';
 
 // Định nghĩa các hàm API trực tiếp trong component
 const getCartItems = async () => {
@@ -305,8 +307,7 @@ const Header = () => {
                         )}                        {isMobile ? (
                             <Fragment>                                {/* Mobile menu */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>                                    {user && (
-                                        <Fragment>
-                                            <Tooltip title="Danh sách yêu thích">
+                                        <Fragment>                                            <Tooltip title="Danh sách yêu thích">
                                                 <IconButton 
                                                     color="inherit" 
                                                     component={RouterLink} 
@@ -321,7 +322,8 @@ const Header = () => {
                                                         <FavoriteIcon />
                                                     </Badge>
                                                 </IconButton>
-                                            </Tooltip>
+                                            </Tooltip>                                            {/* Chat Notifications */}
+                                            <ChatNotifications />
                                             <Tooltip title="Giỏ hàng">
                                                 <IconButton color="inherit" onClick={handleCartMenu} className="cart-icon-wrapper">
                                                     <Badge 
@@ -535,7 +537,8 @@ const Header = () => {
                                                     <FavoriteIcon sx={{ color: scrolled ? 'white' : '#f44336' }} />
                                                 </Badge>
                                             </IconButton>
-                                        </Tooltip>
+                                        </Tooltip>                                        {/* Chat Notifications */}
+                                        <ChatNotifications />
                                           {/* Nút giỏ hàng */}                                        <Tooltip title="Giỏ hàng">
                                             <IconButton className="hover-scale cart-icon-wrapper" onClick={handleCartMenu}>
                                                 <Badge 
@@ -804,8 +807,7 @@ const Header = () => {
                                                         color: location.pathname === '/profile' ? 'var(--primary-main)' : 'inherit'
                                                     }}
                                                 >                                                    <AccountCircleIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />                                                    Tài khoản
-                                                </MenuItem>
-                                                <MenuItem 
+                                                </MenuItem>                                                <MenuItem 
                                                     component={RouterLink} 
                                                     to="/orders" 
                                                     onClick={handleUserMenuClose}
@@ -816,7 +818,19 @@ const Header = () => {
                                                 >
                                                     <ShoppingBagIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
                                                     Đơn hàng của tôi
-                                                </MenuItem>                                                {user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
+                                                </MenuItem>
+                                                <MenuItem 
+                                                    component={RouterLink} 
+                                                    to="/chat" 
+                                                    onClick={handleUserMenuClose}
+                                                    sx={{ 
+                                                        gap: 1,
+                                                        color: location.pathname === '/chat' ? 'var(--primary-main)' : 'inherit'
+                                                    }}
+                                                >
+                                                    <ChatIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
+                                                    Tin nhắn
+                                                </MenuItem>{user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
                                                     <Fragment>
                                                         <MenuItem 
                                                             component={RouterLink} 

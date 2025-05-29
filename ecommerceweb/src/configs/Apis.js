@@ -51,6 +51,9 @@ export const endpoint = {
   RESET_PASSWORD: `/api/password/reset`, // Endpoints cho đăng ký và quản lý seller
   REGISTER_SELLER: `/api/seller/register`,
 
+  // Endpoints cho tìm kiếm người dùng (chat)
+  SEARCH_USERS: `/api/users/search`,
+
   // Endpoints cho reviews & ratings
   GET_PRODUCT_REVIEWS: (productId) => `/api/review/product/${productId}`,
   CREATE_PRODUCT_REVIEW: () => `/api/review/product`,
