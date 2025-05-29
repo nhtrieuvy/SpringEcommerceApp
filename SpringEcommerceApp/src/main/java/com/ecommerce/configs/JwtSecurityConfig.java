@@ -1,7 +1,6 @@
 package com.ecommerce.configs;
 
 import com.ecommerce.filters.JwtAuthenticationFilter;
-import com.ecommerce.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,8 +32,6 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtSecurityConfig extends BaseSecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(JwtSecurityConfig.class);
 
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;

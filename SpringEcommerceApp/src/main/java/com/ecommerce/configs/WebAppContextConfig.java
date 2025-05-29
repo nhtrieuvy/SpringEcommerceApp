@@ -42,8 +42,21 @@ public class WebAppContextConfig implements WebMvcConfigurer {
     @Override
     public void configureDefaultServletHandling(DefaultServletHandlerConfigurer configurer) {
         configurer.enable();
-    }    // Thêm cấu hình hỗ trợ JSON message converter    @Override
+    }    // Thêm cấu hình hỗ trợ JSON message converter    
+    @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+        // Add ByteArrayHttpMessageConverter for Excel files first
+        org.springframework.http.converter.ByteArrayHttpMessageConverter byteArrayConverter = 
+            new org.springframework.http.converter.ByteArrayHttpMessageConverter();
+        
+        List<org.springframework.http.MediaType> byteArrayMediaTypes = new java.util.ArrayList<>();
+        byteArrayMediaTypes.add(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
+        byteArrayMediaTypes.add(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        byteArrayConverter.setSupportedMediaTypes(byteArrayMediaTypes);
+        
+        converters.add(byteArrayConverter);
+        
+        // Add JSON converter
         MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
         
         // Thêm nhiều content type hỗ trợ

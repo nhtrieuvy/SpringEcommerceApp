@@ -16,7 +16,6 @@ import com.ecommerce.services.ProductService;
 import com.ecommerce.services.UserService;
 import com.ecommerce.services.EmailService;
 import com.ecommerce.services.RecentActivityService;
-import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.utils.JwtUtils;
 import com.ecommerce.utils.IpUtils;
 
@@ -41,8 +40,6 @@ public class ApiOrderController {
     @Autowired
     private OrderService orderService;
     
-    @Autowired
-    private OrderRepository orderRepository;
 
     @Autowired
     private OrderDetailService orderDetailService;

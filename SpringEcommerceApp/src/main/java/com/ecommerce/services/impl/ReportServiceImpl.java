@@ -72,6 +72,10 @@ public class ReportServiceImpl implements ReportService {
         Map<String, Double> revenueByPeriod = orderService.getRevenueByDateRange(periodType, fromDate, toDate);
         reportData.put("revenueByPeriod", convertToChartData(revenueByPeriod));
         
+        // Đơn hàng theo thời gian (for Excel export)
+        Map<String, Integer> orderCountByPeriod = orderService.getOrderCountByDateRange(periodType, fromDate, toDate);
+        reportData.put("orderCountByPeriod", convertToChartData(orderCountByPeriod));
+        
         // Trạng thái đơn hàng
         Map<String, Long> orderStatusCounts = orderService.getOrderCountByStatus();
         reportData.put("orderStatus", convertToChartData(orderStatusCounts));
@@ -430,8 +434,7 @@ public class ReportServiceImpl implements ReportService {
             return new byte[0];
         }
     }
-    
-    private void createSalesReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+      private void createSalesReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
         // Create header row
         Row headerRow = sheet.createRow(0);
         String[] headers = {"Kỳ báo cáo", "Doanh thu (VNĐ)", "Số đơn hàng", "Giá trị trung bình"};
@@ -440,32 +443,69 @@ public class ReportServiceImpl implements ReportService {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
             cell.setCellStyle(headerStyle);
+        }      // Add data rows - handle chart data format
+        @SuppressWarnings("unchecked")
+        Map<String, Object> revenueChartData = (Map<String, Object>) data.get("revenueByPeriod");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> orderCountChartData = (Map<String, Object>) data.get("orderCountByPeriod");
+        
+        List<String> labels = null;
+        List<Object> revenueValues = null;
+        List<Object> orderCountValues = null;
+        
+        if (revenueChartData != null) {
+            @SuppressWarnings("unchecked")
+            List<String> tempLabels = (List<String>) revenueChartData.get("labels");
+            @SuppressWarnings("unchecked")
+            List<Object> tempValues = (List<Object>) revenueChartData.get("values");
+            labels = tempLabels;
+            revenueValues = tempValues;
         }
         
-        // Add data rows
-        Map<String, Double> revenue = (Map<String, Double>) data.get("revenueByPeriod");
-        Map<String, Integer> orderCounts = (Map<String, Integer>) data.get("orderCountByPeriod");
+        if (orderCountChartData != null) {
+            @SuppressWarnings("unchecked")
+            List<Object> tempOrderCountValues = (List<Object>) orderCountChartData.get("values");
+            orderCountValues = tempOrderCountValues;
+        }
+        
+        // Get basic summary data
+        double totalRevenue = data.get("totalRevenue") != null ? (Double) data.get("totalRevenue") : 0.0;
+        int totalOrders = data.get("totalOrders") != null ? (Integer) data.get("totalOrders") : 0;
+        double avgOrderValue = data.get("avgOrderValue") != null ? (Double) data.get("avgOrderValue") : 0.0;
         
         int rowNum = 1;
-        for (Map.Entry<String, Double> entry : revenue.entrySet()) {
-            Row row = sheet.createRow(rowNum++);
-            String period = entry.getKey();
-            Double value = entry.getValue();
-            Integer orderCount = orderCounts.getOrDefault(period, 0);
-            
-            row.createCell(0).setCellValue(period);
-            row.createCell(1).setCellValue(value);
-            row.createCell(2).setCellValue(orderCount);
-            
-            if (orderCount > 0) {
-                row.createCell(3).setCellValue(value / orderCount);
-            } else {
-                row.createCell(3).setCellValue(0);
+        
+        if (labels != null && revenueValues != null && labels.size() == revenueValues.size()) {
+            // Add data from chart format with order counts and average values
+            for (int i = 0; i < labels.size(); i++) {
+                Row row = sheet.createRow(rowNum++);
+                String period = labels.get(i);
+                Double revenue = revenueValues.get(i) instanceof Number ? ((Number) revenueValues.get(i)).doubleValue() : 0.0;
+                
+                // Get order count for this period
+                Integer orderCount = 0;
+                if (orderCountValues != null && i < orderCountValues.size() && orderCountValues.get(i) instanceof Number) {
+                    orderCount = ((Number) orderCountValues.get(i)).intValue();
+                }
+                
+                // Calculate average value for this period
+                double avgValue = orderCount > 0 ? revenue / orderCount : 0.0;
+                
+                row.createCell(0).setCellValue(period);
+                row.createCell(1).setCellValue(revenue);
+                row.createCell(2).setCellValue(orderCount);
+                row.createCell(3).setCellValue(avgValue);
             }
+        } else {
+            // Add summary row if detailed data is not available
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue("Tổng kết");
+            row.createCell(1).setCellValue(totalRevenue);
+            row.createCell(2).setCellValue(totalOrders);
+            row.createCell(3).setCellValue(avgOrderValue);
         }
     }
-    
-    private void createProductReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+      private void createProductReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
         // Create header row
         Row headerRow = sheet.createRow(0);
         String[] headers = {"Sản phẩm", "Số lượng đã bán", "Doanh thu (VNĐ)"};
@@ -476,24 +516,25 @@ public class ReportServiceImpl implements ReportService {
             cell.setCellStyle(headerStyle);
         }
         
-        // Add data rows
-        Map<String, Integer> topProducts = (Map<String, Integer>) data.get("topProducts");
-        Map<String, Double> productRevenue = (Map<String, Double>) data.get("productRevenue");
+        // Add data rows - handle chart data format
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> topProducts = (List<Map<String, Object>>) data.get("topProducts");
         
         int rowNum = 1;
-        for (Map.Entry<String, Integer> entry : topProducts.entrySet()) {
-            Row row = sheet.createRow(rowNum++);
-            String productName = entry.getKey();
-            Integer quantity = entry.getValue();
-            Double revenue = productRevenue.getOrDefault(productName, 0.0);
-            
-            row.createCell(0).setCellValue(productName);
-            row.createCell(1).setCellValue(quantity);
-            row.createCell(2).setCellValue(revenue);
+        if (topProducts != null) {
+            for (Map<String, Object> product : topProducts) {
+                Row row = sheet.createRow(rowNum++);
+                String productName = (String) product.get("name");
+                Integer quantity = (Integer) product.get("quantitySold");
+                Double revenue = (Double) product.get("revenue");
+                
+                row.createCell(0).setCellValue(productName != null ? productName : "N/A");
+                row.createCell(1).setCellValue(quantity != null ? quantity : 0);
+                row.createCell(2).setCellValue(revenue != null ? revenue : 0.0);
+            }
         }
     }
-    
-    private void createCategoryReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+      private void createCategoryReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
         // Create header row
         Row headerRow = sheet.createRow(0);
         String[] headers = {"Danh mục", "Doanh thu (VNĐ)", "Phần trăm"};
@@ -504,26 +545,41 @@ public class ReportServiceImpl implements ReportService {
             cell.setCellStyle(headerStyle);
         }
         
-        // Add data rows
-        Map<String, Double> categoryRevenue = (Map<String, Double>) data.get("categoryRevenue");
+        // Add data rows - handle chart data format
+        @SuppressWarnings("unchecked")
+        Map<String, Object> categoryChartData = (Map<String, Object>) data.get("categoryRevenue");
         
-        // Calculate total for percentage
-        double total = categoryRevenue.values().stream().mapToDouble(Double::doubleValue).sum();
-        
-        int rowNum = 1;
-        for (Map.Entry<String, Double> entry : categoryRevenue.entrySet()) {
-            Row row = sheet.createRow(rowNum++);
-            String category = entry.getKey();
-            Double revenue = entry.getValue();
-            double percentage = (total > 0) ? (revenue / total) * 100 : 0;
+        if (categoryChartData != null) {
+            @SuppressWarnings("unchecked")
+            List<String> labels = (List<String>) categoryChartData.get("labels");
+            @SuppressWarnings("unchecked")
+            List<Object> values = (List<Object>) categoryChartData.get("values");
             
-            row.createCell(0).setCellValue(category);
-            row.createCell(1).setCellValue(revenue);
-            row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
+            // Calculate total for percentage
+            double total = 0.0;
+            if (values != null) {
+                total = values.stream()
+                    .filter(v -> v instanceof Number)
+                    .mapToDouble(v -> ((Number) v).doubleValue())
+                    .sum();
+            }
+            
+            int rowNum = 1;
+            if (labels != null && values != null && labels.size() == values.size()) {
+                for (int i = 0; i < labels.size(); i++) {
+                    Row row = sheet.createRow(rowNum++);
+                    String category = labels.get(i);
+                    Double revenue = values.get(i) instanceof Number ? ((Number) values.get(i)).doubleValue() : 0.0;
+                    double percentage = (total > 0) ? (revenue / total) * 100 : 0;
+                    
+                    row.createCell(0).setCellValue(category);
+                    row.createCell(1).setCellValue(revenue);
+                    row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
+                }
+            }
         }
     }
-    
-    private void createUserReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
+      private void createUserReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
         // Create header row
         Row headerRow = sheet.createRow(0);
         String[] headers = {"Loại người dùng", "Số lượng", "Phần trăm"};
@@ -534,22 +590,25 @@ public class ReportServiceImpl implements ReportService {
             cell.setCellStyle(headerStyle);
         }
         
-        // Add data rows
+        // Add data rows - handle chart data format or map data
+        @SuppressWarnings("unchecked")
         Map<String, Integer> userCounts = (Map<String, Integer>) data.get("userCountsByRole");
         
-        // Calculate total for percentage
-        int total = userCounts.values().stream().mapToInt(Integer::intValue).sum();
-        
-        int rowNum = 1;
-        for (Map.Entry<String, Integer> entry : userCounts.entrySet()) {
-            Row row = sheet.createRow(rowNum++);
-            String role = entry.getKey();
-            Integer count = entry.getValue();
-            double percentage = (total > 0) ? ((double)count / total) * 100 : 0;
+        if (userCounts != null) {
+            // Calculate total for percentage
+            int total = userCounts.values().stream().mapToInt(Integer::intValue).sum();
             
-            row.createCell(0).setCellValue(role);
-            row.createCell(1).setCellValue(count);
-            row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
+            int rowNum = 1;
+            for (Map.Entry<String, Integer> entry : userCounts.entrySet()) {
+                Row row = sheet.createRow(rowNum++);
+                String role = entry.getKey();
+                Integer count = entry.getValue();
+                double percentage = (total > 0) ? ((double)count / total) * 100 : 0;
+                
+                row.createCell(0).setCellValue(role);
+                row.createCell(1).setCellValue(count);
+                row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
+            }
         }
     }
     

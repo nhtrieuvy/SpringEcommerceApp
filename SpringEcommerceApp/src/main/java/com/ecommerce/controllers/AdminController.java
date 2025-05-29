@@ -7,7 +7,6 @@ import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.Role;
 import com.ecommerce.pojo.Store;
 import com.ecommerce.pojo.User;
-import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.services.CategoryService;
 import com.ecommerce.services.OrderService;
 import com.ecommerce.services.ProductService;
@@ -21,10 +20,8 @@ import com.ecommerce.services.RecentActivityService;
 import com.ecommerce.pojo.RecentActivity;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +51,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/admin")
-public class AdminController {@Autowired
+public class AdminController {
+    @Autowired
     private UserService userService;
 
     @Autowired
@@ -67,15 +65,14 @@ public class AdminController {@Autowired
     private CategoryService categoryService;
 
     @Autowired
-    private RoleService roleService;    @Autowired
-    private StoreService storeService;    @Autowired
+    private RoleService roleService;
+    @Autowired
+    private StoreService storeService;
+    @Autowired
     private ReportService reportService;
-    
+
     @Autowired
     private RecentActivityService recentActivityService;
-    
-    @Autowired
-    private OrderRepository orderRepository;
 
     @GetMapping("")
     public String adminDashboard(Model model) {
@@ -107,7 +104,7 @@ public class AdminController {@Autowired
 
         // Thống kê doanh thu theo tháng cho biểu đồ
         Map<String, Object> revenueData = reportService.generateSalesReport("monthly", fromDate, toDate);
-        model.addAttribute("revenueData", revenueData.get("revenueByPeriod"));        // Thống kê đơn hàng theo trạng thái
+        model.addAttribute("revenueData", revenueData.get("revenueByPeriod")); // Thống kê đơn hàng theo trạng thái
         model.addAttribute("orderStatusData", revenueData.get("orderStatus"));
 
         // Lấy hoạt động gần đây
@@ -215,11 +212,11 @@ public class AdminController {@Autowired
                             (product.getDescription() != null
                                     && product.getDescription().toLowerCase().contains(keyword.toLowerCase())))
                     .collect(Collectors.toList());
-        }        // Phân trang
+        } // Phân trang
         int start = page * size;
         int end = Math.min(start + size, allProducts.size());
 
-        List<Product> paginatedProducts = allProducts.subList(start, end);        // Lấy danh sách danh mục và stores
+        List<Product> paginatedProducts = allProducts.subList(start, end); // Lấy danh sách danh mục và stores
         List<Category> categories = categoryService.findAll();
         List<Store> stores = storeService.findAll(); // Lấy tất cả các cửa hàng thay vì sellers
         model.addAttribute("products", paginatedProducts);
@@ -316,7 +313,7 @@ public class AdminController {@Autowired
 
         if (toDate == null) {
             toDate = new Date(); // Ngày hiện tại
-        }        // Lấy dữ liệu báo cáo thống kê từ service
+        } // Lấy dữ liệu báo cáo thống kê từ service
         Map<String, Object> reportData;
         switch (reportType) {
             case "sales":
@@ -357,9 +354,7 @@ public class AdminController {@Autowired
         model.addAttribute("printDate", new Date());
 
         return "order-print";
-    }
-
-    @GetMapping("/orders/export")
+    }    @GetMapping("/orders/export")
     public ResponseEntity<byte[]> exportOrders(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
@@ -373,14 +368,14 @@ public class AdminController {@Autowired
 
         // Thiết lập header cho response
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentType(
+                MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headers.setContentDispositionFormData("attachment",
                 "orders_export_" + new SimpleDateFormat("yyyyMMdd").format(new Date()) + ".xlsx");
+        headers.setContentLength(excelContent.length);
 
         return new ResponseEntity<>(excelContent, headers, HttpStatus.OK);
-    }
-
-    @GetMapping("/reports/export")
+    }    @GetMapping("/reports/export")
     public ResponseEntity<byte[]> exportReports(
             @RequestParam(defaultValue = "sales") String reportType,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
@@ -401,67 +396,12 @@ public class AdminController {@Autowired
         byte[] excelContent = reportService.exportReportToExcel(reportType, fromDate, toDate);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentType(
+                MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headers.setContentDispositionFormData("attachment", reportType + "-report.xlsx");
+        headers.setContentLength(excelContent.length);
 
         return new ResponseEntity<>(excelContent, headers, HttpStatus.OK);
-    }
-
-    @GetMapping("/admin/revenue-chart-data")
-    public ResponseEntity<?> getRevenueChartData(@RequestParam String periodType,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
-            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate) {
-        List<String> labels = new ArrayList<>();
-        List<Double> values = new ArrayList<>();
-
-        // Nhóm doanh thu theo thời gian tùy theo loại kỳ
-        // Triển khai logic phân nhóm theo ngày, tuần, tháng, năm
-        SimpleDateFormat dateFormat;
-        if ("daily".equals(periodType)) {
-            dateFormat = new SimpleDateFormat("dd/MM");
-        } else if ("weekly".equals(periodType)) {
-            dateFormat = new SimpleDateFormat("'Week 'w, yyyy");
-        } else if ("monthly".equals(periodType)) {
-            dateFormat = new SimpleDateFormat("MM/yyyy");
-        } else {
-            dateFormat = new SimpleDateFormat("yyyy");
-        }
-
-        // Giả lập dữ liệu mẫu cho các label và values
-        for (int i = 0; i < 12; i++) {
-            Calendar cal = Calendar.getInstance();
-            // Complete the implementation here
-        }
-
-        // Return the data as a JSON response
-        Map<String, Object> response = new HashMap<>();
-        response.put("labels", labels);
-        response.put("values", values);
-        return ResponseEntity.ok(response);
-    }
-
-    private Map<String, Object> generateCategoryRevenueData(List<Order> orders) {
-        Map<String, Object> data = new HashMap<>();
-        List<String> labels = new ArrayList<>();
-        List<Integer> values = new ArrayList<>();
-
-        // Giả lập dữ liệu mẫu cho các label và values
-        labels.add("Điện tử");
-        labels.add("Thời trang");
-        labels.add("Đồ gia dụng");
-        labels.add("Sách");
-        labels.add("Thể thao");
-
-        values.add(35);
-        values.add(25);
-        values.add(20);
-        values.add(10);
-        values.add(10);
-
-        data.put("labels", labels);
-        data.put("values", values);
-
-        return data;
     }
 
     // ==================== User Management Methods ====================
@@ -614,7 +554,8 @@ public class AdminController {@Autowired
         return "redirect:/admin/users";
     }
 
-    // ==================== Product Management Methods ====================    @PostMapping("/products/add")
+    // ==================== Product Management Methods ====================
+    // @PostMapping("/products/add")
     public String addProduct(@AuthenticationPrincipal UserDetails userDetails,
             @ModelAttribute Product product,
             @RequestParam(value = "image", required = false) MultipartFile image,
@@ -622,7 +563,7 @@ public class AdminController {@Autowired
             @RequestParam(required = false) Long storeId,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
-        try {            // Thiết lập danh mục
+        try { // Thiết lập danh mục
             Category category = categoryService.findById(categoryId);
             if (category != null) {
                 product.setCategory(category);
@@ -630,7 +571,7 @@ public class AdminController {@Autowired
                 redirectAttributes.addFlashAttribute("errorMessage", "Danh mục không tồn tại!");
                 return "redirect:/admin/products";
             }
-            
+
             // Thiết lập cửa hàng
             if (storeId != null) {
                 com.ecommerce.pojo.Store store = storeService.findById(storeId);
@@ -662,12 +603,11 @@ public class AdminController {@Autowired
                 if (currentUser != null) {
                     String ipAddress = IpUtils.getClientIpAddress(request);
                     recentActivityService.logProductAdded(
-                        currentUser.getFullname(),
-                        currentUser.getEmail(),
-                        savedProduct.getId(),
-                        savedProduct.getName(),
-                        ipAddress
-                    );
+                            currentUser.getFullname(),
+                            currentUser.getEmail(),
+                            savedProduct.getId(),
+                            savedProduct.getName(),
+                            ipAddress);
                 }
             }
 
@@ -696,7 +636,9 @@ public class AdminController {@Autowired
         model.addAttribute("content", "edit-product :: content");
 
         return "admin";
-    }    @PostMapping("/products/edit/{id}")
+    }
+
+    @PostMapping("/products/edit/{id}")
     public String updateProduct(@AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
             @ModelAttribute Product product,
@@ -725,7 +667,7 @@ public class AdminController {@Autowired
             if (category != null) {
                 existingProduct.setCategory(category);
             }
-            
+
             // Cập nhật cửa hàng nếu có
             if (storeId != null) {
                 com.ecommerce.pojo.Store store = storeService.findById(storeId);
@@ -749,12 +691,11 @@ public class AdminController {@Autowired
                 if (currentUser != null) {
                     String ipAddress = IpUtils.getClientIpAddress(request);
                     recentActivityService.logProductUpdated(
-                        currentUser.getFullname(),
-                        currentUser.getEmail(),
-                        updatedProduct.getId(),
-                        updatedProduct.getName(),
-                        ipAddress
-                    );
+                            currentUser.getFullname(),
+                            currentUser.getEmail(),
+                            updatedProduct.getId(),
+                            updatedProduct.getName(),
+                            ipAddress);
                 }
             }
 
@@ -828,7 +769,8 @@ public class AdminController {@Autowired
         }
     }
 
-    // ==================== Order Management Methods ====================    @PostMapping("/orders/update-status")
+    // ==================== Order Management Methods ====================
+    // @PostMapping("/orders/update-status")
     public String updateOrderStatus(@AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long orderId,
             @RequestParam String status,
@@ -860,20 +802,20 @@ public class AdminController {@Autowired
                     }
                 } catch (Exception e) {
                     // Không xử lý nếu không thể lấy thông tin người dùng
-                }                // Cập nhật đơn hàng mà không tạo lịch sử (để tránh bị trùng lặp)
+                } // Cập nhật đơn hàng mà không tạo lịch sử (để tránh bị trùng lặp)
                 orderService.updateWithoutHistory(order);
-                
+
                 // Thêm lịch sử trạng thái với ghi chú
-                orderService.addOrderStatusHistory(order, status, note, userId);                // Log activity if user is authenticated
+                orderService.addOrderStatusHistory(order, status, note, userId); // Log activity if user is
+                                                                                 // authenticated
                 if (userDetails != null && currentUser != null) {
                     String ipAddress = IpUtils.getClientIpAddress(request);
                     recentActivityService.logOrderStatusChanged(
-                        currentUser.getEmail(),
-                        currentUser.getFullname(),
-                        order.getId(),
-                        status,
-                        ipAddress
-                    );
+                            currentUser.getEmail(),
+                            currentUser.getFullname(),
+                            order.getId(),
+                            status,
+                            ipAddress);
                 }
 
                 // Nếu trạng thái là completed, có thể thực hiện các hành động bổ sung
@@ -974,14 +916,13 @@ public class AdminController {@Autowired
 
         if (keyword != null && !keyword.isEmpty()) {
             allStores = allStores.stream()
-                    .filter(store -> 
-                        ((String) store.get("name") != null && 
-                         ((String) store.get("name")).toLowerCase().contains(keyword.toLowerCase())) ||
-                        ((String) store.get("description") != null && 
-                         ((String) store.get("description")).toLowerCase().contains(keyword.toLowerCase())) ||
-                        ((String) store.get("username") != null && 
-                         ((String) store.get("username")).toLowerCase().contains(keyword.toLowerCase()))
-                    )
+                    .filter(store -> ((String) store.get("name") != null &&
+                            ((String) store.get("name")).toLowerCase().contains(keyword.toLowerCase())) ||
+                            ((String) store.get("description") != null &&
+                                    ((String) store.get("description")).toLowerCase().contains(keyword.toLowerCase()))
+                            ||
+                            ((String) store.get("username") != null &&
+                                    ((String) store.get("username")).toLowerCase().contains(keyword.toLowerCase())))
                     .collect(Collectors.toList());
         }
 
@@ -990,11 +931,11 @@ public class AdminController {@Autowired
         int end = Math.min(start + size, allStores.size());
 
         List<Map<String, Object>> paginatedStores = allStores.subList(start, end);
-        
+
         model.addAttribute("stores", paginatedStores);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", (int) Math.ceil((double) allStores.size() / size));
-        
+
         // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "stores");
 
@@ -1007,38 +948,38 @@ public class AdminController {@Autowired
     @GetMapping("/stores/view/{id}")
     public String viewStore(@PathVariable Long id, Model model) {
         Map<String, Object> store = storeService.findByIdWithUserInfo(id);
-        
+
         if (store == null) {
             model.addAttribute("errorMessage", "Không tìm thấy cửa hàng!");
             return "redirect:/admin/stores";
         }
-        
+
         // Get products for this store
         List<Product> storeProducts = productService.findByStoreId(id);
-        
+
         model.addAttribute("store", store);
         model.addAttribute("products", storeProducts);
         model.addAttribute("activeMenu", "stores");
         model.addAttribute("content", "store-detail :: content");
-        
+
         return "admin";
     }
-    
+
     @GetMapping("/stores/toggle/{id}")
     public String toggleStoreStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             boolean success = storeService.toggleStatus(id);
-            
+
             if (success) {
                 redirectAttributes.addFlashAttribute("successMessage", "Trạng thái cửa hàng đã được cập nhật!");
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy cửa hàng!");
             }
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", 
+            redirectAttributes.addFlashAttribute("errorMessage",
                     "Lỗi khi thay đổi trạng thái cửa hàng: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/stores";
     }
 
@@ -1067,11 +1008,11 @@ public class AdminController {@Autowired
         int end = Math.min(start + size, allRequests.size());
 
         List<Map<String, Object>> paginatedRequests = allRequests.subList(start, end);
-        
+
         model.addAttribute("requests", paginatedRequests);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", (int) Math.ceil((double) allRequests.size() / size));
-        
+
         // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "sellerRequests");
 
@@ -1086,16 +1027,17 @@ public class AdminController {@Autowired
         try {
             // Update the user to have seller role instead of creating a seller entity
             boolean success = userService.approveSellerRequest(id);
-            
+
             if (success) {
-                redirectAttributes.addFlashAttribute("successMessage", "Đã phê duyệt yêu cầu trở thành người bán thành công!");
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Đã phê duyệt yêu cầu trở thành người bán thành công!");
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy yêu cầu hoặc đã xử lý trước đó!");
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi xử lý yêu cầu: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/seller-requests";
     }
 
@@ -1107,7 +1049,7 @@ public class AdminController {@Autowired
         try {
             // Update the seller request status instead of deleting a seller entity
             boolean success = userService.rejectSellerRequest(id, reason);
-            
+
             if (success) {
                 redirectAttributes.addFlashAttribute("successMessage", "Đã từ chối yêu cầu trở thành người bán!");
             } else {
@@ -1116,7 +1058,7 @@ public class AdminController {@Autowired
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi xử lý yêu cầu: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/seller-requests";
     }
 }

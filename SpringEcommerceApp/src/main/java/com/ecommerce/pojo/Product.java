@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import java.util.Set;
-import java.util.HashSet;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity

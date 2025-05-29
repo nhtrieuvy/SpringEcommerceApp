@@ -4,12 +4,10 @@ import jakarta.persistence.*;
 
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity

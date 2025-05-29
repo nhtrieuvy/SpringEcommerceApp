@@ -230,6 +230,33 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
+    public List<Object[]> findOrderCountByDateRange(String groupBy, Date fromDate, Date toDate) {
+        Session session = sessionFactory.getCurrentSession();
+        String dateFormat;
+
+        // Format the date based on grouping parameter
+        if ("daily".equals(groupBy)) {
+            dateFormat = "DAY(orderDate), MONTH(orderDate), YEAR(orderDate)";
+        } else if ("weekly".equals(groupBy)) {
+            dateFormat = "WEEK(orderDate), YEAR(orderDate)";
+        } else if ("monthly".equals(groupBy)) {
+            dateFormat = "MONTH(orderDate), YEAR(orderDate)";
+        } else {
+            dateFormat = "YEAR(orderDate)";
+        }
+
+        String hql = "SELECT " + dateFormat + ", COUNT(id) FROM Order " +
+                "WHERE orderDate BETWEEN :fromDate AND :toDate " +
+                "GROUP BY " + dateFormat + " ORDER BY " + dateFormat;
+
+        Query<Object[]> query = session.createQuery(hql, Object[].class);
+        query.setParameter("fromDate", fromDate);
+        query.setParameter("toDate", toDate);
+
+        return query.list();
+    }
+
+    @Override
     public List<Object[]> findTopSellingProducts(int limit) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT p.id, p.name, SUM(od.quantity) as totalSold " +

@@ -4,9 +4,8 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+
 
 @Entity
 @Table(name = "seller_requests")

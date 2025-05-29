@@ -17,7 +17,9 @@ import java.util.List;
 public class RecentActivityRepositoryImpl implements RecentActivityRepository {
 
     @Autowired
-    private SessionFactory sessionFactory;    @Override
+    private SessionFactory sessionFactory;
+
+    @Override
     public RecentActivity save(RecentActivity activity) {
         Session session = sessionFactory.getCurrentSession();
         if (activity.getId() == null) {
@@ -32,7 +34,7 @@ public class RecentActivityRepositoryImpl implements RecentActivityRepository {
     public List<RecentActivity> findAll() {
         Session session = sessionFactory.getCurrentSession();
         Query<RecentActivity> query = session.createQuery(
-            "FROM RecentActivity ORDER BY createdAt DESC", RecentActivity.class);
+                "FROM RecentActivity ORDER BY createdAt DESC", RecentActivity.class);
         return query.getResultList();
     }
 
@@ -40,7 +42,7 @@ public class RecentActivityRepositoryImpl implements RecentActivityRepository {
     public List<RecentActivity> findRecentActivities(int limit) {
         Session session = sessionFactory.getCurrentSession();
         Query<RecentActivity> query = session.createQuery(
-            "FROM RecentActivity ORDER BY createdAt DESC", RecentActivity.class);
+                "FROM RecentActivity ORDER BY createdAt DESC", RecentActivity.class);
         query.setMaxResults(limit);
         return query.getResultList();
     }
@@ -49,8 +51,8 @@ public class RecentActivityRepositoryImpl implements RecentActivityRepository {
     public List<RecentActivity> findActivitiesBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
         Session session = sessionFactory.getCurrentSession();
         Query<RecentActivity> query = session.createQuery(
-            "FROM RecentActivity WHERE createdAt BETWEEN :startDate AND :endDate ORDER BY createdAt DESC", 
-            RecentActivity.class);
+                "FROM RecentActivity WHERE createdAt BETWEEN :startDate AND :endDate ORDER BY createdAt DESC",
+                RecentActivity.class);
         query.setParameter("startDate", startDate);
         query.setParameter("endDate", endDate);
         return query.getResultList();
@@ -60,8 +62,8 @@ public class RecentActivityRepositoryImpl implements RecentActivityRepository {
     public List<RecentActivity> findByActivityType(String activityType, int limit) {
         Session session = sessionFactory.getCurrentSession();
         Query<RecentActivity> query = session.createQuery(
-            "FROM RecentActivity WHERE activityType = :activityType ORDER BY createdAt DESC", 
-            RecentActivity.class);
+                "FROM RecentActivity WHERE activityType = :activityType ORDER BY createdAt DESC",
+                RecentActivity.class);
         query.setParameter("activityType", activityType);
         query.setMaxResults(limit);
         return query.getResultList();
@@ -71,28 +73,32 @@ public class RecentActivityRepositoryImpl implements RecentActivityRepository {
     public List<RecentActivity> findByUserEmail(String userEmail, int limit) {
         Session session = sessionFactory.getCurrentSession();
         Query<RecentActivity> query = session.createQuery(
-            "FROM RecentActivity WHERE userEmail = :userEmail ORDER BY createdAt DESC", 
-            RecentActivity.class);
+                "FROM RecentActivity WHERE userEmail = :userEmail ORDER BY createdAt DESC",
+                RecentActivity.class);
         query.setParameter("userEmail", userEmail);
         query.setMaxResults(limit);
         return query.getResultList();
-    }    @Override
+    }
+
+    @Override
     public Long countTodayActivities() {
         Session session = sessionFactory.getCurrentSession();
         LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime endOfDay = startOfDay.plusDays(1);
-        
+
         Query<Long> query = session.createQuery(
-            "SELECT COUNT(r) FROM RecentActivity r WHERE r.createdAt >= :startOfDay AND r.createdAt < :endOfDay", 
-            Long.class);
+                "SELECT COUNT(r) FROM RecentActivity r WHERE r.createdAt >= :startOfDay AND r.createdAt < :endOfDay",
+                Long.class);
         query.setParameter("startOfDay", startOfDay);
         query.setParameter("endOfDay", endOfDay);
         return query.uniqueResult();
-    }@Override
+    }
+
+    @Override
     public void deleteOldActivities(LocalDateTime cutoffDate) {
         Session session = sessionFactory.getCurrentSession();
         Query<Integer> query = session.createQuery(
-            "DELETE FROM RecentActivity WHERE createdAt < :cutoffDate", Integer.class);
+                "DELETE FROM RecentActivity WHERE createdAt < :cutoffDate", Integer.class);
         query.setParameter("cutoffDate", cutoffDate);
         query.executeUpdate();
     }

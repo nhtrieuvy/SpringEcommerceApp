@@ -259,6 +259,55 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public Map<String, Integer> getOrderCountByDateRange(String groupBy, Date fromDate, Date toDate) {
+        Map<String, Integer> orderCountByPeriod = new LinkedHashMap<>();
+        List<Object[]> results = orderRepository.findOrderCountByDateRange(groupBy, fromDate, toDate);
+
+        SimpleDateFormat dateFormat;
+        if ("daily".equals(groupBy)) {
+            dateFormat = new SimpleDateFormat("dd/MM");
+        } else if ("weekly".equals(groupBy)) {
+            dateFormat = new SimpleDateFormat("'Week 'w, yyyy");
+        } else if ("monthly".equals(groupBy)) {
+            dateFormat = new SimpleDateFormat("MM/yyyy");
+        } else {
+            dateFormat = new SimpleDateFormat("yyyy");
+        }
+
+        for (Object[] result : results) {
+            // Format the date period label
+            String periodLabel;
+            if (result[0] instanceof Integer && result[1] instanceof Integer) {
+                // For monthly grouping (month, year)
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.MONTH, (Integer) result[0] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.YEAR, (Integer) result[1]);
+                periodLabel = dateFormat.format(cal.getTime());
+            } else if (result[0] instanceof Integer && result[1] instanceof Integer && result[2] instanceof Integer) {
+                // For daily grouping (day, month, year)
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.DAY_OF_MONTH, (Integer) result[0]);
+                cal.set(Calendar.MONTH, (Integer) result[1] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.YEAR, (Integer) result[2]);
+                periodLabel = dateFormat.format(cal.getTime());
+            } else if (result[0] instanceof Integer) {
+                // For yearly grouping (year)
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.YEAR, (Integer) result[0]);
+                periodLabel = dateFormat.format(cal.getTime());
+            } else {
+                // Fallback
+                periodLabel = result[0].toString();
+            }
+
+            Long orderCount = (Long) result[result.length - 1];
+            orderCountByPeriod.put(periodLabel, orderCount.intValue());
+        }
+
+        return orderCountByPeriod;
+    }
+
+    @Override
     public Map<String, Integer> getTopSellingProducts(int limit) {
         Map<String, Integer> topProducts = new LinkedHashMap<>();
         List<Object[]> results = orderRepository.findTopSellingProducts(limit);
