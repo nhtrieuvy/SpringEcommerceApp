@@ -1,6 +1,7 @@
 package com.ecommerce.controllers;
 
 import com.ecommerce.dtos.OrderDTO;
+import com.ecommerce.dtos.OrderCreateDTO;
 import com.ecommerce.dtos.OrderSummaryDTO;
 import com.ecommerce.pojo.Order;
 import com.ecommerce.pojo.OrderDetail;
@@ -16,6 +17,7 @@ import com.ecommerce.services.ProductService;
 import com.ecommerce.services.UserService;
 import com.ecommerce.services.EmailService;
 import com.ecommerce.services.RecentActivityService;
+import com.ecommerce.services.OrderValidationService;
 import com.ecommerce.utils.JwtUtils;
 import com.ecommerce.utils.IpUtils;
 
@@ -48,14 +50,15 @@ public class ApiOrderController {
     private UserService userService;
 
     @Autowired
-    private ProductService productService;
-
-    @Autowired
+    private ProductService productService;    @Autowired
     private PaymentService paymentService;    @Autowired
     private EmailService emailService;
 
     @Autowired
     private RecentActivityService recentActivityService;
+
+    @Autowired
+    private OrderValidationService orderValidationService;
 
     @GetMapping("")
     public ResponseEntity<?> getAllOrders(
@@ -572,9 +575,7 @@ public class ApiOrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
-    }
-
-    @PostMapping(value = "/create-order", consumes = "application/json", produces = "application/json")
+    }    @PostMapping(value = "/create-order", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createOrderFromDTO(@RequestBody OrderDTO orderDTO, HttpServletRequest request) {
         try {
             // Get the authenticated user
@@ -584,6 +585,17 @@ public class ApiOrderController {
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("success", false, "message", "User not found"));
+            }
+
+            // Convert OrderDTO to OrderCreateDTO for validation
+            OrderCreateDTO orderCreateDTO = convertToOrderCreateDTO(orderDTO, user.getId());
+            
+            // Validate order creation using OrderValidationService
+            try {
+                orderValidationService.validateOrderCreation(orderCreateDTO);
+            } catch (Exception validationException) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Validation failed: " + validationException.getMessage()));
             }
 
             // Create a new order
@@ -940,11 +952,57 @@ public class ApiOrderController {
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "orders", orderDTOs,
-                    "totalElements", orderDTOs.size()));
-
-        } catch (Exception e) {
+                    "totalElements", orderDTOs.size()));        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error fetching orders: " + e.getMessage()));
         }
+    }    /**
+     * Convert OrderDTO to OrderCreateDTO for validation purposes
+     * @param orderDTO The OrderDTO from frontend
+     * @param userId The user ID placing the order
+     * @return OrderCreateDTO for validation
+     */
+    private OrderCreateDTO convertToOrderCreateDTO(OrderDTO orderDTO, Long userId) {
+        OrderCreateDTO createDTO = new OrderCreateDTO();
+        
+        // Set basic order information
+        createDTO.setUserId(userId);
+        createDTO.setPaymentMethod(orderDTO.getPaymentMethod());
+        
+        // Calculate subtotal from items
+        double calculatedSubtotal = 0.0;
+        if (orderDTO.getItems() != null && !orderDTO.getItems().isEmpty()) {
+            for (OrderDTO.OrderItemDTO item : orderDTO.getItems()) {
+                if (item.getPrice() != null && item.getQuantity() != null) {
+                    calculatedSubtotal += item.getPrice() * item.getQuantity();
+                }
+            }
+        }
+        createDTO.setSubtotal(calculatedSubtotal);
+          // Set shipping cost (default to 0 if not provided)
+        createDTO.setShipping(0.0); // Could be enhanced to get from orderDTO if available
+        
+        // Set total amount
+        createDTO.setTotal(orderDTO.getTotal() != null ? orderDTO.getTotal() : calculatedSubtotal);
+        
+        // Convert order items
+        if (orderDTO.getItems() != null && !orderDTO.getItems().isEmpty()) {
+            List<OrderCreateDTO.OrderItemCreateDTO> items = new ArrayList<>();
+            for (OrderDTO.OrderItemDTO itemDTO : orderDTO.getItems()) {
+                OrderCreateDTO.OrderItemCreateDTO createItem = new OrderCreateDTO.OrderItemCreateDTO();
+                createItem.setProductId(itemDTO.getProductId());
+                createItem.setQuantity(itemDTO.getQuantity());
+                createItem.setPrice(itemDTO.getPrice());
+                items.add(createItem);
+            }
+            createDTO.setItems(items);
+        }
+        
+        // Set shipping information if available
+        if (orderDTO.getShippingInfo() != null) {
+            createDTO.setShippingInfo(orderDTO.getShippingInfo());
+        }
+        
+        return createDTO;
     }
 }

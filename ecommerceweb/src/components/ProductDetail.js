@@ -1162,9 +1162,14 @@ const ProductDetail = () => {
                                         textTransform: 'none',
                                         fontWeight: 'bold'
                                     }}                                    onClick={() => {
-                                        handleAddToCart();
-                                        // Redirect to checkout page if implemented
-                                        navigate('/checkout');
+                                        // Navigate to checkout with product data for immediate purchase
+                                        navigate('/checkout', {
+                                            state: {
+                                                buyNow: true,
+                                                product: product,
+                                                quantity: quantity
+                                            }
+                                        });
                                     }}
                                 >
                                     Mua ngay

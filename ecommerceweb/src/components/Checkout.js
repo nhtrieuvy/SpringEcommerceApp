@@ -42,7 +42,6 @@ import OrderConfirmationDialog from "./OrderConfirmationDialog";
 import PayPalModal from "./PayPalModal";
 import "../styles/CartStyles.css";
 import { authApi, endpoint } from "../configs/Apis";
-import { formatCurrency } from "../utils/FormatUtils";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -52,9 +51,11 @@ const Checkout = () => {
 
   // Get coupon information from navigation state
   const couponInfo = location.state || {};
-  const [couponApplied, setCouponApplied] = useState(couponInfo.couponApplied || false);
+  const [couponApplied, setCouponApplied] = useState(
+    couponInfo.couponApplied || false
+  );
   const [discount, setDiscount] = useState(couponInfo.discount || 0);
-  const [couponCode, setCouponCode] = useState(couponInfo.couponCode || '');
+  const [couponCode, setCouponCode] = useState(couponInfo.couponCode || "");
 
   // API Helper Functions
   const getCartItems = async () => {
@@ -130,7 +131,8 @@ const Checkout = () => {
         severity: "error",
       });
       throw error;
-    }  };
+    }
+  };
 
   // State variables
   const [cartItems, setCartItems] = useState([]);
@@ -176,8 +178,7 @@ const Checkout = () => {
       const price = (item.product && item.product.price) || item.price || 0;
       return total + price * item.quantity;
     }, 0);
-  };
-  // Load cart items from API
+  }; // Load cart items from API
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
@@ -186,21 +187,52 @@ const Checkout = () => {
 
     const initializeCheckout = async () => {
       try {
-        setLoading(true); // Load cart items
-        const cartData = await getCartItems();
-        if (!cartData || cartData.length === 0) {
-          navigate("/cart");
-          return;
+        setLoading(true);
+        // Check if this is a "Buy Now" action
+        if (location.state && location.state.buyNow) {
+          const { product, quantity } = location.state;
+
+          // Create a cart item from the buy now data
+          const buyNowItem = {
+            id: `buynow_${product.id}`,
+            product: product,
+            quantity: quantity,
+            price: product.price,
+          };
+
+          setCartItems([buyNowItem]);
+        } else {
+          // Normal cart checkout - load cart items
+          const cartData = await getCartItems();
+          if (!cartData || cartData.length === 0) {
+            navigate("/cart");
+            return;
+          }
+          setCartItems(cartData);
         }
-        setCartItems(cartData);
 
         // Load shipping methods
         const shippingOptions = await getShippingMethods();
         setShippingMethods(shippingOptions);
 
         // Select default shipping method based on cart total
-        // Calculate subtotal directly from cartData since cartItems state hasn't been updated yet
-        const subtotal = cartData.reduce((total, item) => {
+        // Calculate subtotal directly from the items we just set
+        let itemsToCalculate = [];
+        if (location.state && location.state.buyNow) {
+          const { product, quantity } = location.state;
+          itemsToCalculate = [
+            {
+              product: product,
+              quantity: quantity,
+              price: product.price,
+            },
+          ];
+        } else {
+          const cartData = await getCartItems();
+          itemsToCalculate = cartData;
+        }
+
+        const subtotal = itemsToCalculate.reduce((total, item) => {
           const price = (item.product && item.product.price) || item.price || 0;
           return total + price * item.quantity;
         }, 0);
@@ -277,11 +309,11 @@ const Checkout = () => {
   // Handle payment method change
   const handlePaymentMethodChange = (method) => {
     setPaymentMethod(method);
-  };  // Calculate subtotal from cart items (returns original subtotal without discount)
+  }; // Calculate subtotal from cart items (returns original subtotal without discount)
   const calculateSubtotal = () => {
     return getSubtotal();
   };
-  
+
   // Calculate final total after applying coupon discount
   const calculateSubtotalWithDiscount = () => {
     const subtotal = getSubtotal();
@@ -405,7 +437,8 @@ const Checkout = () => {
       productId: item.product.id,
       quantity: item.quantity,
       price: item.product.price,
-    }));    return {
+    }));
+    return {
       items: simplifiedItems,
       subtotal: calculateSubtotalWithDiscount(),
       shipping: calculateShipping(),
@@ -415,12 +448,15 @@ const Checkout = () => {
             name: selectedShipping.name,
             price: selectedShipping.price,
           }
-        : null,      total: calculateTotal(),
-      couponInfo: couponApplied ? {
-        couponCode: couponCode,
-        discount: discount,
-        discountAmount: calculateSubtotal() * (discount / 100)
-      } : null,
+        : null,
+      total: calculateTotal(),
+      couponInfo: couponApplied
+        ? {
+            couponCode: couponCode,
+            discount: discount,
+            discountAmount: calculateSubtotal() * (discount / 100),
+          }
+        : null,
       shippingInfo: {
         fullName: shippingInfo.fullName,
         phone: shippingInfo.phone,
@@ -466,20 +502,22 @@ const Checkout = () => {
 
       if (initialOrder.success) {
         console.log("Initial MoMo order created:", initialOrder);
-          // Then create MoMo payment URL with the order ID using PaymentRequestDTO structure
+        // Then create MoMo payment URL with the order ID using PaymentRequestDTO structure
         const response = await authApi().post(endpoint.MOMO_PAYMENT, {
           orderId: initialOrder.orderNumber,
           paymentMethod: "MOMO",
           successUrl: `${window.location.origin}/checkout/momo/return`,
           cancelUrl: `${window.location.origin}/checkout/momo/cancel`,
-        });        if (response.data && response.data.redirectUrl) {
+        });
+        if (response.data && response.data.redirectUrl) {
           console.log("MoMo payment URL created:", response.data.redirectUrl);
           // Redirect to MoMo payment page
           window.location.href = response.data.redirectUrl;
-        } else {          throw new Error(
-            (response.data && response.data.message) || 
-            (response.data && response.data.error) || 
-            "Failed to create MoMo payment"
+        } else {
+          throw new Error(
+            (response.data && response.data.message) ||
+              (response.data && response.data.error) ||
+              "Failed to create MoMo payment"
           );
         }
       } else {
@@ -495,8 +533,7 @@ const Checkout = () => {
           "Failed to create MoMo payment"
       );
     }
-  };
-  // Handle place order for non-external payment methods (COD, etc.)
+  }; // Handle place order for non-external payment methods (COD, etc.)
   const handlePlaceOrder = async () => {
     try {
       setLoading(true);
@@ -508,15 +545,20 @@ const Checkout = () => {
         // Set order data for confirmation dialog
         setOrderData({
           id: response.orderNumber,
-          status: 'PENDING',
-          ...response
+          status: "PENDING",
+          ...response,
         });
         setOrderNumber(response.orderNumber);
         setOrderComplete(true);
         setShowConfirmationDialog(true);
         setActiveStep(3);
-        // Dispatch cart update event to refresh cart
-        window.dispatchEvent(new CustomEvent("cartUpdated"));
+
+        // For buy now mode, don't update cart since no cart was involved
+        if (!location.state?.buyNow) {
+          // Dispatch cart update event to refresh cart only for normal checkout
+          window.dispatchEvent(new CustomEvent("cartUpdated"));
+        }
+
         setSnackbar({
           open: true,
           message: "Đặt hàng thành công!",
@@ -535,29 +577,33 @@ const Checkout = () => {
     } finally {
       setLoading(false);
     }
-  };
-  // PayPal success handler
+  }; // PayPal success handler
   const handlePayPalSuccess = (details, data) => {
     console.log("PayPal payment successful:", details, data);
-    
+
     // Get order ID from paypalOrderData that was set during order creation
     const orderId = paypalOrderData?.orderId;
-    
+
     if (orderId) {
       // Set order data for confirmation dialog
       setOrderData({
         id: orderId,
-        status: 'PENDING',
-        paymentMethod: 'PAYPAL'
+        status: "PENDING",
+        paymentMethod: "PAYPAL",
       });
       setOrderNumber(orderId);
     }
-    
+
     setOrderComplete(true);
     setShowConfirmationDialog(true);
     setActiveStep(3);
-    // Dispatch cart update event to refresh cart
-    window.dispatchEvent(new CustomEvent("cartUpdated"));
+
+    // For buy now mode, don't update cart since no cart was involved
+    if (!location.state?.buyNow) {
+      // Dispatch cart update event to refresh cart only for normal checkout
+      window.dispatchEvent(new CustomEvent("cartUpdated"));
+    }
+
     setSnackbar({
       open: true,
       message: "Thanh toán PayPal thành công!",
@@ -964,7 +1010,8 @@ const Checkout = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-            }}          >
+            }}
+          >
             <Typography variant="h6">Tổng cộng:</Typography>
             <Typography variant="h6" sx={{ fontWeight: "bold" }}>
               {formatCurrency(calculateTotal())}
@@ -1049,7 +1096,7 @@ const Checkout = () => {
       )}
     </Grid>
   );
-  // Render current step content  
+  // Render current step content
   const getStepContent = (step) => {
     // If order is complete, show a simple message and let OrderConfirmationDialog handle the main success flow
     if (orderComplete) {
@@ -1076,9 +1123,12 @@ const Checkout = () => {
       default:
         return <Typography>Unknown step</Typography>;
     }
-  };
-  // If cart is empty, redirect to cart page
-  if ((!cartItems || cartItems.length === 0) && !orderComplete) {
+  }; // If cart is empty and not in buy now mode, redirect to cart page
+  if (
+    (!cartItems || cartItems.length === 0) &&
+    !orderComplete &&
+    !location.state?.buyNow
+  ) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         {renderBreadcrumbs()}
@@ -1314,7 +1364,9 @@ const Checkout = () => {
                     p: 2,
                     borderRadius: 2,
                   }}
-                >                  <Box
+                >
+                  {" "}
+                  <Box
                     sx={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -1326,7 +1378,6 @@ const Checkout = () => {
                       {formatCurrency(calculateSubtotal())}
                     </Typography>
                   </Box>
-                  
                   {/* Coupon discount display */}
                   {couponApplied && discount > 0 && (
                     <Box
@@ -1339,12 +1390,16 @@ const Checkout = () => {
                       <Typography variant="body1">
                         Giảm giá ({discount}%) - {couponCode}:
                       </Typography>
-                      <Typography variant="body1" color="error.main" fontWeight="medium">
-                        -{formatCurrency(calculateSubtotal() * (discount / 100))}
+                      <Typography
+                        variant="body1"
+                        color="error.main"
+                        fontWeight="medium"
+                      >
+                        -
+                        {formatCurrency(calculateSubtotal() * (discount / 100))}
                       </Typography>
                     </Box>
                   )}
-                  
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >

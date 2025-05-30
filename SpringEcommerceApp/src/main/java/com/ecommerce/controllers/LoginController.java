@@ -26,7 +26,7 @@ public class LoginController {
 
         if (error != null) {
             model.addAttribute("error", "Tên đăng nhập hoặc mật khẩu không đúng!");
-        }
+        }   
 
         if (logout != null) {
             model.addAttribute("message", "Bạn đã đăng xuất thành công!");

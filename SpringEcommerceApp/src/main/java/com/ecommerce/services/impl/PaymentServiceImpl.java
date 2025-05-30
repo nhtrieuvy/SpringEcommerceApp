@@ -4,7 +4,6 @@ import com.ecommerce.dtos.PaymentRequestDTO;
 import com.ecommerce.dtos.PaymentResponseDTO;
 import com.ecommerce.pojo.Order;
 import com.ecommerce.pojo.Payment;
-import com.ecommerce.pojo.PaymentMethod;
 import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.repositories.PaymentRepository;
 import com.ecommerce.services.PaymentService;
@@ -23,7 +22,6 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @Transactional
@@ -223,25 +221,7 @@ public class PaymentServiceImpl implements PaymentService {
                     momoResponseDTO.setRedirectUrl(momoExtResponse.getRedirectUrl());
                     return momoResponseDTO;
 
-                case ZALO_PAY:
-                    // Example: update or save logic would be similar
-                    payment.setStatus("PENDING_ZALOPAY");
-                    payment.setTransactionId("MOCK_ZALOPAY_" + UUID.randomUUID().toString());
-                    order.setStatus("AWAITING_ZALOPAY_PAYMENT");
-                    if (isNewPaymentRecord) {
-                        paymentRepository.save(payment);
-                    } else {
-                        paymentRepository.update(payment);
-                    }
-                    orderRepository.update(order);
-                    // ... return ZaloPay response ...
-                    // For now, returning a generic message as the original code didn't fully implement it
-                    return new PaymentResponseDTO(
-                            payment.getId(), order.getId(), payment.getPaymentMethod(), payment.getAmount(),
-                            payment.getStatus(), payment.getTransactionId(), payment.getPaymentDate(),
-                            "ZaloPay payment initiated (mock).");
-
-
+                
                 default:
                     throw new IllegalArgumentException(
                             "Unsupported payment method: " + paymentRequestDTO.getPaymentMethod());

@@ -27,24 +27,7 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-console.log('[firebase.js] Firebase initialized successfully, db:', !!db);
 
-// Initialize Analytics only in production
-// let analytics = null;
-// try {
-//   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-//     analytics = getAnalytics(app);
-//   }
-// } catch (error) {
-//   console.warn('Analytics initialization failed:', error);
-// }
-
-// For development - uncomment if using emulator
-// if (process.env.NODE_ENV === 'development') {
-//   connectFirestoreEmulator(db, 'localhost', 8080);
-// }
-
-// Anonymous authentication for Firestore access
 let isAuthInitialized = false;
 
 const initializeFirebaseAuth = async () => {
