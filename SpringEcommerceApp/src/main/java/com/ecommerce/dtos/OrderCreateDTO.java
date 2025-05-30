@@ -26,12 +26,14 @@ public class OrderCreateDTO {
     @NotNull(message = "Payment method is required")
     @Size(min = 1, max = 50, message = "Payment method must be between 1 and 50 characters")
     private String paymentMethod;
-    
-    @DecimalMin(value = "0.0", inclusive = false, message = "Subtotal must be greater than 0")
+      @DecimalMin(value = "0.0", inclusive = false, message = "Subtotal must be greater than 0")
     private Double subtotal;
     
     @DecimalMin(value = "0.0", message = "Shipping cost cannot be negative")
     private Double shipping;
+    
+    @DecimalMin(value = "0.0", inclusive = false, message = "Total must be greater than 0")
+    private Double total;
     
     private Map<String, Object> shippingMethod;
     private Map<String, String> shippingInfo;

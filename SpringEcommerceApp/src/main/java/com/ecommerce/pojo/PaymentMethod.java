@@ -4,7 +4,7 @@ public enum PaymentMethod {
     CASH_ON_DELIVERY("Cash on Delivery"),
     PAYPAL("PayPal"),
     // STRIPE("Stripe"),
-    ZALO_PAY("ZaloPay"),
+    // ZALO_PAY("ZaloPay"),
     MOMO("MoMo");
 
     private final String displayName;

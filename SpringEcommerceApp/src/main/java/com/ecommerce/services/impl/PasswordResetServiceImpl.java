@@ -7,7 +7,6 @@ import com.ecommerce.services.PasswordResetService;
 import com.ecommerce.services.UserService;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;

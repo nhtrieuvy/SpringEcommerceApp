@@ -4,8 +4,8 @@
  */
 package com.ecommerce.configs;
 
-import com.ecommerce.security.CustomAuthenticationSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
@@ -33,18 +34,17 @@ import org.slf4j.LoggerFactory;
         "com.ecommerce.controllers",
         "com.ecommerce.repositories",
         "com.ecommerce.services",
-        "com.ecommerce.filters"
+        "com.ecommerce.filters",
+        "com.ecommerce.security"
 })
 public class SpringSecurityConfigs extends BaseSecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SpringSecurityConfigs.class);
-
     @Autowired
+    @Qualifier("customUserDetailsService")
     private UserDetailsService userDetailsService;
 
-    @Bean
-    public CustomAuthenticationSuccessHandler authenticationSuccessHandler() {
-        return new CustomAuthenticationSuccessHandler();
-    }
+    @Autowired
+    private AuthenticationSuccessHandler adminAuthenticationSuccessHandler;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -60,19 +60,19 @@ public class SpringSecurityConfigs extends BaseSecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/", "/login", "/js/**", "/css/**", "/images/**", "/static/**").permitAll()
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
-
                         .anyRequest().authenticated())
-
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .loginProcessingUrl("/login") // This should handle the POST request
-                        .defaultSuccessUrl("/admin", true)
-                        .successHandler(authenticationSuccessHandler())
+                        .loginProcessingUrl("/login")
+                        .successHandler(adminAuthenticationSuccessHandler)
                         .failureUrl("/login?error=true")
                         .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
                         .permitAll())
                 .exceptionHandling(ex -> ex.accessDeniedPage("/login"));
 
@@ -82,7 +82,7 @@ public class SpringSecurityConfigs extends BaseSecurityConfig {
     @Bean
     public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
         return new HandlerMappingIntrospector();
-    }    // CorsConfigurationSource is now inherited from BaseSecurityConfig
+    } // CorsConfigurationSource is now inherited from BaseSecurityConfig
 
     @Bean
     public StandardServletMultipartResolver multipartResolver() {

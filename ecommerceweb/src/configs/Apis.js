@@ -5,7 +5,6 @@ import cookie from "react-cookies";
 // chúng ta KHÔNG cần prefix BASE_URL nữa
 const BASE_URL = "/SpringEcommerceApp-1.0-SNAPSHOT";
 
-console.log(`Đang sử dụng API server: ${BASE_URL || "proxy qua package.json"}`);
 
 // Thêm interceptor để log mọi lỗi kết nối
 axios.interceptors.request.use((request) => {
@@ -86,14 +85,14 @@ export const endpoint = {
   ASSIGN_ROLE: (userId) => `/api/admin/users/${userId}/roles`,
   REMOVE_ROLE: (userId, roleId) => `/api/admin/users/${userId}/roles/${roleId}`,
   // Endpoints để lấy danh sách người dùng theo role
-  USERS_BY_ROLE: (roleName) => `/api/admin/users/role/${roleName}`,  // Endpoints cho quản lý cửa hàng
+  USERS_BY_ROLE: (roleName) => `/api/admin/users/role/${roleName}`, // Endpoints cho quản lý cửa hàng
   GET_STORES: `/api/stores`,
   GET_STORE_BY_ID: (id) => `/api/stores/${id}`,
   GET_STORES_BY_SELLER: (sellerId) => `/api/stores/seller/${sellerId}`,
   GET_SELLER_STORES: `/api/seller/products/stores`,
   CREATE_STORE: `/api/stores`,
   UPDATE_STORE: (id) => `/api/stores/${id}`,
-  DELETE_STORE: (id) => `/api/stores/${id}`,// Endpoints cho quản lý sản phẩm
+  DELETE_STORE: (id) => `/api/stores/${id}`, // Endpoints cho quản lý sản phẩm
   GET_PRODUCTS: `/api/products`,
   GET_PRODUCTS_BY_STORE: (storeId, page = 0, size = 10) =>
     `/api/products?storeId=${storeId}&page=${page}&size=${size}`,
@@ -142,7 +141,7 @@ export const endpoint = {
   SHIPPING_METHODS: `/api/shipping/methods`,
 
   // Recommendations Endpoint
-  GET_RECOMMENDATIONS: `/api/products/recommendations`,  // Order Endpoints
+  GET_RECOMMENDATIONS: `/api/products/recommendations`, // Order Endpoints
   GET_ORDERS: `/api/orders`,
   GET_MY_ORDERS: `/api/orders/my-orders`,
   GET_ORDER_BY_ID: (id) => `/api/orders/${id}`,
@@ -153,14 +152,15 @@ export const endpoint = {
   MARK_PAYMENT_COMPLETED: (id) => `/api/orders/${id}/payment-completed`,
   PAYPAL_PAYMENT_COMPLETED: (id) =>
     `/api/orders/${id}/paypal-payment-completed`,
-    // Seller Order Management Endpoints
+  // Seller Order Management Endpoints
   GET_SELLER_ORDERS_ALL: `/api/orders/seller/all`,
-  GET_SELLER_ORDERS_BY_STORE: (storeId) => `/api/orders/seller/store/${storeId}`,
+  GET_SELLER_ORDERS_BY_STORE: (storeId) =>
+    `/api/orders/seller/store/${storeId}`,
   UPDATE_SELLER_ORDER_STATUS: (id) => `/api/orders/${id}/status`,
-  
+
   // Seller Statistics Endpoints
   SELLER_STATISTICS: `/api/seller/statistics`,
-  
+
   MOMO_PAYMENT: `/api/payments/momo/create`,
   MOMO_RETURN: `/api/payments/momo/return`,
   MOMO_NOTIFY: `/api/payments/momo/notify`,
@@ -332,5 +332,7 @@ export const saveAuthCookie = (token, user) => {
   // Lưu vào localStorage như backup
   localStorage.setItem("token", tokenValue);
   if (user) {
-    localStorage.setItem("user", JSON.stringify(user));  }  return tokenValue;
+    localStorage.setItem("user", JSON.stringify(user));
+  }
+  return tokenValue;
 };

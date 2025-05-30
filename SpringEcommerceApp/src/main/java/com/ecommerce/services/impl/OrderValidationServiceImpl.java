@@ -5,8 +5,7 @@ import com.ecommerce.exceptions.OrderException;
 import com.ecommerce.exceptions.ProductException;
 import com.ecommerce.exceptions.UserException;
 import com.ecommerce.pojo.*;
-import com.ecommerce.repositories.OrderRepository;
-import com.ecommerce.services.OrderDetailService;
+
 import com.ecommerce.services.ProductService;
 import com.ecommerce.services.UserService;
 import com.ecommerce.services.OrderValidationService;
@@ -17,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Date;
+
 
 /**
  * Enhanced Order Validation Service with comprehensive business logic validation
@@ -32,8 +31,6 @@ public class OrderValidationServiceImpl implements OrderValidationService {
     @Autowired
     private ProductService productService;
     
-    @Autowired
-    private OrderRepository orderRepository;
 
     @Override
     public void validateOrderCreation(OrderCreateDTO orderDTO) {
@@ -142,8 +139,7 @@ public class OrderValidationServiceImpl implements OrderValidationService {
             throw new OrderException("Shipping cost cannot be negative");
         }
         
-        double expectedTotal = orderDTO.getSubtotal() + orderDTO.getShipping();
-        // Note: Total calculation should be validated if provided in DTO
+        
     }
 
     private void validateStatusTransition(String currentStatus, String newStatus) {

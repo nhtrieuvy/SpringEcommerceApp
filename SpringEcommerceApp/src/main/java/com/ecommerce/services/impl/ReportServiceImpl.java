@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -503,112 +502,6 @@ public class ReportServiceImpl implements ReportService {
             row.createCell(1).setCellValue(totalRevenue);
             row.createCell(2).setCellValue(totalOrders);
             row.createCell(3).setCellValue(avgOrderValue);
-        }
-    }
-      private void createProductReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
-        // Create header row
-        Row headerRow = sheet.createRow(0);
-        String[] headers = {"Sản phẩm", "Số lượng đã bán", "Doanh thu (VNĐ)"};
-        
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
-            cell.setCellStyle(headerStyle);
-        }
-        
-        // Add data rows - handle chart data format
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> topProducts = (List<Map<String, Object>>) data.get("topProducts");
-        
-        int rowNum = 1;
-        if (topProducts != null) {
-            for (Map<String, Object> product : topProducts) {
-                Row row = sheet.createRow(rowNum++);
-                String productName = (String) product.get("name");
-                Integer quantity = (Integer) product.get("quantitySold");
-                Double revenue = (Double) product.get("revenue");
-                
-                row.createCell(0).setCellValue(productName != null ? productName : "N/A");
-                row.createCell(1).setCellValue(quantity != null ? quantity : 0);
-                row.createCell(2).setCellValue(revenue != null ? revenue : 0.0);
-            }
-        }
-    }
-      private void createCategoryReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
-        // Create header row
-        Row headerRow = sheet.createRow(0);
-        String[] headers = {"Danh mục", "Doanh thu (VNĐ)", "Phần trăm"};
-        
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
-            cell.setCellStyle(headerStyle);
-        }
-        
-        // Add data rows - handle chart data format
-        @SuppressWarnings("unchecked")
-        Map<String, Object> categoryChartData = (Map<String, Object>) data.get("categoryRevenue");
-        
-        if (categoryChartData != null) {
-            @SuppressWarnings("unchecked")
-            List<String> labels = (List<String>) categoryChartData.get("labels");
-            @SuppressWarnings("unchecked")
-            List<Object> values = (List<Object>) categoryChartData.get("values");
-            
-            // Calculate total for percentage
-            double total = 0.0;
-            if (values != null) {
-                total = values.stream()
-                    .filter(v -> v instanceof Number)
-                    .mapToDouble(v -> ((Number) v).doubleValue())
-                    .sum();
-            }
-            
-            int rowNum = 1;
-            if (labels != null && values != null && labels.size() == values.size()) {
-                for (int i = 0; i < labels.size(); i++) {
-                    Row row = sheet.createRow(rowNum++);
-                    String category = labels.get(i);
-                    Double revenue = values.get(i) instanceof Number ? ((Number) values.get(i)).doubleValue() : 0.0;
-                    double percentage = (total > 0) ? (revenue / total) * 100 : 0;
-                    
-                    row.createCell(0).setCellValue(category);
-                    row.createCell(1).setCellValue(revenue);
-                    row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
-                }
-            }
-        }
-    }
-      private void createUserReportSheet(XSSFSheet sheet, XSSFCellStyle headerStyle, Map<String, Object> data) {
-        // Create header row
-        Row headerRow = sheet.createRow(0);
-        String[] headers = {"Loại người dùng", "Số lượng", "Phần trăm"};
-        
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
-            cell.setCellStyle(headerStyle);
-        }
-        
-        // Add data rows - handle chart data format or map data
-        @SuppressWarnings("unchecked")
-        Map<String, Integer> userCounts = (Map<String, Integer>) data.get("userCountsByRole");
-        
-        if (userCounts != null) {
-            // Calculate total for percentage
-            int total = userCounts.values().stream().mapToInt(Integer::intValue).sum();
-            
-            int rowNum = 1;
-            for (Map.Entry<String, Integer> entry : userCounts.entrySet()) {
-                Row row = sheet.createRow(rowNum++);
-                String role = entry.getKey();
-                Integer count = entry.getValue();
-                double percentage = (total > 0) ? ((double)count / total) * 100 : 0;
-                
-                row.createCell(0).setCellValue(role);
-                row.createCell(1).setCellValue(count);
-                row.createCell(2).setCellValue(String.format("%.2f%%", percentage));
-            }
         }
     }
     

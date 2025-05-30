@@ -12,46 +12,61 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * Global exception handler for consistent error responses across the application
+ * Global exception handler for consistent error responses across the
+ * application
  */
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
     @ExceptionHandler(OrderException.class)
     public ResponseEntity<Object> handleOrderException(OrderException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of(
-                        "success", false,
-                        "message", ex.getMessage(),
-                        "error", "OrderException"
-                ));
-    }
-
-    @ExceptionHandler(ProductException.class)
-    public ResponseEntity<Object> handleProductException(ProductException ex) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
-        
-        // Different status codes for different product exceptions
-        if (ex instanceof ProductException.ProductNotFoundException) {
+
+        // Different status codes for different order exceptions
+        if (ex instanceof OrderException.OrderNotFoundException) {
             status = HttpStatus.NOT_FOUND;
-        } else if (ex instanceof ProductException.InsufficientStockException) {
+        } else if (ex instanceof OrderException.InvalidOrderStatusException) {
             status = HttpStatus.CONFLICT;
+        } else if (ex instanceof OrderException.OrderAlreadyProcessedException) {
+            status = HttpStatus.CONFLICT;
+        } else if (ex instanceof OrderException.EmptyOrderException) {
+            status = HttpStatus.UNPROCESSABLE_ENTITY;
+        } else if (ex instanceof OrderException.InvalidOrderTotalException) {
+            status = HttpStatus.UNPROCESSABLE_ENTITY;
         }
-        
+
         return ResponseEntity
                 .status(status)
                 .body(Map.of(
                         "success", false,
                         "message", ex.getMessage(),
-                        "error", ex.getClass().getSimpleName()
-                ));
+                        "error", ex.getClass().getSimpleName()));
+    }
+
+    @ExceptionHandler(ProductException.class)
+    public ResponseEntity<Object> handleProductException(ProductException ex) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        // Different status codes for different product exceptions
+        if (ex instanceof ProductException.ProductNotFoundException) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (ex instanceof ProductException.InsufficientStockException) {
+            status = HttpStatus.CONFLICT;
+        } else if (ex instanceof ProductException.InvalidProductDataException) {
+            status = HttpStatus.UNPROCESSABLE_ENTITY;
+        }
+
+        return ResponseEntity
+                .status(status)
+                .body(Map.of(
+                        "success", false,
+                        "message", ex.getMessage(),
+                        "error", ex.getClass().getSimpleName()));
     }
 
     @ExceptionHandler(UserException.class)
     public ResponseEntity<Object> handleUserException(UserException ex) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
-        
+
         // Different status codes for different user exceptions
         if (ex instanceof UserException.UserNotFoundException) {
             status = HttpStatus.NOT_FOUND;
@@ -61,15 +76,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             status = HttpStatus.FORBIDDEN;
         } else if (ex instanceof UserException.DuplicateUserException) {
             status = HttpStatus.CONFLICT;
+        } else if (ex instanceof UserException.InactiveUserException) {
+            status = HttpStatus.FORBIDDEN;
         }
-        
+
         return ResponseEntity
                 .status(status)
                 .body(Map.of(
                         "success", false,
                         "message", ex.getMessage(),
-                        "error", ex.getClass().getSimpleName()
-                ));
+                        "error", ex.getClass().getSimpleName()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -80,15 +96,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of(
                         "success", false,
                         "message", "Validation failed",
                         "errors", errors,
-                        "error", "ValidationException"
-                ));
+                        "error", "ValidationException"));
     }
 
     @ExceptionHandler(IllegalStateException.class)
@@ -98,8 +113,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(Map.of(
                         "success", false,
                         "message", ex.getMessage(),
-                        "error", "IllegalStateException"
-                ));
+                        "error", "IllegalStateException"));
     }
 
     @ExceptionHandler(Exception.class)
@@ -110,7 +124,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         "success", false,
                         "message", "An unexpected error occurred",
                         "error", ex.getClass().getSimpleName(),
-                        "details", ex.getMessage()
-                ));
+                        "details", ex.getMessage()));
     }
 }

@@ -1,8 +1,12 @@
 package com.ecommerce.exceptions;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
 /**
  * Exception for user-related business logic errors
  */
+@ResponseStatus(HttpStatus.BAD_REQUEST)
 public class UserException extends RuntimeException {
     
     public UserException(String message) {

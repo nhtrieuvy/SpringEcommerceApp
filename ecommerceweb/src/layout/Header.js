@@ -18,12 +18,11 @@ import {
     Slide,
     InputBase,
     alpha,
-    Divider,
-    List,    ListItem,
+    List,    
+    ListItem,
     ListItemText,
     ListItemAvatar,
     ListItemSecondaryAction,
-    Paper
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
