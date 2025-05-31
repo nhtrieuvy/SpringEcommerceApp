@@ -1,6 +1,5 @@
 package com.ecommerce.controllers;
 
-
 import com.ecommerce.pojo.ReviewProduct;
 import com.ecommerce.pojo.ReviewReply;
 
@@ -39,8 +38,6 @@ public class ApiReviewController {
 
     @Autowired
     private UserService userService;// API cho đánh giá sản phẩm
-
-
 
     @PostMapping("/product")
     public ResponseEntity<?> addProductReview(@RequestBody ReviewProduct review) {
@@ -133,7 +130,6 @@ public class ApiReviewController {
         }
     }
 
-
     // API cho trả lời đánh giá
     @PostMapping("/reply")
     public ResponseEntity<?> replyToReview(@RequestBody ReviewReply reply) {
@@ -225,7 +221,6 @@ public class ApiReviewController {
                             userObj.put("username", user.getUsername());
                             userObj.put("fullName", user.getFullname());
                             userObj.put("avatar", user.getAvatar());
-
 
                             enhancedReview.put("user", userObj);
                         }

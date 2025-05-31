@@ -53,6 +53,7 @@ import SortIcon from '@mui/icons-material/Sort';
 
 import { defaultApi, authApi, endpoint } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
+import AsyncPageWrapper from './AsyncPageWrapper';
 
 // Định nghĩa các hàm API trực tiếp trong component
 const getWishlistItems = async () => {
@@ -389,15 +390,15 @@ const Home = () => {
         {
             question: "Làm thế nào để theo dõi đơn hàng?",
             answer: "Sau khi đặt hàng thành công, bạn sẽ nhận được email xác nhận kèm mã đơn hàng. Bạn có thể sử dụng mã này để theo dõi trạng thái đơn hàng trong tài khoản của mình."
-        }
-    ];
+        }    ];
 
     return (
-        <Box sx={{
-            background: 'linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%)',
-            minHeight: '100vh',
-            pb: 8
-        }}>
+        <AsyncPageWrapper isLoading={loading}>
+            <Box sx={{
+                background: 'linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%)',
+                minHeight: '100vh',
+                pb: 8
+            }}>
             {/* Hero Section */}
             <Box
                 sx={{
@@ -1266,11 +1267,11 @@ const Home = () => {
                                     </Collapse>
                                 </Box>
                             </Box>
-                        ))}
-                    </Paper>
+                        ))}                </Paper>
                 </Box>
             </Container>
         </Box>
+        </AsyncPageWrapper>
     );
 };
 

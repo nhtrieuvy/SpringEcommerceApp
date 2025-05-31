@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { authApi, endpoint, defaultApi } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
 import { formatCurrency } from '../utils/FormatUtils';
+import AsyncPageWrapper from './AsyncPageWrapper';
 
 // MUI imports
 import {
@@ -550,20 +551,19 @@ const ProductComparison = () => {
                 </Box>
             </Container>
         );
-    }
-
-    return (
-        <Container sx={{ py: 4 }}>
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={3000}
-                onClose={handleSnackbarClose}
-                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-            >
-                <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-                    {snackbarMessage}
-                </Alert>
-            </Snackbar>
+    }    return (
+        <AsyncPageWrapper isLoading={loading || searchLoading}>
+            <Container sx={{ py: 4 }}>
+                <Snackbar
+                    open={snackbarOpen}
+                    autoHideDuration={3000}
+                    onClose={handleSnackbarClose}
+                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                >
+                    <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+                        {snackbarMessage}
+                    </Alert>
+                </Snackbar>
             
             <Typography variant="h4" component="h2" gutterBottom align="center">
                 So sánh sản phẩm cùng loại
@@ -1251,10 +1251,10 @@ const ProductComparison = () => {
                                 </TableRow>
                             </TableBody>
                         </Table>
-                    </TableContainer>
-                </Box>
+                    </TableContainer>                </Box>
             )}
         </Container>
+        </AsyncPageWrapper>
     );
 };
 

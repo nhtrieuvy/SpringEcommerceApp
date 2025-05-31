@@ -69,6 +69,7 @@ import MessageIcon from '@mui/icons-material/Message';
 
 import { defaultApi, authApi, endpoint } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
+import AsyncPageWrapper from './AsyncPageWrapper';
 import '../styles/CartStyles.css';
 import { formatCurrency } from '../utils/FormatUtils';
 import ProductChatDialog from './ProductChatDialog';
@@ -866,12 +867,12 @@ const ProductDetail = () => {
             </Container>
         );
     }
-    
-    const productImages = getProductImages();
+      const productImages = getProductImages();
     
     return (
-        <Box sx={{ background: 'linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%)', minHeight: '100vh', pb: 8 }}>
-            <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AsyncPageWrapper isLoading={loading}>
+            <Box sx={{ background: 'linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%)', minHeight: '100vh', pb: 8 }}>
+                <Container maxWidth="lg" sx={{ py: 4 }}>
                 {renderBreadcrumbs()}
                 
                 {/* Main Product Details */}
@@ -1829,8 +1830,7 @@ const ProductDetail = () => {
                     >
                         Gửi
                     </Button>                </DialogActions>            </Dialog>
-            
-            {/* Product Chat Dialog */}
+              {/* Product Chat Dialog */}
             <ProductChatDialog
                 open={chatDialogOpen}
                 onClose={handleCloseChatDialog}
@@ -1839,6 +1839,7 @@ const ProductDetail = () => {
             />
             
         </Box>
+        </AsyncPageWrapper>
     );
     
 };

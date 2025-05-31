@@ -39,6 +39,7 @@ import { useTheme } from '@mui/material/styles';
 import '../styles/CartStyles.css';
 import ProductRecommendation from './ProductRecommendation';
 import { formatCurrency } from '../utils/FormatUtils';
+import AsyncPageWrapper from './AsyncPageWrapper';
 
 const Cart = () => {
     const theme = useTheme();
@@ -387,11 +388,11 @@ const Cart = () => {
                     </Button>
                 </Paper>
             </Container>
-        );
-    }
+        );    }
     
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AsyncPageWrapper isLoading={loading}>
+            <Container maxWidth="lg" sx={{ py: 4 }}>
             {/* Breadcrumbs */}
             {renderBreadcrumbs()}
             
@@ -707,9 +708,9 @@ const Cart = () => {
             >
                 <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
                     {snackbar.message}
-                </Alert>
-            </Snackbar>
+                </Alert>            </Snackbar>
         </Container>
+        </AsyncPageWrapper>
     );
 };
 

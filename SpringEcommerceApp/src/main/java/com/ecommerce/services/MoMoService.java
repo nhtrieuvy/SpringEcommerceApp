@@ -41,13 +41,6 @@ public interface MoMoService {
      * @return Signature string
      * @throws java.security.NoSuchAlgorithmException
      * @throws java.security.InvalidKeyException
-     */
-    String generateSignature(String rawData, String secretKey) 
+     */    String generateSignature(String rawData, String secretKey) 
             throws java.security.NoSuchAlgorithmException, java.security.InvalidKeyException;
-            
-    /**
-     * Check if MoMo test server is available
-     * @return true if server is available and responding correctly
-     */
-    boolean checkMoMoServerStatus();
 }

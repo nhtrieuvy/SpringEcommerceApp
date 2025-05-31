@@ -45,29 +45,34 @@ public class HibernateConfigs {
         dataSource.setUsername(env.getProperty("hibernate.connection.username"));
         dataSource.setPassword(env.getProperty("hibernate.connection.password"));
         return dataSource;
-    }    private Properties hibernateProperties() {
+    }
+
+    private Properties hibernateProperties() {
         Properties props = new Properties();
         // Cơ bản
         props.setProperty("hibernate.dialect", env.getProperty("hibernate.dialect"));
         props.setProperty("hibernate.show_sql", env.getProperty("hibernate.showSql"));
         props.setProperty("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
-        
+
         // Tối ưu hóa bộ nhớ
         props.setProperty("hibernate.jdbc.batch_size", "50");
         props.setProperty("hibernate.order_inserts", "true");
         props.setProperty("hibernate.order_updates", "true");
         props.setProperty("hibernate.jdbc.batch_versioned_data", "true");
-        
+
         // Cấu hình cache với JCache (tương thích với Hibernate 6)
         props.setProperty("hibernate.cache.use_second_level_cache", "true");
         props.setProperty("hibernate.cache.use_query_cache", "true");
-        props.setProperty("hibernate.cache.region.factory_class", "org.hibernate.cache.jcache.internal.JCacheRegionFactory");
+        props.setProperty("hibernate.cache.region.factory_class",
+                "org.hibernate.cache.jcache.internal.JCacheRegionFactory");
         props.setProperty("hibernate.javax.cache.provider", "org.ehcache.jsr107.EhcacheCachingProvider");
         props.setProperty("hibernate.javax.cache.uri", "classpath:ehcache.xml");
         props.setProperty("hibernate.javax.cache.missing_cache_strategy", "create");
-        
+
         return props;
-    }    @Bean
+    }
+
+    @Bean
     public HibernateTransactionManager transactionManager() {
         HibernateTransactionManager transactionManager = new HibernateTransactionManager();
         transactionManager.setSessionFactory(getSessionFactory().getObject());

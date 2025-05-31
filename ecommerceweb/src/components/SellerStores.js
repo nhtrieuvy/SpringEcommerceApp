@@ -44,6 +44,7 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../configs/MyContexts';
+import AsyncPageWrapper from './AsyncPageWrapper';
 
 const SellerStores = () => {
   const { user } = useAuth();
@@ -486,9 +487,9 @@ const SellerStores = () => {
       </Grid>
     );
   };
-  
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>      <Box sx={{ mb: 4 }}>
+    return (
+    <AsyncPageWrapper isLoading={loading}>
+      <Container maxWidth="lg" sx={{ py: 4 }}><Box sx={{ mb: 4 }}>
         <Box sx={{ 
           display: 'flex', 
           flexDirection: 'column',
@@ -907,9 +908,9 @@ const SellerStores = () => {
              alert.severity === 'warning' ? 'Cảnh báo' : 'Thông tin'}
           </AlertTitle>
           {alert.message}
-        </Alert>
-      </Snackbar>
+        </Alert>      </Snackbar>
     </Container>
+    </AsyncPageWrapper>
   );
 };
 

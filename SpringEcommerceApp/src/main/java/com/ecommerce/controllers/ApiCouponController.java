@@ -9,11 +9,9 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/coupons")
-@CrossOrigin(origins = { "https://localhost:3000", "http://localhost:3000" }, 
-        allowCredentials = "true", 
-        allowedHeaders = "*", 
-        methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }, 
-        maxAge = 3600)
+@CrossOrigin(origins = { "https://localhost:3000",
+        "http://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*", methods = { RequestMethod.GET,
+                RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }, maxAge = 3600)
 public class ApiCouponController {
 
     @PostMapping("/validate")
@@ -26,7 +24,7 @@ public class ApiCouponController {
             }
 
             Map<String, Object> response = new HashMap<>();
-            
+
             // Simple coupon validation logic for demo
             if (code.equalsIgnoreCase("SALE10")) {
                 response.put("isValid", true);
@@ -47,7 +45,7 @@ public class ApiCouponController {
                 response.put("isValid", false);
                 response.put("message", "Mã giảm giá không tồn tại");
             }
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();

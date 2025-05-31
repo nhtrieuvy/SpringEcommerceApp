@@ -1,166 +1,249 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Container,
-  Paper,
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  Button
+    Container,
+    Paper,
+    Typography,
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    Alert,
+    Button,
+    Divider,
+    Grid,
+    Chip,
+    Avatar
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import { authApi, endpoint } from '../configs/Apis';
+import {
+    CheckCircle as CheckCircleIcon,
+    Error as ErrorIcon,
+    Receipt as ReceiptIcon,
+    Home as HomeIcon,
+    ShoppingBag as ShoppingBagIcon
+} from '@mui/icons-material';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { formatCurrency } from '../utils/FormatUtils';
 
 const MoMoReturn = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState('processing'); // processing, success, error
-  const [message, setMessage] = useState('');
-  const [orderNumber, setOrderNumber] = useState('');
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const [paymentResult, setPaymentResult] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const handleMoMoReturn = async () => {
-      try {
-        // Get parameters from URL
-        const params = Object.fromEntries(searchParams.entries());
-        
-        console.log('MoMo return parameters:', params);
+    useEffect(() => {
+        // Lấy các tham số từ URL
+        const status = searchParams.get('status');
+        const orderNumber = searchParams.get('orderNumber');
+        const transactionId = searchParams.get('transactionId');
+        const message = searchParams.get('message');
+        const errorDetail = searchParams.get('errorDetail');
+        const resultCode = searchParams.get('resultCode');
+        const paymentUpdated = searchParams.get('paymentUpdated');
 
-        // Verify payment with backend
-        const response = await authApi().post(endpoint.MOMO_RETURN, params);
+        // Thiết lập kết quả thanh toán
+        const result = {
+            status,
+            orderNumber,
+            transactionId,
+            message: decodeURIComponent(message || ''),
+            errorDetail: errorDetail ? decodeURIComponent(errorDetail) : null,
+            resultCode,
+            paymentUpdated: paymentUpdated === 'true'
+        };        setPaymentResult(result);
+        setLoading(false);
+    }, [searchParams, navigate]);
 
-        if (response.data.success) {
-          setStatus('success');
-          setMessage('Thanh toán MoMo thành công!');
-          setOrderNumber(response.data.orderNumber || params.orderId);
-          
-          // Dispatch cart update event to refresh cart
-          window.dispatchEvent(new CustomEvent('cartUpdated'));        } else {
-          setStatus('error');
-          // Show more detailed error messages from MoMo if available
-          if (response.data.resultCode) {
-            setMessage(`${response.data.message || 'Thanh toán thất bại'} (Mã lỗi: ${response.data.resultCode})`);
-          } else {
-            setMessage(response.data.message || 'Thanh toán thất bại');
-          }
-        }
-      } catch (error) {
-        console.error('Error processing MoMo return:', error);
-        setStatus('error');
-        setMessage(
-          error.response?.data?.message || 
-          'Có lỗi xảy ra khi xử lý thanh toán'
-        );
-      }
+    const handleGoToOrders = () => {
+        navigate('/orders');
     };
 
-    handleMoMoReturn();
-  }, [searchParams]);
+    const handleGoHome = () => {
+        navigate('/');
+    };
 
-  const handleContinueShopping = () => {
-    navigate('/');
-  };
+    const handleViewOrderDetails = () => {
+        if (paymentResult.orderNumber) {
+            navigate(`/orders/${paymentResult.orderNumber}`);
+        }
+    };
 
-  const handleViewOrders = () => {
-    navigate('/orders');
-  };
+    if (loading) {
+        return (
+            <Container maxWidth="md" sx={{ py: 4 }}>
+                <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+                    <CircularProgress size={60} />
+                    <Typography variant="h6">Đang xử lý kết quả thanh toán...</Typography>
+                </Box>
+            </Container>
+        );
+    }
 
-  if (status === 'processing') {
+    if (!paymentResult) {
+        return (
+            <Container maxWidth="md" sx={{ py: 4 }}>
+                <Alert severity="error">
+                    Không tìm thấy thông tin kết quả thanh toán.
+                </Alert>
+                <Box sx={{ mt: 3 }}>
+                    <Button variant="contained" onClick={handleGoHome}>
+                        Về trang chủ
+                    </Button>
+                </Box>
+            </Container>
+        );
+    }
+
+    const isSuccess = paymentResult.status === 'success';
+
     return (
-      <Container maxWidth="sm" sx={{ py: 8 }}>
-        <Paper elevation={0} sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
-          <CircularProgress size={60} sx={{ mb: 3, color: 'primary.main' }} />
-          <Typography variant="h5" gutterBottom>
-            Đang xử lý thanh toán...
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Vui lòng đợi trong giây lát
-          </Typography>
-        </Paper>
-      </Container>
+        <Container maxWidth="md" sx={{ py: 4 }}>
+            <Paper elevation={3} sx={{ p: 4 }}>
+                {/* Header với icon và tiêu đề */}
+                <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
+                    <Avatar
+                        sx={{
+                            width: 80,
+                            height: 80,
+                            mb: 2,
+                            bgcolor: isSuccess ? 'success.main' : 'error.main'
+                        }}
+                    >
+                        {isSuccess ? <CheckCircleIcon sx={{ fontSize: 40 }} /> : <ErrorIcon sx={{ fontSize: 40 }} />}
+                    </Avatar>
+                    
+                    <Typography variant="h4" component="h1" gutterBottom align="center">
+                        {isSuccess ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
+                    </Typography>
+                    
+                    <Typography variant="h6" color="text.secondary" align="center">
+                        {paymentResult.message}
+                    </Typography>
+                </Box>
+
+                <Divider sx={{ my: 3 }} />
+
+                {/* Thông tin chi tiết */}
+                <Card variant="outlined" sx={{ mb: 3 }}>
+                    <CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <ReceiptIcon />
+                            Thông tin thanh toán
+                        </Typography>
+                        
+                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                            {paymentResult.orderNumber && (
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Số đơn hàng:
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight="bold">
+                                        #{paymentResult.orderNumber}
+                                    </Typography>
+                                </Grid>
+                            )}
+                            
+                            {paymentResult.transactionId && (
+                                <Grid item xs={12} sm={6}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Mã giao dịch:
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight="bold">
+                                        {paymentResult.transactionId}
+                                    </Typography>
+                                </Grid>
+                            )}
+                            
+                            <Grid item xs={12} sm={6}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Phương thức thanh toán:
+                                </Typography>
+                                <Chip 
+                                    label="MoMo" 
+                                    color="primary" 
+                                    size="small" 
+                                    sx={{ mt: 0.5 }}
+                                />
+                            </Grid>
+                            
+                            <Grid item xs={12} sm={6}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Trạng thái:
+                                </Typography>
+                                <Chip 
+                                    label={isSuccess ? 'Thành công' : 'Thất bại'}
+                                    color={isSuccess ? 'success' : 'error'}
+                                    size="small"
+                                    sx={{ mt: 0.5 }}
+                                />
+                            </Grid>
+                            
+                            {paymentResult.resultCode && (
+                                <Grid item xs={12}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Mã kết quả:
+                                    </Typography>
+                                    <Typography variant="body1">
+                                        {paymentResult.resultCode}
+                                    </Typography>
+                                </Grid>
+                            )}
+                        </Grid>
+                    </CardContent>
+                </Card>
+
+                {/* Thông báo lỗi chi tiết nếu có */}
+                {!isSuccess && paymentResult.errorDetail && (
+                    <Alert severity="error" sx={{ mb: 3 }}>
+                        <Typography variant="body2">
+                            <strong>Chi tiết lỗi:</strong> {paymentResult.errorDetail}
+                        </Typography>
+                    </Alert>
+                )}
+
+                {/* Thông báo thành công */}
+                {isSuccess && (
+                    <Alert severity="success" sx={{ mb: 3 }}>                        <Typography variant="body2">
+                            Đơn hàng của bạn đã được thanh toán thành công. 
+                            {paymentResult.paymentUpdated && ' Trạng thái đơn hàng đã được cập nhật.'}
+                        </Typography>
+                    </Alert>
+                )}
+
+                {/* Các nút hành động */}
+                <Box display="flex" gap={2} justifyContent="center" flexWrap="wrap">
+                    {isSuccess && paymentResult.orderNumber && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleViewOrderDetails}
+                            startIcon={<ReceiptIcon />}
+                            size="large"
+                        >
+                            Xem chi tiết đơn hàng
+                        </Button>
+                    )}
+                    
+                    <Button
+                        variant="outlined"
+                        onClick={handleGoToOrders}
+                        startIcon={<ShoppingBagIcon />}
+                        size="large"
+                    >
+                        Danh sách đơn hàng
+                    </Button>
+                    
+                    <Button
+                        variant="outlined"
+                        onClick={handleGoHome}
+                        startIcon={<HomeIcon />}
+                        size="large"
+                    >
+                        Về trang chủ
+                    </Button>
+                </Box>
+            </Paper>
+        </Container>
     );
-  }
-
-  return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={0} sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
-        {status === 'success' ? (
-          <>
-            <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main', mb: 3 }} />
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'success.main' }}>
-              Thanh toán thành công!
-            </Typography>
-            <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-              {message}
-            </Typography>
-            {orderNumber && (
-              <Box sx={{ 
-                bgcolor: 'success.light', 
-                p: 2, 
-                borderRadius: 2, 
-                mb: 3,
-                color: 'white'
-              }}>
-                <Typography variant="body1">
-                  Mã đơn hàng: <strong>{orderNumber}</strong>
-                </Typography>
-              </Box>
-            )}
-            <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
-              <Typography variant="body2">
-                Đơn hàng của bạn đã được xác nhận và sẽ được xử lý trong thời gian sớm nhất.
-              </Typography>
-            </Alert>
-          </>
-        ) : (
-          <>
-            <ErrorIcon sx={{ fontSize: 80, color: 'error.main', mb: 3 }} />
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'error.main' }}>
-              Thanh toán thất bại
-            </Typography>
-            <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-              {message}
-            </Typography>
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-              <Typography variant="body2">
-                Vui lòng thử lại hoặc chọn phương thức thanh toán khác.
-              </Typography>
-            </Alert>
-          </>
-        )}
-
-        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 4 }}>
-          <Button
-            variant="outlined"
-            onClick={handleContinueShopping}
-            sx={{ borderRadius: 2, px: 3 }}
-          >
-            Tiếp tục mua sắm
-          </Button>
-          {status === 'success' && (
-            <Button
-              variant="contained"
-              onClick={handleViewOrders}
-              sx={{ borderRadius: 2, px: 3 }}
-            >
-              Xem đơn hàng
-            </Button>
-          )}
-          {status === 'error' && (
-            <Button
-              variant="contained"
-              onClick={() => navigate('/checkout')}
-              sx={{ borderRadius: 2, px: 3 }}
-            >
-              Thử lại
-            </Button>
-          )}
-        </Box>
-      </Paper>
-    </Container>
-  );
 };
 
 export default MoMoReturn;

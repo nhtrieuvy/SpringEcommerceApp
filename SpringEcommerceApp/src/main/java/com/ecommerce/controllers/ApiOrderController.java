@@ -41,7 +41,6 @@ import java.util.Map;
 public class ApiOrderController {
     @Autowired
     private OrderService orderService;
-    
 
     @Autowired
     private OrderDetailService orderDetailService;
@@ -50,8 +49,10 @@ public class ApiOrderController {
     private UserService userService;
 
     @Autowired
-    private ProductService productService;    @Autowired
-    private PaymentService paymentService;    @Autowired
+    private ProductService productService;
+    @Autowired
+    private PaymentService paymentService;
+    @Autowired
     private EmailService emailService;
 
     @Autowired
@@ -86,8 +87,9 @@ public class ApiOrderController {
                         .body(Map.of("success", false, "message", "Order not found"));
             }
 
-            Payment payment = paymentService.getPaymentByOrderId(id);            List<OrderDetail> orderDetails = orderDetailService.findByOrderId(id);
-            
+            Payment payment = paymentService.getPaymentByOrderId(id);
+            List<OrderDetail> orderDetails = orderDetailService.findByOrderId(id);
+
             // Create a safe response without circular references
             Map<String, Object> orderResponse = new HashMap<>();
             orderResponse.put("id", order.getId());
@@ -216,7 +218,7 @@ public class ApiOrderController {
             // Set initial status if not provided
             if (order.getStatus() == null || order.getStatus().isEmpty()) {
                 order.setStatus("PENDING");
-            }            // Save the order
+            } // Save the order
             orderService.save(order);
 
             // Add order status history
@@ -225,15 +227,14 @@ public class ApiOrderController {
 
             if (user != null) {
                 orderService.addOrderStatusHistory(order, order.getStatus(), "Order created", user.getId());
-                
+
                 // Log order creation activity
                 String ipAddress = IpUtils.getClientIpAddress(request);
                 recentActivityService.logOrderCreated(
-                    user.getEmail(),
-                    user.getFullname() != null ? user.getFullname() : user.getUsername(),
-                    order.getId(),
-                    ipAddress
-                );
+                        user.getEmail(),
+                        user.getFullname() != null ? user.getFullname() : user.getUsername(),
+                        order.getId(),
+                        ipAddress);
             }
 
             // Send order confirmation email
@@ -279,10 +280,10 @@ public class ApiOrderController {
 
             String paymentMethod = request.get("paymentMethod");
             String transactionId = request.get("transactionId");
-            String note = request.get("note");            // Update order status to PROCESSING (payment completed)
+            String note = request.get("note"); // Update order status to PROCESSING (payment completed)
             String previousStatus = order.getStatus();
             order.setStatus("PROCESSING");
-            
+
             // Create custom note for payment completion
             String statusNote = "Payment completed via " + (paymentMethod != null ? paymentMethod : "online payment");
             if (transactionId != null && !transactionId.isEmpty()) {
@@ -291,9 +292,9 @@ public class ApiOrderController {
             if (note != null && !note.isEmpty()) {
                 statusNote += " - " + note;
             }
-              // Since we always have a payment note, use update without history
+            // Since we always have a payment note, use update without history
             orderService.updateWithoutHistory(order);
-            
+
             // And manually add the history with the payment note
             if (user != null) {
                 orderService.addOrderStatusHistory(order, "PROCESSING", statusNote, user.getId());
@@ -342,40 +343,41 @@ public class ApiOrderController {
             if (status == null || status.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "Status is required"));
-            } // Update order status            // Store previous status for email notification and response message
+            } // Update order status // Store previous status for email notification and
+              // response message
             String previousStatus = order.getStatus();
 
             // Get user info before updating order
             String username = JwtUtils.extractUsernameFromRequest(httpRequest);
             User user = userService.findByUsername(username);
             Long userId = user != null ? user.getId() : null;
-              // Set new status in the order object
-            order.setStatus(status);            // Option 1: Manual update with custom note (for when user provides a note)
+            // Set new status in the order object
+            order.setStatus(status); // Option 1: Manual update with custom note (for when user provides a note)
             if (note != null && !note.isEmpty()) {
                 // Update order without creating history entry
                 orderService.updateWithoutHistory(order);
-                
+
                 // Add history with user-provided note
                 orderService.addOrderStatusHistory(order, status, note, userId);
-            } 
+            }
             // Option 2: Normal update (for when no note is provided)
             else {
-                // Let the orderService.update method create the default history entry with user ID
+                // Let the orderService.update method create the default history entry with user
+                // ID
                 orderService.update(order, userId);
             }
-            
+
             // Log order status change activity
             if (user != null) {
                 String ipAddress = IpUtils.getClientIpAddress(httpRequest);
                 recentActivityService.logOrderStatusChanged(
-                    user.getEmail(),
-                    user.getFullname() != null ? user.getFullname() : user.getUsername(),
-                    order.getId(),
-                    status,
-                    ipAddress
-                );
+                        user.getEmail(),
+                        user.getFullname() != null ? user.getFullname() : user.getUsername(),
+                        order.getId(),
+                        status,
+                        ipAddress);
             }
-            
+
             // Send status update email
             try {
                 emailService.sendOrderStatusUpdateEmail(order, previousStatus, status);
@@ -385,15 +387,15 @@ public class ApiOrderController {
                 e.printStackTrace();
                 // Don't fail the status update if email fails, just log it
             }
-            
-            // Create a safe response object without lazy-loaded collections that might cause serialization issues
+
+            // Create a safe response object without lazy-loaded collections that might
+            // cause serialization issues
             Map<String, Object> safeOrderData = Map.of(
-                "id", order.getId(),
-                "status", order.getStatus(),
-                "orderDate", order.getOrderDate(),
-                "totalAmount", order.getTotalAmount(),
-                "user", Map.of("id", order.getUser().getId(), "fullname", order.getUser().getFullname())
-            );
+                    "id", order.getId(),
+                    "status", order.getStatus(),
+                    "orderDate", order.getOrderDate(),
+                    "totalAmount", order.getTotalAmount(),
+                    "user", Map.of("id", order.getUser().getId(), "fullname", order.getUser().getFullname()));
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -492,7 +494,7 @@ public class ApiOrderController {
             List<OrderDetail> orderDetails = orderDetailService.findByOrderId(id);
 
             // Lấy lịch sử trạng thái
-            List<OrderStatusHistory> history = orderService.getOrderStatusHistory(id);            // Tạo response object
+            List<OrderStatusHistory> history = orderService.getOrderStatusHistory(id); // Tạo response object
             Map<String, Object> orderResponse = new HashMap<>();
             orderResponse.put("id", order.getId());
             orderResponse.put("orderDate", order.getOrderDate());
@@ -551,7 +553,7 @@ public class ApiOrderController {
                     detailsList.add(detailMap);
                 }
                 orderResponse.put("orderDetails", detailsList);
-            }            // Thêm lịch sử trạng thái
+            } // Thêm lịch sử trạng thái
             if (history != null && !history.isEmpty()) {
                 List<Map<String, Object>> historyList = new ArrayList<>();
                 for (OrderStatusHistory statusHistory : history) {
@@ -575,7 +577,9 @@ public class ApiOrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
-    }    @PostMapping(value = "/create-order", consumes = "application/json", produces = "application/json")
+    }
+
+    @PostMapping(value = "/create-order", consumes = "application/json", produces = "application/json")
     public ResponseEntity<?> createOrderFromDTO(@RequestBody OrderDTO orderDTO, HttpServletRequest request) {
         try {
             // Get the authenticated user
@@ -589,13 +593,14 @@ public class ApiOrderController {
 
             // Convert OrderDTO to OrderCreateDTO for validation
             OrderCreateDTO orderCreateDTO = convertToOrderCreateDTO(orderDTO, user.getId());
-            
+
             // Validate order creation using OrderValidationService
             try {
                 orderValidationService.validateOrderCreation(orderCreateDTO);
             } catch (Exception validationException) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("success", false, "message", "Validation failed: " + validationException.getMessage()));
+                        .body(Map.of("success", false, "message",
+                                "Validation failed: " + validationException.getMessage()));
             }
 
             // Create a new order
@@ -629,7 +634,7 @@ public class ApiOrderController {
             payment.setPaymentDate(new Date());
 
             // Use helper method to maintain bidirectional relationship
-            order.setPaymentWithRelationship(payment);            // Add shipping info to order fields
+            order.setPaymentWithRelationship(payment); // Add shipping info to order fields
             if (orderDTO.getShippingInfo() != null) {
                 // Set shipping address combining address, city, and district
                 String fullAddress = orderDTO.getShippingInfo().get("address");
@@ -640,17 +645,18 @@ public class ApiOrderController {
                     fullAddress += ", " + orderDTO.getShippingInfo().get("district");
                 }
                 order.setShippingAddress(fullAddress);
-                
+
                 // Set user address as the billing address
                 order.setAddress(fullAddress);
-                
+
                 // Set phone number
                 order.setPhoneNumber(orderDTO.getShippingInfo().get("phone"));
-                
+
                 // Set additional notes
                 StringBuilder notes = new StringBuilder();
                 notes.append("Recipient: ").append(orderDTO.getShippingInfo().get("fullName"));
-                if (orderDTO.getShippingInfo().get("notes") != null && !orderDTO.getShippingInfo().get("notes").isEmpty()) {
+                if (orderDTO.getShippingInfo().get("notes") != null
+                        && !orderDTO.getShippingInfo().get("notes").isEmpty()) {
                     notes.append("\nNotes: ").append(orderDTO.getShippingInfo().get("notes"));
                 }
                 order.setNotes(notes.toString());
@@ -671,14 +677,17 @@ public class ApiOrderController {
                         // No need to explicitly save OrderDetail with proper cascade settings
                     }
                 }
-            }
-
-            // Calculate the total amount based on order items
+            }            // Calculate the total amount based on order items
             double calculatedTotal = order.calculateTotalAmount();
 
             // If the calculated total is 0 but we have a DTO total, use it as fallback
             if (calculatedTotal == 0 && orderDTO.getTotal() != null) {
                 order.setTotalAmount(orderDTO.getTotal());
+            }
+            
+            // Set shipping fee from DTO
+            if (orderDTO.getShipping() != null) {
+                order.setShippingFee(orderDTO.getShipping());
             }
 
             // Update payment amount to match the order total
@@ -699,7 +708,7 @@ public class ApiOrderController {
 
             // Create initial order status history entry directly using the helper method
             OrderStatusHistory initialStatus = new OrderStatusHistory(order, order.getStatus(), "Order created", user);
-            order.addStatusHistory(initialStatus);            // Save the order with all its relationships in one transaction
+            order.addStatusHistory(initialStatus); // Save the order with all its relationships in one transaction
             // With proper cascade settings, this will save order details and payment
             // automatically
             orderService.save(order);
@@ -707,11 +716,10 @@ public class ApiOrderController {
             // Log order creation activity
             String ipAddress = IpUtils.getClientIpAddress(request);
             recentActivityService.logOrderCreated(
-                user.getEmail(),
-                user.getFullname() != null ? user.getFullname() : user.getUsername(),
-                order.getId(),
-                ipAddress
-            );
+                    user.getEmail(),
+                    user.getFullname() != null ? user.getFullname() : user.getUsername(),
+                    order.getId(),
+                    ipAddress);
 
             // Send order confirmation email
             try {
@@ -804,14 +812,14 @@ public class ApiOrderController {
                 System.err.println("Error saving/updating payment: " + paymentException.getMessage());
                 paymentException.printStackTrace();
                 throw paymentException; // Re-throw to handle in outer catch
-            }            // Update order status to PROCESSING (payment completed)
+            } // Update order status to PROCESSING (payment completed)
             String previousStatus = order.getStatus();
             order.setStatus("PROCESSING");
-            
+
             // Create custom note for PayPal payment
             String statusNote = "PayPal payment completed (Order ID: " + paypalOrderId +
                     ", Capture ID: " + captureId + ")";
-              // Use service method to avoid duplicate history entries
+            // Use service method to avoid duplicate history entries
             orderService.updateWithoutHistory(order);
 
             // Manually add history entry with PayPal details
@@ -880,10 +888,10 @@ public class ApiOrderController {
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "message", "User not found"));
-            }            // Sử dụng phương thức có sẵn trong OrderService để chuyển đổi sang DTO
+            } // Sử dụng phương thức có sẵn trong OrderService để chuyển đổi sang DTO
             // Phương thức này xử lý đầy đủ các thông tin khách hàng, cửa hàng, sản phẩm
             List<OrderSummaryDTO> orderDTOs = orderService.findOrdersByStoreIdAsDTO(storeId);
-            
+
             // Áp dụng lọc status sau khi đã chuyển đổi sang DTO
             if (status != null && !status.isEmpty() && !status.equals("ALL")) {
                 orderDTOs = orderDTOs.stream()
@@ -928,20 +936,20 @@ public class ApiOrderController {
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("success", false, "message", "User not found"));
-            }            // Sử dụng phương thức có sẵn trong OrderService để chuyển đổi sang DTO
+            } // Sử dụng phương thức có sẵn trong OrderService để chuyển đổi sang DTO
             // Phương thức này xử lý đầy đủ các thông tin khách hàng, cửa hàng, sản phẩm
             List<OrderSummaryDTO> orderDTOs = orderService.findOrdersBySellerIdAsDTO(user.getId());
-            
+
             // Log thông tin để debug
             System.out.println("Orders found for seller ID " + user.getId() + ": " + orderDTOs.size());
             if (!orderDTOs.isEmpty()) {
                 OrderSummaryDTO firstOrder = orderDTOs.get(0);
-                System.out.println("Sample order data - ID: " + firstOrder.getId() 
-                    + ", Customer: " + firstOrder.getCustomerName()
-                    + ", Store: " + firstOrder.getStoreName()
-                    + ", First Product: " + firstOrder.getFirstProductName());
+                System.out.println("Sample order data - ID: " + firstOrder.getId()
+                        + ", Customer: " + firstOrder.getCustomerName()
+                        + ", Store: " + firstOrder.getStoreName()
+                        + ", First Product: " + firstOrder.getFirstProductName());
             }
-            
+
             // Áp dụng lọc status sau khi đã chuyển đổi sang DTO
             if (status != null && !status.isEmpty() && !status.equals("ALL")) {
                 orderDTOs = orderDTOs.stream()
@@ -952,23 +960,27 @@ public class ApiOrderController {
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "orders", orderDTOs,
-                    "totalElements", orderDTOs.size()));        } catch (Exception e) {
+                    "totalElements", orderDTOs.size()));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error fetching orders: " + e.getMessage()));
         }
-    }    /**
+    }
+
+    /**
      * Convert OrderDTO to OrderCreateDTO for validation purposes
+     * 
      * @param orderDTO The OrderDTO from frontend
-     * @param userId The user ID placing the order
+     * @param userId   The user ID placing the order
      * @return OrderCreateDTO for validation
      */
     private OrderCreateDTO convertToOrderCreateDTO(OrderDTO orderDTO, Long userId) {
         OrderCreateDTO createDTO = new OrderCreateDTO();
-        
+
         // Set basic order information
         createDTO.setUserId(userId);
         createDTO.setPaymentMethod(orderDTO.getPaymentMethod());
-        
+
         // Calculate subtotal from items
         double calculatedSubtotal = 0.0;
         if (orderDTO.getItems() != null && !orderDTO.getItems().isEmpty()) {
@@ -978,13 +990,16 @@ public class ApiOrderController {
                 }
             }
         }
-        createDTO.setSubtotal(calculatedSubtotal);
-          // Set shipping cost (default to 0 if not provided)
-        createDTO.setShipping(0.0); // Could be enhanced to get from orderDTO if available
-        
+        createDTO.setSubtotal(calculatedSubtotal);        // Set shipping cost from orderDTO if available
+        if (orderDTO.getShipping() != null) {
+            createDTO.setShipping(orderDTO.getShipping());
+        } else {
+            createDTO.setShipping(0.0); // Default to 0 if not provided
+        }
+
         // Set total amount
         createDTO.setTotal(orderDTO.getTotal() != null ? orderDTO.getTotal() : calculatedSubtotal);
-        
+
         // Convert order items
         if (orderDTO.getItems() != null && !orderDTO.getItems().isEmpty()) {
             List<OrderCreateDTO.OrderItemCreateDTO> items = new ArrayList<>();
@@ -997,12 +1012,12 @@ public class ApiOrderController {
             }
             createDTO.setItems(items);
         }
-        
+
         // Set shipping information if available
         if (orderDTO.getShippingInfo() != null) {
             createDTO.setShippingInfo(orderDTO.getShippingInfo());
         }
-        
+
         return createDTO;
     }
 }

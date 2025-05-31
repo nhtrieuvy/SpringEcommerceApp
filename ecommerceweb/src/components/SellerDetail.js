@@ -45,6 +45,7 @@ import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import { defaultApi } from '../configs/Apis';
 import { authApi, endpoint } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
+import AsyncPageWrapper from './AsyncPageWrapper';
 // import { hasRole, ROLES, canModifyReview } from '../configs/Roles';
 
 const SellerDetail = () => {
@@ -558,9 +559,9 @@ const SellerDetail = () => {
             </Container>
         );
     }
-    
-    return (
-        <Box sx={{ background: 'linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%)', minHeight: '100vh', pb: 8 }}>
+      return (
+        <AsyncPageWrapper isLoading={loading || productsLoading || reviewsLoading}>
+            <Box sx={{ background: 'linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%)', minHeight: '100vh', pb: 8 }}>
             <Container maxWidth="lg" sx={{ py: 4 }}>
                 {renderBreadcrumbs()}
                 
@@ -1086,10 +1087,10 @@ const SellerDetail = () => {
                         sx={{ width: '100%' }}
                     >
                         {snackbar.message}
-                    </Alert>
-                </Snackbar>
+                    </Alert>                </Snackbar>
             </Container>
         </Box>
+        </AsyncPageWrapper>
     );
 };
 

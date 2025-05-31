@@ -20,7 +20,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payments")
-@CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true")
+@CrossOrigin(origins = { "https://localhost:3000",
+        " https://d0d3-2405-4802-37-ca00-5cb4-2712-7f6b-9f68.ngrok-free.app" }, allowCredentials = "true")
 public class ApiPaymentController {
     @Autowired
     private PaymentService paymentService;
@@ -172,33 +173,28 @@ public class ApiPaymentController {
      * Create MoMo payment specifically (alternative endpoint)
      * This endpoint does the same as /process but is MoMo-specific for frontend
      * compatibility
-     */    @PostMapping("/momo/create")
+     */
+    @PostMapping("/momo/create")
     public ResponseEntity<?> createMoMoPayment(@RequestBody @Valid PaymentRequestDTO paymentRequestDTO,
             HttpServletRequest request) {
         try {
-            // Log the incoming payment request
-            System.out.println("Received MoMo payment request for order: " + paymentRequestDTO.getOrderId());
-            
             // Ensure payment method is MoMo
             paymentRequestDTO.setPaymentMethod(PaymentMethod.MOMO);
 
             // Set default MoMo URLs
             setDefaultUrls(paymentRequestDTO, request);
-            System.out.println("MoMo URLs configured - returnUrl: " + paymentRequestDTO.getSuccessUrl());
-
             PaymentResponseDTO paymentResponse = paymentService.processPayment(paymentRequestDTO);
-            System.out.println("MoMo payment processing completed with status: " + paymentResponse.getStatus());
-            
+
             if (paymentResponse.getRedirectUrl() != null) {
                 System.out.println("MoMo redirect URL: " + paymentResponse.getRedirectUrl());
             }
-            
+
             return ResponseEntity.ok(paymentResponse);
 
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("MoMo payment creation error: " + e.getMessage());
-            
+
             Map<String, String> error = new HashMap<>();
             error.put("error", "Failed to create MoMo payment: " + e.getMessage());
             error.put("details", e.toString());
@@ -208,14 +204,12 @@ public class ApiPaymentController {
 
     /**
      * Handle MoMo payment return (user redirected back from MoMo)
+     * This endpoint redirects user to frontend component instead of returning JSON
      */
     @GetMapping("/momo/return")
     public ResponseEntity<?> handleMoMoReturn(@RequestParam Map<String, String> allParams) {
         try {
-            // Log all parameters for debugging
-            System.out.println("MoMo Return called with parameters: " + allParams);
-
-            // Extract MoMo callback parameters
+            // Extract MoMo return parameters
             String partnerCode = allParams.get("partnerCode");
             String orderId = allParams.get("orderId");
             String requestId = allParams.get("requestId");
@@ -230,94 +224,77 @@ public class ApiPaymentController {
             String extraData = allParams.get("extraData");
             String signature = allParams.get("signature");
 
-            // Log specific details
-            System.out.println("MoMo Payment ResultCode: " + resultCode);
-            System.out.println("MoMo Payment Message: " + message);
-            System.out.println("MoMo Payment TransId: " + transId);
+            // Backend callback URL (ngrok - for MoMo to call back to our API)
+            // Frontend redirect URL (localhost - to redirect user to React app)
+            String frontendBaseUrl = "https://localhost:3000";
+            String redirectUrl;
 
-            // Verify payment with MoMo
-            boolean isValidPayment = moMoService.verifyMoMoPayment(
-                    partnerCode, orderId, requestId, amount, orderInfo, orderType,
-                    transId, resultCode, message, payType, responseTime, extraData, signature);
+            if ("0".equals(resultCode)) {
+                // Payment successful
+                String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
 
-            System.out.println("MoMo Payment Signature Valid: " + isValidPayment);
+                // Verify payment with MoMo (optional, but recommended for security)
+                boolean isValidPayment = moMoService.verifyMoMoPayment(
+                        partnerCode, orderId, requestId, amount, orderInfo, orderType,
+                        transId, resultCode, message, payType, responseTime, extraData, signature);
+                if (isValidPayment) {
+                    // Update payment status
+                    boolean paymentUpdated = paymentService.updatePaymentStatus(extractedOrderId, "COMPLETED", transId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("orderId", orderId);
-            response.put("resultCode", resultCode);
-            response.put("message", message);
-            response.put("transId", transId);
-            response.put("isValid", isValidPayment);
-
-            if (isValidPayment && "0".equals(resultCode)) {
-                response.put("status", "success");
-                response.put("paymentStatus", "COMPLETED");
-                System.out.println("MoMo Payment Successful!");
-            } else {
-                response.put("status", "failed");
-                response.put("paymentStatus", "FAILED");
-                System.out.println("MoMo Payment Failed: " + message + " (Code: " + resultCode + ")");                // Add detailed debug info based on MoMo documentation
-                if (resultCode != null) {
-                    switch (resultCode) {
-                        case "1001":
-                            response.put("errorDetail", "Giao dịch thất bại do tài khoản không đủ tiền");
-                            break;
-                        case "1003":
-                            response.put("errorDetail", "Giao dịch đã bị hủy");
-                            break;
-                        case "1004":
-                            response.put("errorDetail", "Giao dịch thất bại do vượt quá hạn mức thanh toán ngày/tháng");
-                            break;
-                        case "1005":
-                            response.put("errorDetail", "URL hoặc mã QR đã hết hạn");
-                            break;
-                        case "1006":
-                            response.put("errorDetail", "Người dùng đã từ chối xác nhận thanh toán");
-                            break;
-                        case "1007":
-                            response.put("errorDetail", "Tài khoản người dùng không hoạt động hoặc không tồn tại");
-                            break;
-                        case "7000":
-                        case "7002":
-                            response.put("errorDetail", "Giao dịch đang được xử lý, vui lòng thử lại sau");
-                            break;
-                        case "9000":
-                            response.put("errorDetail", "Giao dịch đã được xác thực nhưng chưa hoàn tất");
-                            break;
-                        case "11":
-                            response.put("errorDetail", "Truy cập bị từ chối - Vui lòng kiểm tra cấu hình");
-                            break;
-                        case "12":
-                            response.put("errorDetail", "Phiên bản API không được hỗ trợ");
-                            break;
-                        case "13":
-                            response.put("errorDetail", "Xác thực merchant thất bại - Kiểm tra thông tin đăng ký");
-                            break;
-                        case "21":
-                        case "22":
-                            response.put("errorDetail", "Số tiền không hợp lệ hoặc nằm ngoài phạm vi cho phép");
-                            break;
-                        case "40":
-                            response.put("errorDetail", "RequestId trùng lặp");
-                            break;
-                        case "41":
-                            response.put("errorDetail", "OrderId trùng lặp");
-                            break;
-                        case "42":
-                            response.put("errorDetail", "OrderId không hợp lệ hoặc không tìm thấy");
-                            break;
-                        default:
-                            response.put("errorDetail", "Lỗi không xác định (Mã: " + resultCode + ")");
-                    }
+                    // Redirect to MoMo return page with success parameters
+                    redirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
+                            "status=success&" +
+                            "orderNumber=" + extractedOrderId + "&" +
+                            "transactionId=" + transId + "&" +
+                            "message=" + java.net.URLEncoder.encode("Thanh toán MoMo thành công", "UTF-8") + "&" +
+                            "paymentUpdated=" + paymentUpdated;
+                } else { // Invalid signature
+                    redirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
+                            "status=error&" +
+                            "message=" + java.net.URLEncoder.encode("Xác thực thanh toán không hợp lệ", "UTF-8") + "&" +
+                            "resultCode=" + resultCode;
                 }
+            } else {
+                // Payment failed or cancelled
+                String errorMessage = message != null ? message : "Thanh toán thất bại";
+                String errorDetail = mapMoMoErrorCode(resultCode);
+                String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
+
+                System.out.println("MoMo payment return failed for order: " + orderId +
+                        ", message: " + message + ", resultCode: " + resultCode); // Redirect to error page with
+                                                                                  // parameters
+                redirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
+                        "status=error&" +
+                        "message=" + java.net.URLEncoder.encode(errorMessage, "UTF-8") + "&" +
+                        "errorDetail=" + java.net.URLEncoder.encode(errorDetail, "UTF-8") + "&" +
+                        "resultCode=" + resultCode + "&" +
+                        "orderNumber=" + extractedOrderId;
             }
 
-            return ResponseEntity.ok(response);
-
+            // Return redirect response
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header("Location", redirectUrl)
+                    .build();
         } catch (Exception e) {
             System.err.println("Error in MoMo return callback: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Error processing MoMo payment return: " + e.getMessage()));
+            e.printStackTrace(); // Redirect to error page
+            String frontendBaseUrl = "https://localhost:3000";
+            try {
+                String errorRedirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
+                        "status=error&" +
+                        "message=" + java.net.URLEncoder.encode("Có lỗi xảy ra khi xử lý kết quả thanh toán", "UTF-8");
+
+                return ResponseEntity.status(HttpStatus.FOUND)
+                        .header("Location", errorRedirectUrl)
+                        .build();
+            } catch (Exception urlException) {
+                // Fallback to JSON response if URL encoding fails
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of(
+                                "status", "error",
+                                "message", "Có lỗi xảy ra khi xử lý kết quả thanh toán",
+                                "error", e.getMessage()));
+            }
         }
     }
 
@@ -348,50 +325,144 @@ public class ApiPaymentController {
             boolean isValidPayment = moMoService.verifyMoMoPayment(
                     partnerCode, orderId, requestId, amount, orderInfo, orderType,
                     transId, resultCode, message, payType, responseTime, extraData, signature);
-
             if (isValidPayment) {
                 if ("0".equals(resultCode)) {
-                    System.out.println("MoMo payment confirmed for order: " + orderId);
-                    return ResponseEntity.ok("Payment confirmed");
+                    // Extract order ID and update payment status
+                    String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
+                    boolean paymentUpdated = paymentService.updatePaymentStatus(extractedOrderId, "COMPLETED", transId);
+
+                    System.out.println(
+                            "MoMo payment confirmed for order: " + extractedOrderId + ", updated: " + paymentUpdated);
+                    return ResponseEntity.ok(Map.of(
+                            "status", "success",
+                            "message", "Payment confirmed",
+                            "paymentUpdated", paymentUpdated));
                 } else {
                     System.out.println("MoMo payment failed for order: " + orderId + ", message: " + message);
-                    return ResponseEntity.ok("Payment failed");
+                    return ResponseEntity.ok(Map.of(
+                            "status", "failed",
+                            "message", "Payment failed: " + message));
                 }
             } else {
                 System.err.println("Invalid MoMo signature for order: " + orderId);
-                return ResponseEntity.badRequest().body("Invalid signature");
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "error",
+                        "message", "Invalid signature"));
             }
         } catch (Exception e) {
             System.err.println("Error in MoMo IPN callback: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing notification");
         }
     }
-    
-    /**
-     * Check MoMo server health status
-     */
-    @GetMapping("/momo/health-check")
-    public ResponseEntity<?> checkMomoServerStatus() {
-        try {
-            boolean isAvailable = moMoService.checkMoMoServerStatus();
-            Map<String, Object> status = new HashMap<>();
-            status.put("status", isAvailable ? "UP" : "DOWN");
-            status.put("timestamp", new java.util.Date().getTime());
-            
-            // Add MoMo configuration details for debugging
-            Map<String, String> config = new HashMap<>();
-            config.put("endpoint", moMoConfig.getEndpoint());
-            config.put("returnUrl", moMoConfig.getReturnUrl());
-            config.put("notifyUrl", moMoConfig.getNotifyUrl());
-            status.put("config", config);
 
-            return ResponseEntity.ok(status);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of(
-                    "status", "ERROR", 
-                    "message", "Error checking MoMo server status: " + e.getMessage()
-                ));
+    /**
+     * Extract order ID from MoMo order ID format (e.g., ORDER_123_timestamp -> 123)
+     */
+    private String extractOrderIdFromMoMoOrderId(String momoOrderId) {
+        if (momoOrderId == null) {
+            return null;
+        }
+
+        System.out.println("Extracting order ID from MoMo order ID: " + momoOrderId);
+
+        // Check if the orderId follows the ORDER_xxx_timestamp pattern from MoMo
+        if (momoOrderId.startsWith("ORDER_")) {
+            String extracted = momoOrderId.substring("ORDER_".length());
+            System.out.println("Full extracted part (after ORDER_ prefix): " + extracted);
+            // If the extracted part contains underscores, it's likely in the format
+            // orderId_timestamp
+            if (extracted.contains("_")) {
+                String orderIdPart = extracted.split("_")[0];
+                System.out.println("Extracted order ID (first part before underscore): " + orderIdPart);
+                try {
+                    Long.parseLong(orderIdPart); // Validate that this is a numeric ID
+                    return orderIdPart;
+                } catch (NumberFormatException e) {
+                    System.out.println("Extracted part is not numeric: " + orderIdPart);
+                    // Continue to return extracted in case parsing fails
+                }
+            }
+
+            System.out.println("Extracted order ID (no underscore found): " + extracted);
+            return extracted;
+        }
+
+        // Check if contains orderId=ORDER_xxx pattern (from URL parameters)
+        if (momoOrderId.contains("orderId=ORDER_")) {
+            int startIndex = momoOrderId.indexOf("orderId=ORDER_") + "orderId=ORDER_".length();
+            int endIndex = momoOrderId.indexOf("&", startIndex);
+            if (endIndex == -1)
+                endIndex = momoOrderId.length();
+            String extracted = momoOrderId.substring(startIndex, endIndex);
+            System.out.println("Extracted from URL parameter: " + extracted);
+            // If the extracted part contains underscores, get just the order ID part
+            if (extracted.contains("_")) {
+                String orderIdPart = extracted.split("_")[0];
+                System.out.println("Extracted order ID from URL (first part before underscore): " + orderIdPart);
+                try {
+                    Long.parseLong(orderIdPart); // Validate that this is a numeric ID
+                    return orderIdPart;
+                } catch (NumberFormatException e) {
+                    System.out.println("Extracted part from URL is not numeric: " + orderIdPart);
+                }
+            }
+
+            return extracted;
+        }
+
+        // Try to parse as numeric if possible
+        try {
+            Long.parseLong(momoOrderId);
+            return momoOrderId; // It's already a numeric ID
+        } catch (NumberFormatException e) {
+            // Not a numeric ID, return as is System.out.println("Could not extract numeric
+            // order ID, returning original: " + momoOrderId);
+            return momoOrderId;
+        }
+    }
+
+    /**
+     * Map MoMo error codes to user-friendly messages
+     */
+    private String mapMoMoErrorCode(String resultCode) {
+        if (resultCode == null)
+            return "Lỗi không xác định";
+
+        switch (resultCode) {
+            case "0":
+                return "Thành công";
+            case "1":
+                return "Lỗi hệ thống MoMo";
+            case "2":
+                return "Lỗi cấu hình merchant";
+            case "4":
+                return "Số tiền không hợp lệ";
+            case "8":
+                return "Chữ ký không hợp lệ";
+            case "11":
+                return "Không tìm thấy đơn hàng";
+            case "25":
+                return "Địa chỉ IP không được phép";
+            case "32":
+                return "Đơn hàng đã tồn tại";
+            case "1000":
+                return "Giao dịch được khởi tạo, chờ người dùng xác nhận thanh toán";
+            case "1001":
+                return "Giao dịch thành công (nhưng chưa capture)";
+            case "1003":
+                return "Giao dịch bị hủy";
+            case "1004":
+                return "Giao dịch thất bại do tài khoản người dùng không đủ tiền";
+            case "1005":
+                return "Giao dịch thất bại do url hoặc QR code đã hết hạn";
+            case "1006":
+                return "Giao dịch thất bại do người dùng đã decline";
+            case "1007":
+                return "Giao dịch đang được xử lý";
+            case "9000":
+                return "Giao dịch được authorized thành công";
+            default:
+                return "Lỗi không xác định (Mã: " + resultCode + ")";
         }
     }
 }

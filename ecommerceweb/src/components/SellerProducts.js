@@ -60,6 +60,7 @@ import EditNoteIcon from '@mui/icons-material/EditNote';
 import ProductionQuantityLimitsIcon from '@mui/icons-material/ProductionQuantityLimits';
 import { useAuth } from '../configs/MyContexts';
 import { useLocation, useNavigate } from 'react-router-dom';
+import AsyncPageWrapper from './AsyncPageWrapper';
 
 const SellerProducts = () => {
   const { user } = useAuth();
@@ -421,9 +422,9 @@ const SellerProducts = () => {
       console.error("Error deleting product:", error);
       showAlert("Không thể xóa sản phẩm", "error");
     }
-  };
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>      <Box sx={{ mb: 4 }}>
+  };  return (
+    <AsyncPageWrapper isLoading={loading}>
+      <Container maxWidth="lg" sx={{ py: 4 }}><Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
                    background: 'linear-gradient(145deg, #f0f0f0, #ffffff)', 
                    p: 3, 
@@ -1226,9 +1227,9 @@ const SellerProducts = () => {
           sx={{ width: '100%' }}
         >
           {alert.message}
-        </Alert>
-      </Snackbar>
+        </Alert>      </Snackbar>
     </Container>
+    </AsyncPageWrapper>
   );
 };
 
