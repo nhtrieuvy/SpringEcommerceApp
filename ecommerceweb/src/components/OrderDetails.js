@@ -54,6 +54,7 @@ import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../configs/MyContexts';
 import { authApi, endpoint } from '../configs/Apis';
 import { formatCurrency } from '../utils/FormatUtils';
+import AsyncPageWrapper from './AsyncPageWrapper';
 
 const OrderDetails = () => {
     const { id } = useParams();
@@ -413,13 +414,12 @@ const OrderDetails = () => {
                 </Alert>
             </Container>
         );
-    }
-
-    const statusInfo = getStatusInfo(order.status);
+    }    const statusInfo = getStatusInfo(order.status);
     const { steps, currentStatusIndex } = getOrderSteps();
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <AsyncPageWrapper isLoading={loading}>
+            <Container maxWidth="lg" sx={{ py: 4 }}>
             {/* Breadcrumbs */}            <Breadcrumbs sx={{ mb: 3 }}>
                 <Link component={RouterLink} to="/" sx={{ display: 'flex', alignItems: 'center' }}>
                     Trang chủ
@@ -837,9 +837,9 @@ const OrderDetails = () => {
                             Không có thông tin sản phẩm
                         </Alert>
                     )}
-                </CardContent>
-            </Card>
+                </CardContent>            </Card>
         </Container>
+        </AsyncPageWrapper>
     );
 };
 

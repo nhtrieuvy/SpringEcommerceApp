@@ -31,7 +31,8 @@ public class ApiAdminController {
     private ProductService productService;
 
     @Autowired
-    private StoreService storeService;    // API để lấy danh sách người dùng với phân trang và lọc
+    private StoreService storeService; // API để lấy danh sách người dùng với phân trang và lọc
+
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -81,7 +82,7 @@ public class ApiAdminController {
         }
     }
 
-    // API để lấy thông tin chi tiết của một người dùng    @GetMapping("/users/{id}")
+    // API để lấy thông tin chi tiết của một người dùng @GetMapping("/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
             User user = userService.findById(id);
@@ -97,7 +98,8 @@ public class ApiAdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy thông tin người dùng: " + e.getMessage()));
         }
-    }    // API để cập nhật thông tin người dùng (bao gồm kích hoạt/khóa tài khoản)
+    } // API để cập nhật thông tin người dùng (bao gồm kích hoạt/khóa tài khoản)
+
     @PutMapping("/users/{id}")
     public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
         try {
@@ -138,7 +140,8 @@ public class ApiAdminController {
                     .body(Map.of("success", false, "message",
                             "Lỗi khi cập nhật thông tin người dùng: " + e.getMessage()));
         }
-    }    // API để lấy danh sách tất cả các quyền
+    } // API để lấy danh sách tất cả các quyền
+
     @GetMapping("/roles")
     public ResponseEntity<?> getAllRoles() {
         try {
@@ -432,7 +435,6 @@ public class ApiAdminController {
         return null;
     }
 
-
     // Add role-based access control for creating products and stores
     @PostMapping("/products")
     public ResponseEntity<?> createProduct(@RequestBody Product product) {
@@ -441,10 +443,8 @@ public class ApiAdminController {
             return ResponseEntity.ok(Map.of("success", true, "message", "Product created successfully"));
         } catch (Exception e) {
 
-
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
-
 
         }
     }

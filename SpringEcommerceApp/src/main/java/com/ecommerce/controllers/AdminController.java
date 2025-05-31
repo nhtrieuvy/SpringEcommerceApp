@@ -354,7 +354,9 @@ public class AdminController {
         model.addAttribute("printDate", new Date());
 
         return "order-print";
-    }    @GetMapping("/orders/export")
+    }
+
+    @GetMapping("/orders/export")
     public ResponseEntity<byte[]> exportOrders(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
@@ -375,7 +377,9 @@ public class AdminController {
         headers.setContentLength(excelContent.length);
 
         return new ResponseEntity<>(excelContent, headers, HttpStatus.OK);
-    }    @GetMapping("/reports/export")
+    }
+
+    @GetMapping("/reports/export")
     public ResponseEntity<byte[]> exportReports(
             @RequestParam(defaultValue = "sales") String reportType,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,

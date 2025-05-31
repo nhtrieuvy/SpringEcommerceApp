@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
+import AsyncPageWrapper from './AsyncPageWrapper';
 import {
   Container,
   Typography,
@@ -245,11 +246,11 @@ const Wishlist = () => {
       >
         Tiếp tục mua sắm
       </Button>
-    </Box>
-  );
+    </Box>  );
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+    <AsyncPageWrapper isLoading={loading}>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
       {/* Breadcrumbs */}
       <Breadcrumbs
         separator={<NavigateNextIcon fontSize="small" />}
@@ -476,12 +477,12 @@ const Wishlist = () => {
           onClose={handleSnackbarClose}
           severity={snackbar.severity}
           variant="filled"
-          sx={{ width: "100%" }}
-        >
+          sx={{ width: "100%" }}        >
           {snackbar.message}
         </Alert>
       </Snackbar>
     </Container>
+    </AsyncPageWrapper>
   );
 };
 

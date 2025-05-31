@@ -9,35 +9,35 @@ import jakarta.servlet.ServletRegistration;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 import jakarta.servlet.Filter;
 
-
 /**
  *
  * @author nhanh
  */
-public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherServletInitializer{    @Override
+public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherServletInitializer {
+    @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class[]{
-            HibernateConfigs.class,
-            SpringSecurityConfigs.class,
-            JwtSecurityConfig.class,
-            ThymeleafConfig.class,
-            MailConfig.class,
-            CacheConfig.class,
-            PaypalConfig.class,
-            MomoConfig.class,
+        return new Class[] {
+                HibernateConfigs.class,
+                SpringSecurityConfigs.class,
+                JwtSecurityConfig.class,
+                ThymeleafConfig.class,
+                MailConfig.class,
+                CacheConfig.class,
+                PaypalConfig.class,
+                MomoConfig.class,
         };
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class[]{
-            WebAppContextConfig.class
+        return new Class[] {
+                WebAppContextConfig.class
         };
     }
 
     @Override
     protected String[] getServletMappings() {
-        return new String[] {"/"};
+        return new String[] { "/" };
     }
 
     @Override
@@ -51,15 +51,15 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
         // Tạo thư mục tạm thời để lưu file upload
         String location = "/";
 
-        
-        // Cấu hình các giá trị: vị trí lưu, kích thước tối đa file, kích thước tối đa request, ngưỡng kích thước lưu vào bộ nhớ
+        // Cấu hình các giá trị: vị trí lưu, kích thước tối đa file, kích thước tối đa
+        // request, ngưỡng kích thước lưu vào bộ nhớ
         MultipartConfigElement multipartConfig = new MultipartConfigElement(
-                location, 
-                5 * 1024 * 1024,   // 5MB kích thước tối đa file
-                25 * 1024 * 1024,  // 25MB kích thước tối đa request
-                0                   // ngưỡng kích thước lưu vào bộ nhớ (0 = tất cả)
+                location,
+                5 * 1024 * 1024, // 5MB kích thước tối đa file
+                25 * 1024 * 1024, // 25MB kích thước tối đa request
+                0 // ngưỡng kích thước lưu vào bộ nhớ (0 = tất cả)
         );
-        
+
         registration.setMultipartConfig(multipartConfig);
     }
 }

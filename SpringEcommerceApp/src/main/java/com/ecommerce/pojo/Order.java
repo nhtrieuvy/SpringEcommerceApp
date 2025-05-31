@@ -44,6 +44,9 @@ public class Order {
     @Column(nullable = false)
     private double totalAmount;
     
+    @Column(name = "shipping_fee")
+    private Double shippingFee;
+    
     @Column(length = 255)
     private String address;
     
@@ -103,10 +106,16 @@ public class Order {
 
     public double getTotalAmount() {
         return totalAmount;
+    }    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+    
+    public Double getShippingFee() {
+        return shippingFee;
     }
 
-    public void setTotalAmount(double totalAmount) {
-        this.totalAmount = totalAmount;
+    public void setShippingFee(Double shippingFee) {
+        this.shippingFee = shippingFee;
     }
 
     public String getAddress() {

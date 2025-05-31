@@ -36,6 +36,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../configs/MyContexts';
 import { authApi, endpoint } from '../configs/Apis';
 import { formatCurrency } from '../utils/FormatUtils';
+import AsyncPageWrapper from './AsyncPageWrapper';
 
 const Orders = () => {
     const navigate = useNavigate();
@@ -285,14 +286,13 @@ const Orders = () => {
                 ))}
             </Container>
         );
-    }
-
-    return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            {/* Header */}
-            <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <ShoppingBagIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+    }    return (
+        <AsyncPageWrapper isLoading={loading}>
+            <Container maxWidth="lg" sx={{ py: 4 }}>
+                {/* Header */}
+                <Box sx={{ mb: 4 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                        <ShoppingBagIcon sx={{ fontSize: 32, color: 'primary.main' }} />
                     <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
                         Đơn hàng của tôi
                     </Typography>
@@ -545,12 +545,12 @@ const Orders = () => {
                             onRowsPerPageChange={handleChangeRowsPerPage}
                             rowsPerPageOptions={[5, 10, 25]}
                             labelRowsPerPage="Hiển thị:"
-                            labelDisplayedRows={({ from, to, count }) => `${from}-${to} trên ${count !== -1 ? count : `hơn ${to}`}`}
-                        />
+                            labelDisplayedRows={({ from, to, count }) => `${from}-${to} trên ${count !== -1 ? count : `hơn ${to}`}`}                        />
                     </Box>
                 </>
             )}
         </Container>
+        </AsyncPageWrapper>
     );
 };
 

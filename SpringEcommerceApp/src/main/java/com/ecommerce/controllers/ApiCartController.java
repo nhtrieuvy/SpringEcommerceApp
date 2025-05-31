@@ -13,11 +13,9 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/cart")
-@CrossOrigin(origins = { "https://localhost:3000", "http://localhost:3000" }, 
-        allowCredentials = "true", 
-        allowedHeaders = "*", 
-        methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }, 
-        maxAge = 3600)
+@CrossOrigin(origins = { "https://localhost:3000",
+        "http://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*", methods = { RequestMethod.GET,
+                RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }, maxAge = 3600)
 public class ApiCartController {
 
     @Autowired
@@ -39,11 +37,11 @@ public class ApiCartController {
         try {
             Long productId = Long.parseLong(payload.get("productId").toString());
             int quantity = Integer.parseInt(payload.get("quantity").toString());
-            
+
             if (quantity <= 0) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            
+
             CartItem cartItem = cartService.addToCart(productId, quantity);
             if (cartItem != null) {
                 return new ResponseEntity<>(cartItem, HttpStatus.CREATED);
@@ -73,15 +71,15 @@ public class ApiCartController {
 
     @PutMapping("/items/{productId}")
     public ResponseEntity<CartItem> updateQuantity(
-            @PathVariable Long productId, 
+            @PathVariable Long productId,
             @RequestBody Map<String, Object> payload) {
         try {
             int quantity = Integer.parseInt(payload.get("quantity").toString());
-            
+
             if (quantity <= 0) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            
+
             CartItem cartItem = cartService.updateQuantity(productId, quantity);
             if (cartItem != null) {
                 return new ResponseEntity<>(cartItem, HttpStatus.OK);
@@ -142,12 +140,12 @@ public class ApiCartController {
             if (couponCode == null || couponCode.trim().isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-            
+
             CartService.CouponValidationResult result = cartService.validateCoupon(couponCode);
             Map<String, Object> response = new HashMap<>();
             response.put("isValid", result.isValid());
             response.put("discount", result.getDiscount());
-            
+
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();

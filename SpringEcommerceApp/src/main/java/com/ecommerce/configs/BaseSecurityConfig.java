@@ -23,6 +23,7 @@ public class BaseSecurityConfig {
 
     /**
      * Creates and configures a Cloudinary instance for file uploads
+     * 
      * @return a configured Cloudinary instance
      */
     @Bean
@@ -39,6 +40,7 @@ public class BaseSecurityConfig {
 
     /**
      * Configures CORS settings for the application
+     * 
      * @return a configured CorsConfigurationSource
      */
     @Bean
@@ -46,7 +48,9 @@ public class BaseSecurityConfig {
         logger.info("Configuring CORS");
 
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://localhost:3000"));
+        configuration.setAllowedOrigins(List.of(
+                "https://localhost:3000",
+                "https://d0d3-2405-4802-37-ca00-5cb4-2712-7f6b-9f68.ngrok-free.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));

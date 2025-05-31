@@ -8,6 +8,7 @@ import com.ecommerce.repositories.OrderRepository;
 import com.ecommerce.repositories.PaymentRepository;
 import com.ecommerce.services.PaymentService;
 import com.ecommerce.services.MoMoService;
+import com.ecommerce.services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,12 +30,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private PaymentRepository paymentRepository;
-
     @Autowired
     private OrderRepository orderRepository;
-    
+
     @Autowired
     private MoMoService moMoService;
+
+    @Autowired
+    private OrderService orderService;
 
     @Autowired
     private APIContext apiContext; // Inject APIContext
@@ -89,7 +92,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (order == null) {
             throw new RuntimeException("Order not found with ID: " + paymentRequestDTO.getOrderId());
         }
-        System.out.println("Processing payment for order ID: " + order.getId() + " with method: " + paymentRequestDTO.getPaymentMethod());
+        System.out.println("Processing payment for order ID: " + order.getId() + " with method: "
+                + paymentRequestDTO.getPaymentMethod());
 
         Payment payment = paymentRepository.findByOrderId(order.getId());
         boolean isNewPaymentRecord;
@@ -109,9 +113,10 @@ public class PaymentServiceImpl implements PaymentService {
             }
             // Reusing existing payment record.
             isNewPaymentRecord = false;
-            System.out.println("Reusing existing payment record (ID: " + payment.getId() + ") for order ID: " + order.getId() +
-                               ". Current method: " + payment.getPaymentMethod() + ", status: " + payment.getStatus() +
-                               ". Requested method: " + paymentRequestDTO.getPaymentMethod());
+            System.out.println(
+                    "Reusing existing payment record (ID: " + payment.getId() + ") for order ID: " + order.getId() +
+                            ". Current method: " + payment.getPaymentMethod() + ", status: " + payment.getStatus() +
+                            ". Requested method: " + paymentRequestDTO.getPaymentMethod());
             // paymentDate is not changed for existing records.
         } else { // No payment record for this order, create a new one.
             payment = new Payment();
@@ -164,7 +169,8 @@ public class PaymentServiceImpl implements PaymentService {
                         System.out.println("Saved new payment record with ID: " + payment.getId() + " for PayPal.");
                     } else {
                         paymentRepository.update(payment);
-                        System.out.println("Updated existing payment record with ID: " + payment.getId() + " for PayPal.");
+                        System.out.println(
+                                "Updated existing payment record with ID: " + payment.getId() + " for PayPal.");
                     }
                     orderRepository.update(order);
 
@@ -192,7 +198,8 @@ public class PaymentServiceImpl implements PaymentService {
                     return response;
 
                 case MOMO:
-                    // Assuming MoMoServiceImpl.createMoMoPayment uses MomoConfig for URLs if not passed directly.
+                    // Assuming MoMoServiceImpl.createMoMoPayment uses MomoConfig for URLs if not
+                    // passed directly.
                     // The current signature in summary is createMoMoPayment(Order order).
                     PaymentResponseDTO momoExtResponse = moMoService.createMoMoPayment(order);
 
@@ -205,7 +212,8 @@ public class PaymentServiceImpl implements PaymentService {
                         System.out.println("Saved new payment record with ID: " + payment.getId() + " for MoMo.");
                     } else {
                         paymentRepository.update(payment);
-                        System.out.println("Updated existing payment record with ID: " + payment.getId() + " for MoMo.");
+                        System.out
+                                .println("Updated existing payment record with ID: " + payment.getId() + " for MoMo.");
                     }
                     orderRepository.update(order);
 
@@ -221,7 +229,6 @@ public class PaymentServiceImpl implements PaymentService {
                     momoResponseDTO.setRedirectUrl(momoExtResponse.getRedirectUrl());
                     return momoResponseDTO;
 
-                
                 default:
                     throw new IllegalArgumentException(
                             "Unsupported payment method: " + paymentRequestDTO.getPaymentMethod());
@@ -251,15 +258,16 @@ public class PaymentServiceImpl implements PaymentService {
                     payment.getPaymentDate(), // May be null if new and not set
                     "PayPal payment processing failed: " + e.getDetails());
         } catch (Exception e) {
-            System.err.println("Payment processing failed for method " + paymentRequestDTO.getPaymentMethod() + ": " + e.getMessage());
+            System.err.println("Payment processing failed for method " + paymentRequestDTO.getPaymentMethod() + ": "
+                    + e.getMessage());
             e.printStackTrace();
 
             payment.setStatus("FAILED");
             order.setStatus("PAYMENT_FAILED");
 
             if (payment.getOrder() != null) { // Ensure payment object is minimally valid
-                 // If it's a new record that failed before the first save, save it as FAILED.
-                 // If it's an existing record, update it to FAILED.
+                // If it's a new record that failed before the first save, save it as FAILED.
+                // If it's an existing record, update it to FAILED.
                 if (isNewPaymentRecord) {
                     paymentRepository.save(payment);
                 } else if (payment.getId() != null) { // Ensure existing record has an ID
@@ -284,8 +292,17 @@ public class PaymentServiceImpl implements PaymentService {
             throws PayPalRESTException {
         Amount amount = new Amount();
         amount.setCurrency("USD"); // Or get from order/config
+
+        // Calculate total including shipping fee if available
+        double totalWithShipping = order.getTotalAmount();
+        if (order.getShippingFee() != null && order.getShippingFee() > 0) {
+            totalWithShipping += order.getShippingFee();
+            System.out.println("Added shipping fee: " + order.getShippingFee() + " to PayPal payment, new total: "
+                    + totalWithShipping);
+        }
+
         // Format to 2 decimal places for PayPal
-        String totalAmountStr = BigDecimal.valueOf(order.getTotalAmount()).setScale(2, RoundingMode.HALF_UP).toString();
+        String totalAmountStr = BigDecimal.valueOf(totalWithShipping).setScale(2, RoundingMode.HALF_UP).toString();
         amount.setTotal(totalAmountStr);
 
         Transaction transaction = new Transaction();
@@ -406,5 +423,57 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public Payment getPaymentByOrderId(Long orderId) {
         return paymentRepository.findByOrderId(orderId);
+    }
+
+    @Override
+    @Transactional
+    public boolean updatePaymentStatus(String orderId, String status, String transactionId) {
+        try {
+            // Convert string orderId to Long
+            Long orderIdLong = null;
+            try {
+                orderIdLong = Long.valueOf(orderId);
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid order ID format: " + orderId);
+                return false;
+            }
+
+            // Find payment by orderId
+            Payment payment = paymentRepository.findByOrderId(orderIdLong);
+            if (payment == null) {
+                System.err.println("Payment not found for order ID: " + orderId);
+                return false;
+            }
+
+            // Update payment fields
+            payment.setStatus(status);
+            if (transactionId != null && !transactionId.isEmpty()) {
+                payment.setTransactionId(transactionId);
+            }
+            payment.setPaymentDate(new java.util.Date());
+
+            // Save payment
+            paymentRepository.update(payment); // Also update the order status if payment was completed
+            if ("COMPLETED".equals(status)) {
+                Order order = orderRepository.findById(orderIdLong);
+                if (order != null) {
+                    order.setStatus("PROCESSING");
+                    orderRepository.update(order);
+                    System.out.println("Order " + orderId + " status updated to PROCESSING after MoMo payment");
+
+                    // Add order status history for MoMo payment completion
+                    String statusNote = "MoMo payment completed (Transaction ID: " +
+                            (payment != null ? payment.getTransactionId() : "N/A") + ")";
+                    orderService.addOrderStatusHistory(order, "PROCESSING", statusNote, order.getUser().getId());
+                    System.out.println("Order status history added for MoMo payment completion");
+                }
+            }
+
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error updating payment status: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 }

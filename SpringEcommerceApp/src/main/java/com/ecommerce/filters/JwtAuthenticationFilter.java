@@ -25,10 +25,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
-
-        // Thêm CORS headers vào response
-        response.setHeader("Access-Control-Allow-Origin", "https://localhost:3000");
+            FilterChain filterChain) throws ServletException, IOException { // Thêm CORS headers vào response
+        String origin = request.getHeader("Origin");
+        if (origin != null && (origin.equals("https://localhost:3000") ||
+                origin.contains("ngrok-free.app"))) {
+            response.setHeader("Access-Control-Allow-Origin", origin);
+        } else {
+            response.setHeader("Access-Control-Allow-Origin", "https://localhost:3000");
+        }
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With");
         response.setHeader("Access-Control-Allow-Credentials", "true");

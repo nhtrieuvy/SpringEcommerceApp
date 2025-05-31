@@ -26,7 +26,8 @@ import java.util.ArrayList;
 @RestController
 @RequestMapping("/api/products")
 @CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", maxAge = 3600)
-public class ApiProductController {    @Autowired
+public class ApiProductController {
+    @Autowired
     private ProductService productService;
 
     @Autowired
@@ -71,7 +72,9 @@ public class ApiProductController {    @Autowired
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching product: " + e.getMessage());
         }
-    }    @PostMapping(value = "", consumes = { MediaType.APPLICATION_JSON_VALUE, "application/json" })
+    }
+
+    @PostMapping(value = "", consumes = { MediaType.APPLICATION_JSON_VALUE, "application/json" })
     public ResponseEntity<Product> createProduct(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Product product,
@@ -116,12 +119,11 @@ public class ApiProductController {    @Autowired
                 if (currentUser != null) {
                     String ipAddress = IpUtils.getClientIpAddress(request);
                     recentActivityService.logProductAdded(
-                        currentUser.getFullname(),
-                        currentUser.getEmail(),
-                        savedProduct.getId(),
-                        savedProduct.getName(),
-                        ipAddress
-                    );
+                            currentUser.getFullname(),
+                            currentUser.getEmail(),
+                            savedProduct.getId(),
+                            savedProduct.getName(),
+                            ipAddress);
                 }
             }
 
@@ -130,7 +132,9 @@ public class ApiProductController {    @Autowired
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }    @PutMapping(value = "/{id}", consumes = { MediaType.APPLICATION_JSON_VALUE })
+    }
+
+    @PutMapping(value = "/{id}", consumes = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<Product> updateProduct(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
@@ -186,12 +190,11 @@ public class ApiProductController {    @Autowired
                 if (currentUser != null) {
                     String ipAddress = IpUtils.getClientIpAddress(request);
                     recentActivityService.logProductUpdated(
-                        currentUser.getFullname(),
-                        currentUser.getEmail(),
-                        updatedProduct.getId(),
-                        updatedProduct.getName(),
-                        ipAddress
-                    );
+                            currentUser.getFullname(),
+                            currentUser.getEmail(),
+                            updatedProduct.getId(),
+                            updatedProduct.getName(),
+                            ipAddress);
                 }
             }
 
@@ -200,7 +203,9 @@ public class ApiProductController {    @Autowired
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-    }    @DeleteMapping("/{id}")
+    }
+
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
@@ -223,12 +228,11 @@ public class ApiProductController {    @Autowired
                 if (currentUser != null) {
                     String ipAddress = IpUtils.getClientIpAddress(request);
                     recentActivityService.logProductDeleted(
-                        currentUser.getFullname(),
-                        currentUser.getEmail(),
-                        id,
-                        productName,
-                        ipAddress
-                    );
+                            currentUser.getFullname(),
+                            currentUser.getEmail(),
+                            id,
+                            productName,
+                            ipAddress);
                 }
             }
 
@@ -271,7 +275,7 @@ public class ApiProductController {    @Autowired
                     .body("Error comparing products: " + e.getMessage());
         }
     }
-    
+
     @GetMapping("/compare-with-product")
     public ResponseEntity<?> compareWithProduct(@RequestParam Long productId) {
         try {
@@ -279,11 +283,11 @@ public class ApiProductController {    @Autowired
             if (product == null) {
                 return ResponseEntity.notFound().build();
             }
-            
+
             // Lấy danh sách các sản phẩm cùng loại từ cửa hàng khác
-            List<ProductComparisonDTO> comparisonResults = 
-                productService.compareProductsByCategory(product.getCategory().getId());
-            
+            List<ProductComparisonDTO> comparisonResults = productService
+                    .compareProductsByCategory(product.getCategory().getId());
+
             return ResponseEntity.ok(comparisonResults);
         } catch (Exception e) {
             e.printStackTrace();
@@ -291,7 +295,7 @@ public class ApiProductController {    @Autowired
                     .body("Error comparing products: " + e.getMessage());
         }
     }
-    
+
     @GetMapping("/recommendations")
     public ResponseEntity<?> getRecommendations(
             @RequestParam(required = false) Long categoryId,
@@ -299,32 +303,32 @@ public class ApiProductController {    @Autowired
             @RequestParam(defaultValue = "6") int limit) {
         try {
             List<Product> recommendedProducts = new ArrayList<>();
-            
+
             if (productId != null) {
                 // Get recommendations based on a specific product
                 Product product = productService.findById(productId);
                 if (product != null && product.getCategory() != null) {
                     // Get products from the same category
                     List<Product> similarProducts = productService.findByCategoryId(product.getCategory().getId());
-                    
+
                     // Filter out the current product and limit results
                     recommendedProducts = similarProducts.stream()
-                        .filter(p -> !p.getId().equals(productId))
-                        .limit(limit)
-                        .toList();
+                            .filter(p -> !p.getId().equals(productId))
+                            .limit(limit)
+                            .toList();
                 }
             } else if (categoryId != null) {
                 // Get recommendations based on a specific category
                 recommendedProducts = productService.findByCategoryId(categoryId).stream()
-                    .limit(limit)
-                    .toList();
+                        .limit(limit)
+                        .toList();
             } else {
                 // Get general recommendations (newest or most popular products)
                 recommendedProducts = productService.findAll().stream()
-                    .limit(limit)
-                    .toList();
+                        .limit(limit)
+                        .toList();
             }
-            
+
             return ResponseEntity.ok(recommendedProducts);
         } catch (Exception e) {
             e.printStackTrace();
