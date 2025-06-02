@@ -11,11 +11,10 @@ public class PaymentRequestDTO {
     @NotNull(message = "Payment method is required")
     private PaymentMethod paymentMethod;
 
-    // Optional: card details, token, etc., depending on the payment gateway
-    // For simplicity, we'll assume these are handled client-side or by a separate flow for now
-    private String paymentToken; // Example for Stripe/PayPal token
+    
+    private String paymentToken; 
 
-    // URLs for PayPal redirection
+    
     private String successUrl;
     private String cancelUrl;
 

@@ -18,7 +18,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "https://localhost:3000", allowCredentials = "true", maxAge = 3600)
 public class ApiAdminController {
 
     @Autowired

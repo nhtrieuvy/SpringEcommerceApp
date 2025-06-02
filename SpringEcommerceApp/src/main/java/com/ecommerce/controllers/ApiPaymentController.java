@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.HashMap;
@@ -20,21 +19,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payments")
-@CrossOrigin(origins = { "https://localhost:3000",
-        " https://d0d3-2405-4802-37-ca00-5cb4-2712-7f6b-9f68.ngrok-free.app" }, allowCredentials = "true")
 public class ApiPaymentController {
     @Autowired
     private PaymentService paymentService;
-
     @Autowired
     private MoMoService moMoService;
-
     @Autowired
     private MomoConfig moMoConfig;
 
-    /**
-     * Get all payments (admin endpoint with pagination)
-     */
     @GetMapping
     public ResponseEntity<?> getAllPayments(
             @RequestParam(defaultValue = "0") int page,
@@ -52,9 +44,6 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Get payment by ID
-     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getPaymentById(@PathVariable Long id) {
         try {
@@ -69,9 +58,6 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Get payment status by order ID
-     */
     @GetMapping("/status/{orderId}")
     public ResponseEntity<?> getPaymentStatusByOrderId(@PathVariable Long orderId) {
         try {
@@ -80,7 +66,6 @@ public class ApiPaymentController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Payment not found for order ID: " + orderId));
             }
-
             PaymentResponseDTO responseDTO = new PaymentResponseDTO(
                     payment.getId(),
                     orderId,
@@ -97,20 +82,13 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Process payment for all payment methods (COD, PayPal, MoMo, etc.)
-     * This is the main endpoint for payment processing
-     */
     @PostMapping("/process")
     public ResponseEntity<?> processPayment(@RequestBody @Valid PaymentRequestDTO paymentRequestDTO,
             HttpServletRequest request) {
         try {
-            // Set default URLs based on payment method
             setDefaultUrls(paymentRequestDTO, request);
-
             PaymentResponseDTO paymentResponse = paymentService.processPayment(paymentRequestDTO);
             return ResponseEntity.ok(paymentResponse);
-
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -118,12 +96,8 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Helper method to set default URLs based on payment method
-     */
     private void setDefaultUrls(PaymentRequestDTO paymentRequestDTO, HttpServletRequest request) {
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-
         if (paymentRequestDTO.getPaymentMethod() == PaymentMethod.PAYPAL) {
             if (paymentRequestDTO.getSuccessUrl() == null || paymentRequestDTO.getSuccessUrl().isEmpty()) {
                 paymentRequestDTO.setSuccessUrl(baseUrl + "/api/payments/paypal/success");
@@ -132,9 +106,6 @@ public class ApiPaymentController {
                 paymentRequestDTO.setCancelUrl(baseUrl + "/api/payments/paypal/cancel");
             }
         } else if (paymentRequestDTO.getPaymentMethod() == PaymentMethod.MOMO) {
-            // For MoMo, we use the provided frontend URLs or default to configuration URLs
-            // Don't modify frontend provided URLs as they are already complete absolute
-            // URLs
             if (paymentRequestDTO.getSuccessUrl() == null || paymentRequestDTO.getSuccessUrl().isEmpty()) {
                 paymentRequestDTO.setSuccessUrl(moMoConfig.getReturnUrl());
             }
@@ -144,23 +115,17 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Execute PayPal payment after user approval
-     */
     @PostMapping("/paypal/execute")
     public ResponseEntity<?> executePaypalPayment(@RequestBody Map<String, String> paypalData) {
         try {
             String paymentId = paypalData.get("paymentId");
             String payerId = paypalData.get("payerId");
-
             if (paymentId == null || payerId == null) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "PayPal paymentId and payerId are required"));
             }
-
             PaymentResponseDTO response = paymentService.executePaypalPayment(paymentId, payerId);
             return ResponseEntity.ok(response);
-
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, String> error = new HashMap<>();
@@ -169,32 +134,20 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Create MoMo payment specifically (alternative endpoint)
-     * This endpoint does the same as /process but is MoMo-specific for frontend
-     * compatibility
-     */
     @PostMapping("/momo/create")
     public ResponseEntity<?> createMoMoPayment(@RequestBody @Valid PaymentRequestDTO paymentRequestDTO,
             HttpServletRequest request) {
         try {
-            // Ensure payment method is MoMo
             paymentRequestDTO.setPaymentMethod(PaymentMethod.MOMO);
-
-            // Set default MoMo URLs
             setDefaultUrls(paymentRequestDTO, request);
             PaymentResponseDTO paymentResponse = paymentService.processPayment(paymentRequestDTO);
-
             if (paymentResponse.getRedirectUrl() != null) {
                 System.out.println("MoMo redirect URL: " + paymentResponse.getRedirectUrl());
             }
-
             return ResponseEntity.ok(paymentResponse);
-
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("MoMo payment creation error: " + e.getMessage());
-
             Map<String, String> error = new HashMap<>();
             error.put("error", "Failed to create MoMo payment: " + e.getMessage());
             error.put("details", e.toString());
@@ -202,14 +155,9 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Handle MoMo payment return (user redirected back from MoMo)
-     * This endpoint redirects user to frontend component instead of returning JSON
-     */
     @GetMapping("/momo/return")
     public ResponseEntity<?> handleMoMoReturn(@RequestParam Map<String, String> allParams) {
         try {
-            // Extract MoMo return parameters
             String partnerCode = allParams.get("partnerCode");
             String orderId = allParams.get("orderId");
             String requestId = allParams.get("requestId");
@@ -223,46 +171,33 @@ public class ApiPaymentController {
             String responseTime = allParams.get("responseTime");
             String extraData = allParams.get("extraData");
             String signature = allParams.get("signature");
-
-            // Backend callback URL (ngrok - for MoMo to call back to our API)
-            // Frontend redirect URL (localhost - to redirect user to React app)
             String frontendBaseUrl = "https://localhost:3000";
             String redirectUrl;
-
             if ("0".equals(resultCode)) {
-                // Payment successful
                 String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
-
-                // Verify payment with MoMo (optional, but recommended for security)
                 boolean isValidPayment = moMoService.verifyMoMoPayment(
                         partnerCode, orderId, requestId, amount, orderInfo, orderType,
                         transId, resultCode, message, payType, responseTime, extraData, signature);
                 if (isValidPayment) {
-                    // Update payment status
                     boolean paymentUpdated = paymentService.updatePaymentStatus(extractedOrderId, "COMPLETED", transId);
-
-                    // Redirect to MoMo return page with success parameters
                     redirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
                             "status=success&" +
                             "orderNumber=" + extractedOrderId + "&" +
                             "transactionId=" + transId + "&" +
                             "message=" + java.net.URLEncoder.encode("Thanh toán MoMo thành công", "UTF-8") + "&" +
                             "paymentUpdated=" + paymentUpdated;
-                } else { // Invalid signature
+                } else {
                     redirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
                             "status=error&" +
                             "message=" + java.net.URLEncoder.encode("Xác thực thanh toán không hợp lệ", "UTF-8") + "&" +
                             "resultCode=" + resultCode;
                 }
             } else {
-                // Payment failed or cancelled
                 String errorMessage = message != null ? message : "Thanh toán thất bại";
                 String errorDetail = mapMoMoErrorCode(resultCode);
                 String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
-
                 System.out.println("MoMo payment return failed for order: " + orderId +
-                        ", message: " + message + ", resultCode: " + resultCode); // Redirect to error page with
-                                                                                  // parameters
+                        ", message: " + message + ", resultCode: " + resultCode);
                 redirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
                         "status=error&" +
                         "message=" + java.net.URLEncoder.encode(errorMessage, "UTF-8") + "&" +
@@ -270,25 +205,21 @@ public class ApiPaymentController {
                         "resultCode=" + resultCode + "&" +
                         "orderNumber=" + extractedOrderId;
             }
-
-            // Return redirect response
             return ResponseEntity.status(HttpStatus.FOUND)
                     .header("Location", redirectUrl)
                     .build();
         } catch (Exception e) {
             System.err.println("Error in MoMo return callback: " + e.getMessage());
-            e.printStackTrace(); // Redirect to error page
+            e.printStackTrace();
             String frontendBaseUrl = "https://localhost:3000";
             try {
                 String errorRedirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
                         "status=error&" +
                         "message=" + java.net.URLEncoder.encode("Có lỗi xảy ra khi xử lý kết quả thanh toán", "UTF-8");
-
                 return ResponseEntity.status(HttpStatus.FOUND)
                         .header("Location", errorRedirectUrl)
                         .build();
             } catch (Exception urlException) {
-                // Fallback to JSON response if URL encoding fails
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of(
                                 "status", "error",
@@ -298,13 +229,9 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Handle MoMo payment notification (IPN - webhook from MoMo)
-     */
     @PostMapping("/momo/notify")
     public ResponseEntity<?> handleMoMoNotify(@RequestParam Map<String, String> allParams) {
         try {
-            // Extract MoMo callback parameters
             String partnerCode = allParams.get("partnerCode");
             String orderId = allParams.get("orderId");
             String requestId = allParams.get("requestId");
@@ -318,19 +245,14 @@ public class ApiPaymentController {
             String responseTime = allParams.get("responseTime");
             String extraData = allParams.get("extraData");
             String signature = allParams.get("signature");
-
             System.out.println("MoMo IPN received - Order ID: " + orderId + ", Result Code: " + resultCode);
-
-            // Verify payment with MoMo
             boolean isValidPayment = moMoService.verifyMoMoPayment(
                     partnerCode, orderId, requestId, amount, orderInfo, orderType,
                     transId, resultCode, message, payType, responseTime, extraData, signature);
             if (isValidPayment) {
                 if ("0".equals(resultCode)) {
-                    // Extract order ID and update payment status
                     String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
                     boolean paymentUpdated = paymentService.updatePaymentStatus(extractedOrderId, "COMPLETED", transId);
-
                     System.out.println(
                             "MoMo payment confirmed for order: " + extractedOrderId + ", updated: " + paymentUpdated);
                     return ResponseEntity.ok(Map.of(
@@ -355,39 +277,27 @@ public class ApiPaymentController {
         }
     }
 
-    /**
-     * Extract order ID from MoMo order ID format (e.g., ORDER_123_timestamp -> 123)
-     */
     private String extractOrderIdFromMoMoOrderId(String momoOrderId) {
         if (momoOrderId == null) {
             return null;
         }
-
         System.out.println("Extracting order ID from MoMo order ID: " + momoOrderId);
-
-        // Check if the orderId follows the ORDER_xxx_timestamp pattern from MoMo
         if (momoOrderId.startsWith("ORDER_")) {
             String extracted = momoOrderId.substring("ORDER_".length());
             System.out.println("Full extracted part (after ORDER_ prefix): " + extracted);
-            // If the extracted part contains underscores, it's likely in the format
-            // orderId_timestamp
             if (extracted.contains("_")) {
                 String orderIdPart = extracted.split("_")[0];
                 System.out.println("Extracted order ID (first part before underscore): " + orderIdPart);
                 try {
-                    Long.parseLong(orderIdPart); // Validate that this is a numeric ID
+                    Long.parseLong(orderIdPart);
                     return orderIdPart;
                 } catch (NumberFormatException e) {
                     System.out.println("Extracted part is not numeric: " + orderIdPart);
-                    // Continue to return extracted in case parsing fails
                 }
             }
-
             System.out.println("Extracted order ID (no underscore found): " + extracted);
             return extracted;
         }
-
-        // Check if contains orderId=ORDER_xxx pattern (from URL parameters)
         if (momoOrderId.contains("orderId=ORDER_")) {
             int startIndex = momoOrderId.indexOf("orderId=ORDER_") + "orderId=ORDER_".length();
             int endIndex = momoOrderId.indexOf("&", startIndex);
@@ -395,39 +305,29 @@ public class ApiPaymentController {
                 endIndex = momoOrderId.length();
             String extracted = momoOrderId.substring(startIndex, endIndex);
             System.out.println("Extracted from URL parameter: " + extracted);
-            // If the extracted part contains underscores, get just the order ID part
             if (extracted.contains("_")) {
                 String orderIdPart = extracted.split("_")[0];
                 System.out.println("Extracted order ID from URL (first part before underscore): " + orderIdPart);
                 try {
-                    Long.parseLong(orderIdPart); // Validate that this is a numeric ID
+                    Long.parseLong(orderIdPart);
                     return orderIdPart;
                 } catch (NumberFormatException e) {
                     System.out.println("Extracted part from URL is not numeric: " + orderIdPart);
                 }
             }
-
             return extracted;
         }
-
-        // Try to parse as numeric if possible
         try {
             Long.parseLong(momoOrderId);
-            return momoOrderId; // It's already a numeric ID
+            return momoOrderId;
         } catch (NumberFormatException e) {
-            // Not a numeric ID, return as is System.out.println("Could not extract numeric
-            // order ID, returning original: " + momoOrderId);
             return momoOrderId;
         }
     }
 
-    /**
-     * Map MoMo error codes to user-friendly messages
-     */
     private String mapMoMoErrorCode(String resultCode) {
         if (resultCode == null)
             return "Lỗi không xác định";
-
         switch (resultCode) {
             case "0":
                 return "Thành công";

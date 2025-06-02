@@ -5,10 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-/**
- * DTO for returning summarized order information without loading all associated entities.
- * This is used to minimize payload size and optimize API responses.
- */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,9 +27,7 @@ public class OrderSummaryDTO {
     private String storeName;
     private Long storeId;
     
-    /**
-     * DTO for order details with minimal information for listing views
-     */
+ 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
