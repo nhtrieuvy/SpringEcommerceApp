@@ -57,8 +57,8 @@ public class ReviewProductRepositoryImpl implements ReviewProductRepository {
 
     @Override
     public double getAverageRatingByProductId(Long productId) {
-        Object result = this.sessionFactory.getCurrentSession()
-                .createQuery("SELECT AVG(rating) FROM ReviewProduct WHERE productId = :pid")
+        Double result = this.sessionFactory.getCurrentSession()
+                .createQuery("SELECT AVG(rating) FROM ReviewProduct WHERE productId = :pid", Double.class)
                 .setParameter("pid", productId)
                 .getSingleResult();
         
@@ -66,7 +66,7 @@ public class ReviewProductRepositoryImpl implements ReviewProductRepository {
             return 0.0;
         }
         
-        return ((Double) result).doubleValue();
+        return result.doubleValue();
     }
 
 }

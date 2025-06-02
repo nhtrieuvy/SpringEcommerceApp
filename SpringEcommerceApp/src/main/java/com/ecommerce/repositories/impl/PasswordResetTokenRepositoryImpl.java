@@ -22,7 +22,8 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
     public PasswordResetToken findByToken(String token) {
         Session session = this.sessionFactory.getCurrentSession();
         try {
-            Query<PasswordResetToken> q = session.createQuery("FROM PasswordResetToken WHERE token=:token", PasswordResetToken.class);
+            Query<PasswordResetToken> q = session.createQuery("FROM PasswordResetToken WHERE token=:token",
+                    PasswordResetToken.class);
             q.setParameter("token", token);
             return q.getSingleResult();
         } catch (Exception ex) {
@@ -34,7 +35,8 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
     public PasswordResetToken findByUser(User user) {
         Session session = this.sessionFactory.getCurrentSession();
         try {
-            Query<PasswordResetToken> q = session.createQuery("FROM PasswordResetToken WHERE user.id=:userId", PasswordResetToken.class);
+            Query<PasswordResetToken> q = session.createQuery("FROM PasswordResetToken WHERE user.id=:userId",
+                    PasswordResetToken.class);
             q.setParameter("userId", user.getId());
             return q.getSingleResult();
         } catch (Exception ex) {
@@ -50,11 +52,11 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
             System.out.println("Token: " + passwordResetToken.getToken());
             System.out.println("User ID: " + passwordResetToken.getUser().getId());
             System.out.println("Expiry Date: " + passwordResetToken.getExpiryDate());
-            
+
             // Sử dụng merge thay vì saveOrUpdate để xử lý detached entities
             session.merge(passwordResetToken);
             session.flush(); // Đảm bảo lệnh SQL được thực thi ngay lập tức
-            
+
             System.out.println("Token đã được lưu thành công vào database");
         } catch (HibernateException ex) {
             System.err.println("LỖI khi lưu token vào database: " + ex.getMessage());
@@ -71,7 +73,7 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
     public void delete(PasswordResetToken passwordResetToken) {
         Session session = this.sessionFactory.getCurrentSession();
         try {
-            session.delete(passwordResetToken);
+            session.remove(passwordResetToken);
         } catch (HibernateException ex) {
             ex.printStackTrace();
         }

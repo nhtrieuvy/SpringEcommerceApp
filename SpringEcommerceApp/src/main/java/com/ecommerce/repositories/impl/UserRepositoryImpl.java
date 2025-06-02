@@ -20,8 +20,7 @@ public class UserRepositoryImpl implements UserRepository {
     private SessionFactory sessionFactory;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
-    
-    // Simple cache for frequently accessed users
+
     private final Map<String, User> usernameCache = new ConcurrentHashMap<>();
     private final Map<Long, User> idCache = new ConcurrentHashMap<>();
 
@@ -29,21 +28,21 @@ public class UserRepositoryImpl implements UserRepository {
     public User addUser(User user) {
         Session session = sessionFactory.getCurrentSession();
         session.persist(user);
-        
-        // Add to cache
+
         if (user.getUsername() != null) {
             usernameCache.put(user.getUsername(), user);
         }
         if (user.getId() != null) {
             idCache.put(user.getId(), user);
         }
-        
+
         return user;
-    }    @Override
+    }
+
+    @Override
     public void update(User user) {
         Session session = sessionFactory.getCurrentSession();
-        
-        // Check if we need to preserve password
+
         if (user.getId() != null && user.getPassword() == null) {
             User existingUser = this.findById(user.getId());
             if (existingUser != null && existingUser.getPassword() != null) {
@@ -51,10 +50,9 @@ public class UserRepositoryImpl implements UserRepository {
                 System.out.println("Password preserved for user: " + user.getUsername());
             }
         }
-        
+
         session.merge(user);
-        
-        // Update cache
+
         if (user.getUsername() != null) {
             usernameCache.put(user.getUsername(), user);
         }
@@ -65,15 +63,15 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void delete(Long id) {
-        if (id == null) return;
-        
+        if (id == null)
+            return;
+
         Session session = sessionFactory.getCurrentSession();
         User user = session.get(User.class, id);
         if (user != null) {
-            // Clear cache
             usernameCache.remove(user.getUsername());
             idCache.remove(id);
-            
+
             session.remove(user);
         }
     }
@@ -83,24 +81,22 @@ public class UserRepositoryImpl implements UserRepository {
         if (id == null) {
             return null;
         }
-        
-        // Check cache first
+
         User cachedUser = idCache.get(id);
         if (cachedUser != null) {
             return cachedUser;
         }
-        
+
         Session session = sessionFactory.getCurrentSession();
         User user = session.get(User.class, id);
-        
-        // Update cache if found
+
         if (user != null) {
             idCache.put(id, user);
             if (user.getUsername() != null) {
                 usernameCache.put(user.getUsername(), user);
             }
         }
-        
+
         return user;
     }
 
@@ -109,7 +105,7 @@ public class UserRepositoryImpl implements UserRepository {
         try {
             Session session = sessionFactory.getCurrentSession();
             Query<User> query = session.createQuery("FROM User", User.class);
-            query.setCacheable(true); // Enable query cache
+            query.setCacheable(true);
             return query.list();
         } catch (Exception e) {
             System.err.println("Error getting all users: " + e.getMessage());
@@ -122,31 +118,29 @@ public class UserRepositoryImpl implements UserRepository {
         if (username == null || username.trim().isEmpty()) {
             return null;
         }
-        
+
         String normalizedUsername = username.trim();
-        
-        // Check cache first
+
         User cachedUser = usernameCache.get(normalizedUsername);
         if (cachedUser != null) {
             return cachedUser;
         }
-        
+
         try {
             Session session = sessionFactory.getCurrentSession();
             Query<User> query = session.createQuery("FROM User WHERE username = :username", User.class);
             query.setParameter("username", normalizedUsername);
-            query.setCacheable(true); // Enable query cache
-            
+            query.setCacheable(true);
+
             User user = query.uniqueResult();
-            
-            // Update cache if found
+
             if (user != null) {
                 usernameCache.put(normalizedUsername, user);
                 if (user.getId() != null) {
                     idCache.put(user.getId(), user);
                 }
             }
-            
+
             return user;
         } catch (Exception e) {
             System.err.println("Error finding user by username: " + e.getMessage());
@@ -159,18 +153,17 @@ public class UserRepositoryImpl implements UserRepository {
         if (email == null || email.trim().isEmpty()) {
             return null;
         }
-        
+
         String normalizedEmail = email.trim().toLowerCase();
-        
+
         try {
             Session session = sessionFactory.getCurrentSession();
             Query<User> query = session.createQuery("FROM User WHERE email = :email", User.class);
             query.setParameter("email", normalizedEmail);
-            query.setCacheable(true); // Enable query cache
-            
+            query.setCacheable(true);
+
             User user = query.uniqueResult();
-            
-            // Update caches if found
+
             if (user != null) {
                 if (user.getUsername() != null) {
                     usernameCache.put(user.getUsername(), user);
@@ -179,7 +172,7 @@ public class UserRepositoryImpl implements UserRepository {
                     idCache.put(user.getId(), user);
                 }
             }
-            
+
             return user;
         } catch (Exception e) {
             System.err.println("Error finding user by email: " + e.getMessage());
@@ -192,17 +185,19 @@ public class UserRepositoryImpl implements UserRepository {
         if (username == null || password == null) {
             return false;
         }
-        
+
         User user = this.findByUsername(username);
         if (user == null) {
             return false;
         }
-        
+
         return passwordEncoder.matches(password, user.getPassword());
-    }    @Override
+    }
+
+    @Override
     public List<User> findByActiveStatus(boolean isActive) {
         Session session = sessionFactory.getCurrentSession();
-        
+
         try {
             Query<User> query = session.createQuery("FROM User u WHERE u.isActive = :active", User.class);
             query.setParameter("active", isActive);
@@ -212,48 +207,47 @@ public class UserRepositoryImpl implements UserRepository {
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public List<User> findByRole(String roleName) {
         if (roleName == null || roleName.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        
+
         try {
             Session session = sessionFactory.getCurrentSession();
-            
-            // Sử dụng HQL với JOIN để lấy tất cả người dùng có vai trò chỉ định
+
             Query<User> query = session.createQuery(
-                "SELECT DISTINCT u FROM User u " +
-                "JOIN u.roles r " +
-                "WHERE r.name = :roleName", 
-                User.class
-            );
+                    "SELECT DISTINCT u FROM User u " +
+                            "JOIN u.roles r " +
+                            "WHERE r.name = :roleName",
+                    User.class);
             query.setParameter("roleName", roleName);
-            
-            return query.getResultList();        } catch (Exception e) {
+
+            return query.getResultList();
+        } catch (Exception e) {
             System.err.println("Error finding users by role: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public List<User> searchUsers(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        
+
         String normalizedKeyword = keyword.trim().toLowerCase();
-        
+
         try {
-            Session session = sessionFactory.getCurrentSession();            Query<User> query = session.createQuery(
-                "FROM User WHERE (LOWER(username) LIKE :keyword OR LOWER(email) LIKE :keyword OR LOWER(fullname) LIKE :keyword) AND isActive = true", 
-                User.class
-            );
+            Session session = sessionFactory.getCurrentSession();
+            Query<User> query = session.createQuery(
+                    "FROM User WHERE (LOWER(username) LIKE :keyword OR LOWER(email) LIKE :keyword OR LOWER(fullname) LIKE :keyword) AND isActive = true",
+                    User.class);
             query.setParameter("keyword", "%" + normalizedKeyword + "%");
-            query.setCacheable(true); // Enable query cache
-            
+            query.setCacheable(true);
+
             return query.getResultList();
         } catch (Exception e) {
             System.err.println("Error searching users: " + e.getMessage());

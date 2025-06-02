@@ -12,7 +12,7 @@ public class PaymentResponseDTO {
     private String transactionId;
     private Date paymentDate;
     private String message;
-    private String redirectUrl; // For PayPal approval URL
+    private String redirectUrl; 
 
     public PaymentResponseDTO() {
     }

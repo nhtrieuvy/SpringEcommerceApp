@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Import PayPal SDK classes
 import com.paypal.api.payments.*;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
@@ -40,7 +39,7 @@ public class PaymentServiceImpl implements PaymentService {
     private OrderService orderService;
 
     @Autowired
-    private APIContext apiContext; // Inject APIContext
+    private APIContext apiContext;
 
     @Override
     public Payment save(Payment payment) {
@@ -98,7 +97,7 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByOrderId(order.getId());
         boolean isNewPaymentRecord;
 
-        if (payment != null) { // Existing payment record for this order
+        if (payment != null) {
             if ("COMPLETED".equals(payment.getStatus())) {
                 System.out.println("Payment for order ID: " + order.getId() + " already completed.");
                 return new PaymentResponseDTO(
@@ -111,24 +110,22 @@ public class PaymentServiceImpl implements PaymentService {
                         payment.getPaymentDate(),
                         "Payment already completed for this order.");
             }
-            // Reusing existing payment record.
             isNewPaymentRecord = false;
             System.out.println(
                     "Reusing existing payment record (ID: " + payment.getId() + ") for order ID: " + order.getId() +
                             ". Current method: " + payment.getPaymentMethod() + ", status: " + payment.getStatus() +
                             ". Requested method: " + paymentRequestDTO.getPaymentMethod());
-            // paymentDate is not changed for existing records.
-        } else { // No payment record for this order, create a new one.
+
+        } else {
             payment = new Payment();
-            payment.setOrder(order); // Link to order
-            payment.setPaymentDate(new Date()); // Set creation date for the new payment record
+            payment.setOrder(order);
+            payment.setPaymentDate(new Date());
             isNewPaymentRecord = true;
             System.out.println("Creating new payment record for order ID: " + order.getId());
         }
 
-        // Set/update common properties.
         payment.setAmount(order.getTotalAmount());
-        payment.setPaymentMethod(paymentRequestDTO.getPaymentMethod()); // Set/Update to the requested method
+        payment.setPaymentMethod(paymentRequestDTO.getPaymentMethod());
 
         try {
             switch (paymentRequestDTO.getPaymentMethod()) {
@@ -198,9 +195,7 @@ public class PaymentServiceImpl implements PaymentService {
                     return response;
 
                 case MOMO:
-                    // Assuming MoMoServiceImpl.createMoMoPayment uses MomoConfig for URLs if not
-                    // passed directly.
-                    // The current signature in summary is createMoMoPayment(Order order).
+
                     PaymentResponseDTO momoExtResponse = moMoService.createMoMoPayment(order);
 
                     payment.setStatus("PENDING_MOMO");
@@ -239,23 +234,23 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus("FAILED");
             order.setStatus("PAYMENT_FAILED");
 
-            if (payment.getOrder() != null) { // Ensure payment object is minimally valid
+            if (payment.getOrder() != null) {
                 if (payment.getId() != null) {
                     paymentRepository.update(payment);
-                } else if (isNewPaymentRecord) { // Only save if it was intended to be new
+                } else if (isNewPaymentRecord) {
                     paymentRepository.save(payment);
                 }
             }
             orderRepository.update(order);
 
             return new PaymentResponseDTO(
-                    payment.getId(), // May be null if save failed or wasn't called
+                    payment.getId(),
                     order.getId(),
                     paymentRequestDTO.getPaymentMethod(),
                     order.getTotalAmount(),
                     "FAILED",
-                    payment.getTransactionId(), // May be null
-                    payment.getPaymentDate(), // May be null if new and not set
+                    payment.getTransactionId(),
+                    payment.getPaymentDate(),
                     "PayPal payment processing failed: " + e.getDetails());
         } catch (Exception e) {
             System.err.println("Payment processing failed for method " + paymentRequestDTO.getPaymentMethod() + ": "
@@ -265,12 +260,10 @@ public class PaymentServiceImpl implements PaymentService {
             payment.setStatus("FAILED");
             order.setStatus("PAYMENT_FAILED");
 
-            if (payment.getOrder() != null) { // Ensure payment object is minimally valid
-                // If it's a new record that failed before the first save, save it as FAILED.
-                // If it's an existing record, update it to FAILED.
+            if (payment.getOrder() != null) {
                 if (isNewPaymentRecord) {
                     paymentRepository.save(payment);
-                } else if (payment.getId() != null) { // Ensure existing record has an ID
+                } else if (payment.getId() != null) {
                     paymentRepository.update(payment);
                 }
             }
@@ -282,8 +275,8 @@ public class PaymentServiceImpl implements PaymentService {
                     paymentRequestDTO.getPaymentMethod(),
                     order.getTotalAmount(),
                     "FAILED",
-                    null, // Transaction ID might not be available or relevant for a general failure
-                    new Date(), // Use current date for the failure response
+                    null,
+                    new Date(),
                     "Payment processing failed: " + e.getMessage());
         }
     }
@@ -291,9 +284,8 @@ public class PaymentServiceImpl implements PaymentService {
     private com.paypal.api.payments.Payment createPaypalPaymentObject(Order order, String cancelUrl, String successUrl)
             throws PayPalRESTException {
         Amount amount = new Amount();
-        amount.setCurrency("USD"); // Or get from order/config
+        amount.setCurrency("USD");
 
-        // Calculate total including shipping fee if available
         double totalWithShipping = order.getTotalAmount();
         if (order.getShippingFee() != null && order.getShippingFee() > 0) {
             totalWithShipping += order.getShippingFee();
@@ -301,7 +293,6 @@ public class PaymentServiceImpl implements PaymentService {
                     + totalWithShipping);
         }
 
-        // Format to 2 decimal places for PayPal
         String totalAmountStr = BigDecimal.valueOf(totalWithShipping).setScale(2, RoundingMode.HALF_UP).toString();
         amount.setTotal(totalAmountStr);
 
@@ -321,9 +312,8 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setTransactions(transactions);
 
         RedirectUrls redirectUrls = new RedirectUrls();
-        // Make sure these URLs are correctly configured and reachable
-        redirectUrls.setCancelUrl(cancelUrl); // e.g., http://localhost:8080/payments/paypal/cancel
-        redirectUrls.setReturnUrl(successUrl); // e.g., http://localhost:8080/payments/paypal/success
+        redirectUrls.setCancelUrl(cancelUrl);
+        redirectUrls.setReturnUrl(successUrl);
 
         payment.setRedirectUrls(redirectUrls);
         return payment;
@@ -337,7 +327,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment paymentRecord = paymentRepository.findByTransactionId(paymentId);
 
-        // Nếu không tìm thấy payment record, trả về lỗi thay vì tạo mới
         if (paymentRecord == null) {
             System.err.println("❌ Không tìm thấy payment record cho PayPal ID: " + paymentId);
             System.err.println("⚠️ Frontend cần gọi /api/payments/process trước khi execute PayPal payment");
@@ -351,10 +340,10 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = paymentRecord.getOrder();
 
         com.paypal.api.payments.Payment payment = new com.paypal.api.payments.Payment();
-        payment.setId(paymentId); // The PayPal Payment ID
+        payment.setId(paymentId);
 
         PaymentExecution paymentExecute = new PaymentExecution();
-        paymentExecute.setPayerId(payerId); // The PayerID from PayPal callback
+        paymentExecute.setPayerId(payerId);
 
         try {
             System.out.println("🔄 Đang thực hiện PayPal payment execution...");
@@ -365,15 +354,14 @@ public class PaymentServiceImpl implements PaymentService {
                 System.out.println("✅ PayPal payment được approve, đang cập nhật payment record...");
                 paymentRecord.setStatus("COMPLETED");
                 paymentRecord.setPaypalPayerId(payerId);
-                // Capture ID might be part of transactions -> related_resources -> sale -> id
                 if (!executedPayment.getTransactions().isEmpty() &&
                         !executedPayment.getTransactions().get(0).getRelatedResources().isEmpty() &&
                         executedPayment.getTransactions().get(0).getRelatedResources().get(0).getSale() != null) {
                     paymentRecord.setPaypalCaptureId(
                             executedPayment.getTransactions().get(0).getRelatedResources().get(0).getSale().getId());
                 }
-                paymentRecord.setPaymentDate(new Date()); // Update payment date to completion time
-                order.setStatus("PROCESSING"); // Or "COMPLETED" depending on your flow
+                paymentRecord.setPaymentDate(new Date());
+                order.setStatus("PROCESSING");
 
                 paymentRepository.update(paymentRecord);
                 orderRepository.update(order);
@@ -391,9 +379,8 @@ public class PaymentServiceImpl implements PaymentService {
                         paymentRecord.getPaymentDate(),
                         "PayPal payment completed successfully.");
             } else {
-                // Handle other states like pending, failed, etc.
                 paymentRecord.setStatus("FAILED");
-                paymentRecord.setPaypalPayerId(payerId); // Still useful to store
+                paymentRecord.setPaypalPayerId(payerId);
                 order.setStatus("PAYMENT_FAILED");
                 paymentRepository.update(paymentRecord);
                 orderRepository.update(order);
@@ -409,10 +396,9 @@ public class PaymentServiceImpl implements PaymentService {
             }
         } catch (PayPalRESTException e) {
             System.err.println("PayPal execution failed: " + e.getMessage());
-            // Log detailed error: e.getDetails()
             paymentRecord.setStatus("FAILED");
             order.setStatus("PAYMENT_FAILED");
-            if (paymentRecord.getId() != null) { // Ensure it's an existing record before updating
+            if (paymentRecord.getId() != null) {
                 paymentRepository.update(paymentRecord);
             }
             orderRepository.update(order);
@@ -429,7 +415,6 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public boolean updatePaymentStatus(String orderId, String status, String transactionId) {
         try {
-            // Convert string orderId to Long
             Long orderIdLong = null;
             try {
                 orderIdLong = Long.valueOf(orderId);
@@ -438,22 +423,19 @@ public class PaymentServiceImpl implements PaymentService {
                 return false;
             }
 
-            // Find payment by orderId
             Payment payment = paymentRepository.findByOrderId(orderIdLong);
             if (payment == null) {
                 System.err.println("Payment not found for order ID: " + orderId);
                 return false;
             }
 
-            // Update payment fields
             payment.setStatus(status);
             if (transactionId != null && !transactionId.isEmpty()) {
                 payment.setTransactionId(transactionId);
             }
             payment.setPaymentDate(new java.util.Date());
 
-            // Save payment
-            paymentRepository.update(payment); // Also update the order status if payment was completed
+            paymentRepository.update(payment);
             if ("COMPLETED".equals(status)) {
                 Order order = orderRepository.findById(orderIdLong);
                 if (order != null) {
@@ -461,7 +443,6 @@ public class PaymentServiceImpl implements PaymentService {
                     orderRepository.update(order);
                     System.out.println("Order " + orderId + " status updated to PROCESSING after MoMo payment");
 
-                    // Add order status history for MoMo payment completion
                     String statusNote = "MoMo payment completed (Transaction ID: " +
                             (payment != null ? payment.getTransactionId() : "N/A") + ")";
                     orderService.addOrderStatusHistory(order, "PROCESSING", statusNote, order.getUser().getId());

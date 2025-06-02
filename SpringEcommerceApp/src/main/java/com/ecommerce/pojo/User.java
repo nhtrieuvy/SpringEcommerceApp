@@ -40,27 +40,23 @@ public class User {
     @Column(length = 1024)
     private String avatar;
 
-    // Trường mới cho đăng nhập Google
     @Column(name = "google_id")
     private String googleId;
     
-    // Trường mới cho đăng nhập Facebook
     @Column(name = "facebook_id")
     private String facebookId;
     
-    // Trường để xác định đăng nhập từ đâu
     @Column(name = "auth_provider")
     private String authProvider;
-      // Trường lưu thời gian tạo tài khoản
+
     @Column(name = "created_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
     
-    // Trường lưu thời gian đăng nhập cuối cùng
     @Column(name = "last_login")
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastLogin;
-      // Trường xác định trạng thái hoạt động của tài khoản
+
     @Column(name = "is_active")
     @JsonProperty("active")
     private boolean isActive = true;
@@ -71,6 +67,7 @@ public class User {
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+    
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     @JsonManagedReference
     private Set<Role> roles;

@@ -9,12 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-/**
- * Entity representing the details of an order in the e-commerce system.
- * Each OrderDetail contains information about a specific product in an order,
- * including quantity and price. It has a many-to-one relationship with the
- * Order entity.
- */
+
 @Entity
 @Table(name = "order_details")
 

@@ -49,7 +49,6 @@ public class WishlistServiceImpl implements WishlistService {
             User user = getCurrentUser();
             return wishlistItemRepository.findByUser(user);
         } catch (Exception e) {
-            // Handle case when user is not authenticated
             return List.of();
         }
     }
@@ -64,9 +63,8 @@ public class WishlistServiceImpl implements WishlistService {
                 throw new IllegalArgumentException("Product not found");
             }
             
-            // Check if product is already in wishlist
             if (wishlistItemRepository.existsByUserAndProduct(user, product)) {
-                return null; // Already in wishlist, no action needed
+                return null; 
             }
             
             WishlistItem wishlistItem = new WishlistItem();
@@ -144,16 +142,13 @@ public class WishlistServiceImpl implements WishlistService {
                 return false;
             }
             
-            // Check if product is in wishlist
             Optional<WishlistItem> wishlistItemOpt = wishlistItemRepository.findByUserAndProduct(user, product);
             if (wishlistItemOpt.isEmpty()) {
                 return false;
             }
             
-            // Add to cart (quantity 1 by default)
             CartItem addedCartItem = cartService.addToCart(productId, 1);
             
-            // If successfully added to cart, remove from wishlist
             if (addedCartItem != null) {
                 wishlistItemRepository.deleteByUserAndProduct(user, product);
                 return true;
@@ -175,14 +170,12 @@ public class WishlistServiceImpl implements WishlistService {
             
             boolean success = true;
             for (WishlistItem item : wishlistItems) {
-                // Add to cart (quantity 1 by default)
                 CartItem addedCartItem = cartService.addToCart(item.getProduct().getId(), 1);
                 if (addedCartItem == null) {
                     success = false;
                 }
             }
             
-            // Clear wishlist if all items were successfully added to cart
             if (success) {
                 wishlistItemRepository.deleteAllByUser(user);
             }

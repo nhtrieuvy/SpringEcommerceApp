@@ -16,10 +16,7 @@ import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-/**
- *
- * @author admin
- */
+
 @Configuration
 @EnableTransactionManagement
 @PropertySource("classpath:database.properties")
@@ -49,18 +46,18 @@ public class HibernateConfigs {
 
     private Properties hibernateProperties() {
         Properties props = new Properties();
-        // Cơ bản
+       
         props.setProperty("hibernate.dialect", env.getProperty("hibernate.dialect"));
         props.setProperty("hibernate.show_sql", env.getProperty("hibernate.showSql"));
         props.setProperty("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
 
-        // Tối ưu hóa bộ nhớ
+      
         props.setProperty("hibernate.jdbc.batch_size", "50");
         props.setProperty("hibernate.order_inserts", "true");
         props.setProperty("hibernate.order_updates", "true");
         props.setProperty("hibernate.jdbc.batch_versioned_data", "true");
 
-        // Cấu hình cache với JCache (tương thích với Hibernate 6)
+      
         props.setProperty("hibernate.cache.use_second_level_cache", "true");
         props.setProperty("hibernate.cache.use_query_cache", "true");
         props.setProperty("hibernate.cache.region.factory_class",

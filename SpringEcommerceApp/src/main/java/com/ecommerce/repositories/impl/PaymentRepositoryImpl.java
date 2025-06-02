@@ -58,7 +58,8 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     @Override
     public Payment findByTransactionId(String transactionId) {
         Session session = sessionFactory.getCurrentSession();
-        Query<Payment> query = session.createQuery("FROM Payment p WHERE p.transactionId = :transactionId", Payment.class);
+        Query<Payment> query = session.createQuery("FROM Payment p WHERE p.transactionId = :transactionId",
+                Payment.class);
         query.setParameter("transactionId", transactionId);
         return query.uniqueResultOptional().orElse(null);
     }

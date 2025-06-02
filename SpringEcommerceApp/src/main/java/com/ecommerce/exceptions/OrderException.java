@@ -3,9 +3,7 @@ package com.ecommerce.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-/**
- * Exception thrown when an order operation fails due to business rule violations.
- */
+
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class OrderException extends RuntimeException {
     public OrderException(String message) {
@@ -16,7 +14,7 @@ public class OrderException extends RuntimeException {
         super(message, cause);
     }
     
-    // Specific order error types
+    
     public static class OrderNotFoundException extends OrderException {
         public OrderNotFoundException(Long orderId) {
             super("Order not found with ID: " + orderId);

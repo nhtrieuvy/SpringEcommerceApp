@@ -37,47 +37,44 @@ public class OrderServiceImpl implements OrderService {
     private OrderStatusHistoryRepository orderStatusHistoryRepository;
 
     @Autowired
-    private UserRepository userRepository;    @Override
+    private UserRepository userRepository;
+
+    @Override
     public void save(Order order) {
-        // Check if the order has any status history entries already
-        if ((order.getStatusHistory() == null || order.getStatusHistory().isEmpty()) && 
-            order.getUser() != null && order.getStatus() != null) {
-            // Add initial status history if none exists
-            addOrderStatusHistory(order, order.getStatus(), "Đơn hàng mới được tạo", 
-                order.getUser().getId());
+        if ((order.getStatusHistory() == null || order.getStatusHistory().isEmpty()) &&
+                order.getUser() != null && order.getStatus() != null) {
+            addOrderStatusHistory(order, order.getStatus(), "Đơn hàng mới được tạo",
+                    order.getUser().getId());
         }
-        // Save the order with all its relationships (with proper cascade settings)
         orderRepository.save(order);
-    }    @Override
+    }
+
+    @Override
     public void update(Order order) {
-        // Call the overloaded method with null userId for backward compatibility
         update(order, null);
     }
-    
+
     @Override
     public void update(Order order, Long userId) {
-        // Fetch the current state of the order from the database
         Order existingOrder = orderRepository.findById(order.getId());
         if (existingOrder == null) {
             throw new NoSuchElementException("Order not found with id: " + order.getId());
         }
 
-        // Check if the status has changed by comparing with the new status in the
-        // 'order' object
         if (!existingOrder.getStatus().equals(order.getStatus())) {
-            // Pass the 'order' object (which has the new status) to addOrderStatusHistory
-            // Now we use the userId parameter that was passed to this method
+
             addOrderStatusHistory(order, order.getStatus(), "Trạng thái đơn hàng đã được cập nhật", userId);
         }
 
-        // Use the update method in our repository
-        orderRepository.update(order);
-    }@Override
-    public void updateWithoutHistory(Order order) {
-        // Cập nhật đơn hàng mà không kiểm tra hoặc tạo lịch sử trạng thái
         orderRepository.update(order);
     }
-    
+
+    @Override
+    public void updateWithoutHistory(Order order) {
+
+        orderRepository.update(order);
+    }
+
     @Override
     public void delete(Long id) {
         orderRepository.delete(id);
@@ -91,7 +88,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Order> findAll() {
         return orderRepository.findAll();
-    }    @Override
+    }
+
+    @Override
     public List<Order> findByUserId(Long userId) {
         return orderRepository.findByUserId(userId);
     }
@@ -101,14 +100,16 @@ public class OrderServiceImpl implements OrderService {
         try {
             List<Order> orders = orderRepository.findByUserId(userId);
             System.out.println("Converting " + orders.size() + " orders to DTOs");
-            
+
             return orders.stream().map(this::convertToOrderSummaryDTO).collect(Collectors.toList());
         } catch (Exception e) {
             System.err.println("Error converting orders to DTOs: " + e.getMessage());
             e.printStackTrace();
             return new ArrayList<>();
         }
-    }      private OrderSummaryDTO convertToOrderSummaryDTO(Order order) {
+    }
+
+    private OrderSummaryDTO convertToOrderSummaryDTO(Order order) {
         try {
             OrderSummaryDTO dto = new OrderSummaryDTO();
             dto.setId(order.getId());
@@ -117,36 +118,32 @@ public class OrderServiceImpl implements OrderService {
             dto.setOrderDate(order.getOrderDate());
             dto.setStatus(order.getStatus());
             dto.setTotalAmount(order.getTotalAmount());
-              // Set customer information with default values if null
             if (order.getUser() != null) {
                 dto.setCustomerId(order.getUser().getId());
-                dto.setCustomerName(order.getUser().getFullname() != null ? 
-                    order.getUser().getFullname() : order.getUser().getUsername());
+                dto.setCustomerName(order.getUser().getFullname() != null ? order.getUser().getFullname()
+                        : order.getUser().getUsername());
                 dto.setCustomerEmail(order.getUser().getEmail());
             } else {
-                // Provide default values when user info is missing
                 dto.setCustomerId(null);
                 dto.setCustomerName("Khách hàng không xác định");
                 dto.setCustomerEmail("");
             }
-            
-            // Set payment method safely
+
             if (order.getPayment() != null) {
-                dto.setPaymentMethod(order.getPayment().getPaymentMethod() != null ? 
-                    order.getPayment().getPaymentMethod().toString() : "Chưa xác định");
-                dto.setPaymentStatus(order.getPayment().getStatus() != null ? 
-                    order.getPayment().getStatus().toString() : "Chưa thanh toán");
+                dto.setPaymentMethod(
+                        order.getPayment().getPaymentMethod() != null ? order.getPayment().getPaymentMethod().toString()
+                                : "Chưa xác định");
+                dto.setPaymentStatus(order.getPayment().getStatus() != null ? order.getPayment().getStatus().toString()
+                        : "Chưa thanh toán");
             } else {
                 dto.setPaymentMethod("Chưa xác định");
                 dto.setPaymentStatus("Chưa thanh toán");
             }
-            
-            // Set item count and order details info safely
+
             if (order.getOrderDetails() != null && !order.getOrderDetails().isEmpty()) {
                 dto.setItemCount(order.getOrderDetails().size());
                 dto.setOrderDetailsCount(order.getOrderDetails().size());
-                
-                // Set first product name and store info
+
                 OrderDetail firstDetail = order.getOrderDetails().iterator().next();
                 if (firstDetail.getProduct() != null) {
                     dto.setFirstProductName(firstDetail.getProduct().getName());
@@ -161,18 +158,16 @@ public class OrderServiceImpl implements OrderService {
                     dto.setFirstProductName("Sản phẩm không xác định");
                 }
             } else {
-                // Provide default values when order details are missing
                 dto.setItemCount(0);
                 dto.setOrderDetailsCount(0);
                 dto.setFirstProductName("Không có sản phẩm");
                 dto.setStoreName("Không có cửa hàng");
                 dto.setStoreId(null);
             }
-            
+
             return dto;
         } catch (Exception e) {
             System.err.println("Error converting order " + order.getId() + " to DTO: " + e.getMessage());
-            // Return a minimal DTO in case of error
             OrderSummaryDTO dto = new OrderSummaryDTO();
             dto.setId(order.getId());
             dto.setOrderDate(order.getOrderDate());
@@ -200,7 +195,6 @@ public class OrderServiceImpl implements OrderService {
             String status = (String) result[0];
             Long count = (Long) result[1];
 
-            // Convert status to display name
             String displayName = getStatusDisplayName(status);
             statusCounts.put(displayName, count);
         }
@@ -225,28 +219,23 @@ public class OrderServiceImpl implements OrderService {
         }
 
         for (Object[] result : results) {
-            // Format the date period label
             String periodLabel;
             if (result[0] instanceof Integer && result[1] instanceof Integer) {
-                // For monthly grouping (month, year)
                 Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.MONTH, (Integer) result[0] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.MONTH, (Integer) result[0] - 1);
                 cal.set(Calendar.YEAR, (Integer) result[1]);
                 periodLabel = dateFormat.format(cal.getTime());
             } else if (result[0] instanceof Integer && result[1] instanceof Integer && result[2] instanceof Integer) {
-                // For daily grouping (day, month, year)
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.DAY_OF_MONTH, (Integer) result[0]);
-                cal.set(Calendar.MONTH, (Integer) result[1] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.MONTH, (Integer) result[1] - 1);
                 cal.set(Calendar.YEAR, (Integer) result[2]);
                 periodLabel = dateFormat.format(cal.getTime());
             } else if (result[0] instanceof Integer) {
-                // For yearly grouping (year)
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.YEAR, (Integer) result[0]);
                 periodLabel = dateFormat.format(cal.getTime());
             } else {
-                // Fallback
                 periodLabel = result[0].toString();
             }
 
@@ -274,28 +263,24 @@ public class OrderServiceImpl implements OrderService {
         }
 
         for (Object[] result : results) {
-            // Format the date period label
             String periodLabel;
             if (result[0] instanceof Integer && result[1] instanceof Integer) {
                 // For monthly grouping (month, year)
                 Calendar cal = Calendar.getInstance();
-                cal.set(Calendar.MONTH, (Integer) result[0] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.MONTH, (Integer) result[0] - 1);
                 cal.set(Calendar.YEAR, (Integer) result[1]);
                 periodLabel = dateFormat.format(cal.getTime());
             } else if (result[0] instanceof Integer && result[1] instanceof Integer && result[2] instanceof Integer) {
-                // For daily grouping (day, month, year)
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.DAY_OF_MONTH, (Integer) result[0]);
-                cal.set(Calendar.MONTH, (Integer) result[1] - 1); // Month is 0-based in Calendar
+                cal.set(Calendar.MONTH, (Integer) result[1] - 1);
                 cal.set(Calendar.YEAR, (Integer) result[2]);
                 periodLabel = dateFormat.format(cal.getTime());
             } else if (result[0] instanceof Integer) {
-                // For yearly grouping (year)
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.YEAR, (Integer) result[0]);
                 periodLabel = dateFormat.format(cal.getTime());
             } else {
-                // Fallback
                 periodLabel = result[0].toString();
             }
 
@@ -336,18 +321,14 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public byte[] generateOrderExcel(List<Order> orders) {
-        // Implementation using Apache POI to create Excel file
         try {
-            // Create a new workbook
             try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-                // Create sheet
                 XSSFSheet sheet = workbook.createSheet("Đơn hàng");
-                
-                // Create header row
+
                 Row headerRow = sheet.createRow(0);
-                String[] headers = {"ID", "Ngày đặt", "Khách hàng", "Email", "SĐT", "Trạng thái", "Địa chỉ", "Tổng tiền"};
-                
-                // Style for header
+                String[] headers = { "ID", "Ngày đặt", "Khách hàng", "Email", "SĐT", "Trạng thái", "Địa chỉ",
+                        "Tổng tiền" };
+
                 XSSFCellStyle headerStyle = workbook.createCellStyle();
                 headerStyle.setFillForegroundColor(IndexedColors.LIGHT_BLUE.getIndex());
                 headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -355,27 +336,25 @@ public class OrderServiceImpl implements OrderService {
                 font.setFontHeightInPoints((short) 12);
                 font.setBold(true);
                 headerStyle.setFont(font);
-                
-                // Add headers
+
                 for (int i = 0; i < headers.length; i++) {
                     Cell cell = headerRow.createCell(i);
                     cell.setCellValue(headers[i]);
                     cell.setCellStyle(headerStyle);
                 }
-                
-                // Add data rows
+
                 int rowNum = 1;
                 for (Order order : orders) {
                     Row row = sheet.createRow(rowNum++);
                     row.createCell(0).setCellValue(order.getId());
-                    
+
                     if (order.getOrderDate() != null) {
                         Cell dateCell = row.createCell(1);
                         dateCell.setCellValue(new SimpleDateFormat("dd/MM/yyyy HH:mm").format(order.getOrderDate()));
                     } else {
                         row.createCell(1).setCellValue("");
                     }
-                    
+
                     if (order.getUser() != null) {
                         row.createCell(2).setCellValue(order.getUser().getFullname());
                         row.createCell(3).setCellValue(order.getUser().getEmail());
@@ -385,21 +364,18 @@ public class OrderServiceImpl implements OrderService {
                         row.createCell(3).setCellValue("N/A");
                         row.createCell(4).setCellValue("N/A");
                     }
-                    
+
                     row.createCell(5).setCellValue(getStatusDisplayName(order.getStatus()));
                     row.createCell(6).setCellValue(order.getShippingAddress());
-                    
-                    // Format currency
+
                     Cell totalCell = row.createCell(7);
                     totalCell.setCellValue(order.getTotalAmount());
                 }
-                
-                // Auto-size columns
+
                 for (int i = 0; i < headers.length; i++) {
                     sheet.autoSizeColumn(i);
                 }
-                
-                // Write to ByteArrayOutputStream
+
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 workbook.write(outputStream);
                 return outputStream.toByteArray();
@@ -412,10 +388,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public byte[] generateReportExcel(String reportType, Date fromDate, Date toDate) {
-        // Implementation using Apache POI to create Excel file
         try {
-            // This would be replaced with actual Apache POI code to generate Excel
-            // based on the report type and date range
+
             return new byte[0];
         } catch (Exception e) {
             e.printStackTrace();
@@ -423,7 +397,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    // Helper method to get friendly status display name
     private String getStatusDisplayName(String statusCode) {
         switch (statusCode) {
             case "PENDING":
@@ -436,7 +409,6 @@ public class OrderServiceImpl implements OrderService {
                 return "Đã hoàn thành";
             case "CANCELLED":
                 return "Đã hủy";
-            // Add other statuses from your payment processing if needed
             case "PROCESSING_COD":
                 return "Đang xử lý (COD)";
             case "AWAITING_PAYPAL_PAYMENT":
@@ -457,7 +429,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderStatusHistory> getOrderStatusHistory(Long orderId) {
         return orderStatusHistoryRepository.findByOrderId(orderId);
-    }    @Override
+    }
+
+    @Override
     public void addOrderStatusHistory(Order order, String status, String note, Long userId) {
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrder(order); // Set the order reference directly without lazy loading
@@ -468,7 +442,7 @@ public class OrderServiceImpl implements OrderService {
         if (userId != null) {
             User user = userRepository.findById(userId);
             history.setCreatedBy(user);
-        }        // Save the history directly without accessing the lazy collection
+        } // Save the history directly without accessing the lazy collection
         orderStatusHistoryRepository.save(history);
     }
 
@@ -490,7 +464,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Order> findOrdersBySellerIdAndStatus(Long sellerId, String status) {
         return orderRepository.findOrdersBySellerIdAndStatus(sellerId, status);
-    }    @Override
+    }
+
+    @Override
     public List<OrderSummaryDTO> findOrdersByStoreIdAsDTO(Long storeId) {
         List<Order> orders = orderRepository.findOrdersByStoreId(storeId);
         return orders.stream().map(this::convertToOrderSummaryDTO).collect(Collectors.toList());

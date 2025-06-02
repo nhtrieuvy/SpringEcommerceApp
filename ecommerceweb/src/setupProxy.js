@@ -1,7 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function (app) {
-  // Determine the environment: if running on ngrok or locally
+  
   const host = process.env.HOST || 'localhost';
   const isNgrok = host.includes('ngrok');
   
@@ -18,13 +18,13 @@ module.exports = function (app) {
       target: targetUrl,
       changeOrigin: true,
       secure: false,
-      // Add support for all HTTP methods
+     
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-      // Add better error handling
+     
       onError: (err, req, res) => {
         console.error('Proxy error:', err);
       },
-      // Add logging for debugging
+      
       onProxyReq: (proxyReq, req, res) => {
         console.log(`Proxying request to: ${req.method} ${proxyReq.path}`);
       }

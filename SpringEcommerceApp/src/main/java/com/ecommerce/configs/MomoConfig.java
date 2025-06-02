@@ -23,7 +23,7 @@ public class MomoConfig {
     private String notifyUrl;
 
     @Value("${momo.requestType:captureWallet}")
-    private String requestType; // Getters for the properties
+    private String requestType; 
 
     public String getPartnerCode() {
         return partnerCode;

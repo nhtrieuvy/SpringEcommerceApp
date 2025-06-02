@@ -24,7 +24,7 @@ public class ReviewReply {
 
     private Date createdAt;
 
-    // Getter & Setter for id
+   
     public Long getId() {
         return id;
     }
@@ -32,7 +32,7 @@ public class ReviewReply {
         this.id = id;
     }
 
-    // Getter & Setter for reviewId
+    
     public Long getReviewId() {
         return reviewId;
     }
@@ -40,7 +40,7 @@ public class ReviewReply {
         this.reviewId = reviewId;
     }
 
-    // Getter & Setter for userId
+    
     public Long getUserId() {
         return userId;
     }
@@ -48,7 +48,7 @@ public class ReviewReply {
         this.userId = userId;
     }
 
-    // Getter & Setter for comment
+   
     public String getComment() {
         return comment;
     }
@@ -56,7 +56,7 @@ public class ReviewReply {
         this.comment = comment;
     }
 
-    // Getter & Setter for createdAt
+    
     public Date getCreatedAt() {
         return createdAt;
     }

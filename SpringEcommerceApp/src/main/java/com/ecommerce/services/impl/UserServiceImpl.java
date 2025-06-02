@@ -6,12 +6,14 @@ import com.ecommerce.pojo.SellerRequest;
 import com.ecommerce.pojo.Store;
 import com.ecommerce.repositories.UserRepository;
 import com.ecommerce.services.UserService;
+import com.ecommerce.services.SellerRequestService;
 import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Date;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,12 +31,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-import org.hibernate.Hibernate;
 
 @Service("userServiceImpl")
 @Transactional
-public class UserServiceImpl implements UserService {
-    @Autowired
+public class UserServiceImpl implements UserService {    @Autowired
     private UserRepository userRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -42,6 +42,8 @@ public class UserServiceImpl implements UserService {
     private Cloudinary cloudinary;
     @Autowired
     private SessionFactory sessionFactory;
+    @Autowired
+    private SellerRequestService sellerRequestService;
     
     // Cache đơn giản để lưu trữ thông tin UserDetails
     private final Map<String, UserDetails> userDetailsCache = new ConcurrentHashMap<>();
@@ -81,7 +83,8 @@ public class UserServiceImpl implements UserService {
             // Upload avatar lên Cloudinary nếu có
             if (avatar != null && !avatar.isEmpty()) {
                 try {
-                    Map uploadResult = cloudinary.uploader().upload(
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> uploadResult = cloudinary.uploader().upload(
                         avatar.getBytes(), 
                         ObjectUtils.asMap(
                             "folder", "ecommerce/avatars",
@@ -90,7 +93,6 @@ public class UserServiceImpl implements UserService {
                     );
                     user.setAvatar(uploadResult.get("secure_url").toString());
                 } catch (IOException e) {
-                    // Log lỗi và tiếp tục, không làm gián đoạn quá trình đăng ký
                     System.err.println("Failed to upload avatar: " + e.getMessage());
                     user.setAvatar(null);
                 }
@@ -98,30 +100,29 @@ public class UserServiceImpl implements UserService {
                 user.setAvatar(null);
             }
             
-            user.setAuthProvider("LOCAL"); // Đặt auth provider là LOCAL cho đăng ký thông thường
+            user.setAuthProvider("LOCAL"); 
             
-            // Thiết lập role USER cho người dùng mới
             Session session = sessionFactory.getCurrentSession();
             Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
             query.setParameter("name", "USER");
             Role userRole = query.uniqueResult();
             
             if (userRole == null) {
-                // Nếu không tìm thấy, tạo role mới
+                
                 userRole = new Role();
                 userRole.setName("USER");
                 session.persist(userRole);
-                session.flush(); // Đảm bảo role được lưu và có ID
+                session.flush(); 
             }
             
-            // Lưu user trước để có ID
+            
             User savedUser = userRepository.addUser(user);
             
-            // Gán role cho user qua Hibernate
+            
             Set<Role> roles = new HashSet<>();
             roles.add(userRole);
             savedUser.setRoles(roles);
-            userRepository.update(savedUser); // Hibernate sẽ tự insert vào user_roles
+            userRepository.update(savedUser);
             
             return savedUser;
         } catch (IllegalArgumentException e) {
@@ -143,7 +144,6 @@ public class UserServiceImpl implements UserService {
     @CacheEvict(value = "users", key = "#user.id")
     public void update(User user) {
         userRepository.update(user);
-        // Xóa cache khi user được update
         userDetailsCache.remove(user.getUsername());
     }
 
@@ -154,14 +154,12 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id);
         if (user != null) {
             try {
-                // Xóa cache trước
                 userDetailsCache.remove(user.getUsername());
                 
                 System.out.println("Xóa user với ID=" + id);
                 
-                // Xóa các bản ghi liên quan trong user_roles
                 Session session = sessionFactory.getCurrentSession();
-                int deleteCount = session.createNativeQuery("DELETE FROM user_roles WHERE user_id = :userId")
+                int deleteCount = session.createNativeMutationQuery("DELETE FROM user_roles WHERE user_id = :userId")
                         .setParameter("userId", id)
                         .executeUpdate();
                 System.out.println("Đã xóa " + deleteCount + " bản ghi từ user_roles");
@@ -258,23 +256,20 @@ public class UserServiceImpl implements UserService {
                     }
                 }
                 
-                // Tải avatar mới lên với nén hình ảnh
-                Map uploadResult = cloudinary.uploader().upload(
+                @SuppressWarnings("unchecked")
+                Map<String, Object> uploadResult = cloudinary.uploader().upload(
                     avatar.getBytes(),
                     ObjectUtils.asMap(
                         "folder", "ecommerce/avatars",
                         "resource_type", "auto",
-                        "quality", "auto:good"  // Tự động điều chỉnh chất lượng để tối ưu hóa
+                        "quality", "auto:good" 
                     )
                 );
                 
-                // Cập nhật URL mới
                 user.setAvatar(uploadResult.get("secure_url").toString());
                 
-                // Cập nhật user trong database
                 userRepository.update(user);
                 
-                // Xóa cache
                 userDetailsCache.remove(user.getUsername());
             }
         } catch (IOException e) {
@@ -406,70 +401,22 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    // Phương thức mới để thêm role mặc định cho user
-    private User addDefaultRole(User user) {
-        try {
-            // Sử dụng session hiện tại nếu có
-            Session session = sessionFactory.getCurrentSession();
-            
-            // Truy vấn tìm role USER
-            Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
-            query.setParameter("name", "USER");
-            Role userRole = query.uniqueResult();
-            
-            if (userRole == null) {
-                // Nếu không có role USER, tạo mới
-                userRole = new Role();
-                userRole.setName("USER");
-                session.persist(userRole);
-            }
-            
-            // Tạo set roles nếu chưa có
-            if (user.getRoles() == null) {
-                user.setRoles(new HashSet<>());
-            } else {
-                // Đảm bảo collection đã được khởi tạo
-                Hibernate.initialize(user.getRoles());
-            }
-            
-            // Thêm role vào user
-            user.getRoles().add(userRole);
-            System.out.println("Đã thêm role USER vào user: " + user.getUsername());
-            
-            return user;
-        } catch (Exception e) {
-            System.err.println("Lỗi khi thêm role mặc định: " + e.getMessage());
-            e.printStackTrace();
-            return user; // Vẫn trả về user để tiếp tục quá trình
-        }
-    }
-      @Override
+   
+    @Override
     public void addRoleToUser(User user, Role role) {
-        // Clear user cache to ensure updated roles are reflected
         userDetailsCache.remove(user.getUsername());
         
-        // Check if user already has this role
         if (user.getRoles() == null) {
             user.setRoles(new HashSet<>());
         }
         
-        // // Ensure we have a complete user object with password
-        // if (user.getPassword() == null) {
-        //     // Get a fresh copy of the user with all fields from the database
-        //     User refreshedUser = userRepository.findById(user.getId());
-        //     if (refreshedUser != null && refreshedUser.getPassword() != null) {
-        //         user.setPassword(refreshedUser.getPassword());
-        //     } else {
-        //         throw new RuntimeException("Không thể cập nhật quyền: password của user là null");
-        //     }
-        // }
         
-        // Add the role to the user's role set
         user.getRoles().add(role);
         
-        // Update the user in the database
         userRepository.update(user);
-    }    @Override
+    }  
+
+    @Override
     @Transactional(readOnly = true)
     public List<User> findByActiveStatus(boolean isActive) {
         return userRepository.findByActiveStatus(isActive);
@@ -493,7 +440,6 @@ public class UserServiceImpl implements UserService {
         user.setRoles(roles);
         userRepository.update(user);
         
-        // Xóa cache
         userDetailsCache.remove(user.getUsername());
     }
     
@@ -503,42 +449,62 @@ public class UserServiceImpl implements UserService {
             userDetailsCache.remove(username);
             System.out.println("Cleared cache for user: " + username);
         }
-    }    @Override
+    }       @Override
     public List<Map<String, Object>> findAllSellerRequests() {
-        Session session = sessionFactory.getCurrentSession();
-        String hql = "SELECT new map(sr.id as id, sr.shopName as shopName, " +
-                "sr.description as description, sr.status as status, " +
-                "sr.createdDate as createdDate, sr.sellerType as sellerType, " +
-                "u.id as userId, u.username as username, u.fullname as fullname, u.email as email) " +
-                "FROM SellerRequest sr JOIN sr.user u ORDER BY sr.createdDate DESC";
-        
-        @SuppressWarnings("unchecked")
-        Query<Map<String, Object>> query = session.createQuery(hql);
-        return query.list();
+        try {
+            // Use the new SellerRequestService to get DTOs
+            var sellerRequestDTOs = sellerRequestService.findAllSellerRequestsAsDTO();
+            
+            // Convert DTOs to Map<String, Object> for backward compatibility
+            return sellerRequestDTOs.stream()
+                    .map(dto -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", dto.getId());
+                        map.put("shopName", dto.getShopName());
+                        map.put("description", dto.getDescription());
+                        map.put("status", dto.getStatus());
+                        map.put("createdDate", dto.getCreatedDate());
+                        map.put("sellerType", dto.getSellerType());
+                        map.put("userId", dto.getUserId());
+                        map.put("username", dto.getUsername());
+                        map.put("fullname", dto.getFullname());
+                        map.put("email", dto.getEmail());
+                        
+                        // Add additional fields from DTO
+                        map.put("displayStatus", dto.getDisplayStatus());
+                        map.put("daysSinceCreated", dto.getDaysSinceCreated());
+                        map.put("isPending", dto.isPending());
+                        map.put("isApproved", dto.isApproved());
+                        map.put("isRejected", dto.isRejected());
+                        map.put("formattedCreatedDate", dto.getFormattedCreatedDate());
+                        
+                        return map;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Error in findAllSellerRequests: " + e.getMessage());
+            e.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
     }
 
     @Override
     public boolean approveSellerRequest(Long id) {
         Session session = sessionFactory.getCurrentSession();
         
-        // Find the seller request
         SellerRequest request = session.get(SellerRequest.class, id);
         if (request == null || !"PENDING".equals(request.getStatus())) {
             return false;
         }
-          // Update the request status
         request.setStatus("APPROVED");
         request.setReviewedDate(new Date());
         
-        // Add the SELLER role to the user
         User user = request.getUser();
         
-        // Find the SELLER role
         String hql = "FROM Role WHERE LOWER(name) = 'seller'";
         Role sellerRole = session.createQuery(hql, Role.class).uniqueResult();
         
         if (sellerRole != null) {
-            // Add the role to the user if they don't already have it
             Set<Role> roles = user.getRoles();
             if (roles == null) {
                 roles = new HashSet<>();
@@ -552,7 +518,6 @@ public class UserServiceImpl implements UserService {
                 user.setRoles(roles);
             }
             
-            // Create a store for the user
             Store store = new Store();
             store.setName(request.getShopName());
             store.setDescription(request.getDescription());
@@ -570,12 +535,10 @@ public class UserServiceImpl implements UserService {
     public boolean rejectSellerRequest(Long id, String reason) {
         Session session = sessionFactory.getCurrentSession();
         
-        // Find the seller request
         SellerRequest request = session.get(SellerRequest.class, id);
         if (request == null || !"PENDING".equals(request.getStatus())) {
             return false;
         }
-          // Update the request status
         request.setStatus("REJECTED");
         request.setStatusNotes(reason);
         request.setReviewedDate(new Date());        return true;

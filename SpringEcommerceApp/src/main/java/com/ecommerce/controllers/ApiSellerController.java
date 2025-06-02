@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.stream.Collectors;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -140,49 +141,24 @@ public class ApiSellerController {    @Autowired
                     "success", false,
                     "message", "Lỗi khi kiểm tra trạng thái: " + e.getMessage()));
         }
-    }
-
-    /**
-     * Lấy danh sách tất cả các yêu cầu đăng ký
+    }    /**
+     * Lấy danh sách tất cả các yêu cầu đăng ký với pagination và sorting
      * Chỉ ADMIN hoặc STAFF mới có quyền truy cập
-     */    @GetMapping("/requests")
+     */
+    @GetMapping("/requests")
     public ResponseEntity<?> getAllRequests(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
 
         try {
-            List<SellerRequest> requests;
+            // Use the new DTO-based pagination method
+            Map<String, Object> paginationResult = sellerRequestService.getSellerRequestsPaginated(
+                page, size, status, sortBy, sortDir);
 
-            if (status != null && !status.isEmpty() && !status.equals("ALL")) {
-                requests = sellerRequestService.findByStatus(status);
-            } else {
-                requests = sellerRequestService.findAll();
-            }
-
-            // Tính toán phân trang
-            int totalElements = requests.size();
-            int fromIndex = page * size;
-            int toIndex = Math.min(fromIndex + size, totalElements);
-
-            // Xử lý trường hợp index ngoài giới hạn
-            if (fromIndex >= totalElements) {
-                fromIndex = 0;
-                toIndex = Math.min(size, totalElements);
-            }
-
-            List<SellerRequest> pagedRequests = fromIndex < toIndex
-                    ? requests.subList(fromIndex, toIndex)
-                    : List.of();
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("content", pagedRequests);
-            response.put("totalElements", totalElements);
-            response.put("totalPages", (int) Math.ceil((double) totalElements / size));
-            response.put("currentPage", page);
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(paginationResult);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -215,6 +191,60 @@ public class ApiSellerController {    @Autowired
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi lấy thông tin yêu cầu: " + e.getMessage()));
+        }    }
+
+    /**
+     * Lấy thống kê về các yêu cầu đăng ký seller
+     * Chỉ ADMIN hoặc STAFF mới có quyền truy cập
+     */
+    @GetMapping("/requests/statistics")
+    public ResponseEntity<?> getRequestStatistics() {
+        try {
+            // Get all requests as DTOs to calculate statistics
+            List<com.ecommerce.dtos.SellerRequestDTO> allRequests = 
+                sellerRequestService.findAllSellerRequestsAsDTO();
+
+            // Calculate statistics
+            Map<String, Object> statistics = new HashMap<>();
+            
+            // Total counts by status
+            Map<String, Long> statusCounts = allRequests.stream()
+                .collect(Collectors.groupingBy(
+                    com.ecommerce.dtos.SellerRequestDTO::getStatus,
+                    Collectors.counting()
+                ));
+            
+            // Additional metrics
+            long totalRequests = allRequests.size();
+            long pendingRequests = statusCounts.getOrDefault("PENDING", 0L);
+            long approvedRequests = statusCounts.getOrDefault("APPROVED", 0L);
+            long rejectedRequests = statusCounts.getOrDefault("REJECTED", 0L);
+            long overdueRequests = allRequests.stream()
+                .mapToLong(dto -> dto.isOverdue() ? 1 : 0)
+                .sum();
+            
+            // Calculate approval rate
+            double approvalRate = totalRequests > 0 ? 
+                (double) approvedRequests / totalRequests * 100 : 0;
+            
+            statistics.put("totalRequests", totalRequests);
+            statistics.put("pendingRequests", pendingRequests);
+            statistics.put("approvedRequests", approvedRequests);
+            statistics.put("rejectedRequests", rejectedRequests);
+            statistics.put("overdueRequests", overdueRequests);
+            statistics.put("approvalRate", Math.round(approvalRate * 100.0) / 100.0);
+            statistics.put("statusCounts", statusCounts);
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "statistics", statistics
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Lỗi khi lấy thống kê yêu cầu: " + e.getMessage()));
         }
     }
 

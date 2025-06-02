@@ -21,36 +21,38 @@ public class StoreRepositoryImpl implements StoreRepository {
     public void save(Store store) {
         Session session = sessionFactory.getCurrentSession();
         session.persist(store);
-    }    @Override
+    }
+
+    @Override
     public void update(Store store) {
         try {
             System.out.println("Updating store in repository layer: " + store.getId());
             System.out.println("Store name: " + store.getName());
-            System.out.println("Store logo: " + store.getLogo());            Session session = sessionFactory.getCurrentSession();
-            
-            // Merge the updated store and flush to ensure changes are persisted
-            session.merge(store); // mergedStore is not strictly needed here if not used later in this block            session.flush();
-            
-            // Products will be loaded by the service layer if needed via findById call,
-            // or if explicitly initialized within a transaction.
+            System.out.println("Store logo: " + store.getLogo());
+            Session session = sessionFactory.getCurrentSession();
+
+            session.merge(store);
+            session.flush();
 
             System.out.println("Store updated successfully in database");
         } catch (Exception e) {
             System.err.println("Error updating store in repository layer: " + e.getMessage());
             e.printStackTrace();
-            throw e; // Re-throw để service layer xử lý
+            throw e;
         }
-    }    @Override
+    }
+
+    @Override
     public void delete(Long id) {
         try {
             System.out.println("Attempting to delete store with ID: " + id);
             Session session = sessionFactory.getCurrentSession();
-            
-            Store store = session.get(Store.class, id); // Fetch without products first
-            
+
+            Store store = session.get(Store.class, id);
+
             if (store != null) {
                 System.out.println("Store found, attempting to delete: " + store.getName());
-                // Products will be handled by cascade delete due to orphanRemoval=true
+
                 session.remove(store);
                 session.flush();
                 System.out.println("Store deleted successfully with its products");
@@ -60,16 +62,20 @@ public class StoreRepositoryImpl implements StoreRepository {
         } catch (Exception e) {
             System.err.println("Error deleting store: " + e.getMessage());
             e.printStackTrace();
-            throw e; // Re-throw to be handled by service layer
+            throw e;
         }
-    }@Override
+    }
+
+    @Override
     public Store findById(Long id) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT s FROM Store s LEFT JOIN FETCH s.products WHERE s.id = :id";
         Query<Store> query = session.createQuery(hql, Store.class);
         query.setParameter("id", id);
         return query.uniqueResult();
-    }    @Override
+    }
+
+    @Override
     public List<Store> findAll() {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT s FROM Store s LEFT JOIN FETCH s.products";

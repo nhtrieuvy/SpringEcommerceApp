@@ -35,13 +35,8 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonIgnoreProperties("products")
-    private Category category;    /**
-     * Reviews for this product.
-     * 
-     * Note: This field is @Transient as the reviews are stored in the review_products table
-     * instead of the reviews table. The actual reviews are loaded dynamically from the
-     * ReviewProductService when needed rather than through Hibernate's relationships.
-     */
+    private Category category;    
+  
     @Transient
     private Set<ReviewProduct> reviews;
 
@@ -116,8 +111,7 @@ public class Product {
     public void setCategory(Category category) {
         this.category = category;
     }    public Set<ReviewProduct> getReviews() {
-        // Reviews are now loaded on-demand from the database using ReviewProductRepository
-        // This will be empty unless explicitly populated
+       
         return reviews;
     }
 
@@ -125,12 +119,7 @@ public class Product {
         this.reviews = reviews;
     }
 
-    /**
-     * Loads reviews for this product from the given ReviewProductService.
-     * Call this method to manually initialize reviews before using them.
-     * 
-     * @param reviewService the ReviewProductService to load reviews from
-     */
+   
     public void loadReviews(com.ecommerce.services.ReviewProductService reviewService) {
         if (this.id != null) {
             java.util.List<ReviewProduct> reviewList = reviewService.getReviewsByProductId(this.id);

@@ -13,29 +13,32 @@ import java.util.Map;
 @Transactional
 public class StoreServiceImpl implements StoreService {
     @Autowired
-    private StoreRepository storeRepository;    
-    
+    private StoreRepository storeRepository;
+
     @Override
     public Store save(Store store) {
         storeRepository.save(store);
         return store;
-    }    @Override
+    }
+
+    @Override
     public Store update(Store store) {
         try {
             System.out.println("Updating store in service layer: " + store.getId());
             storeRepository.update(store);
             System.out.println("Store updated successfully in repository");
-            
-            // Get the fresh store with eagerly loaded collections
+
             Store updatedStore = findById(store.getId());
             System.out.println("Retrieved updated store with all collections loaded");
             return updatedStore;
         } catch (Exception e) {
             System.err.println("Error updating store in service layer: " + e.getMessage());
             e.printStackTrace();
-            throw e; // Re-throw để ApiStoreController xử lý
+            throw e;
         }
-    }    @Override
+    }
+
+    @Override
     public boolean delete(Long id) {
         try {
             System.out.println("Deleting store with ID: " + id + " from service layer");
@@ -80,8 +83,7 @@ public class StoreServiceImpl implements StoreService {
         if (store == null) {
             return false;
         }
-        
-        // Toggle the status
+
         store.setActive(!store.isActive());
         storeRepository.update(store);
         return true;

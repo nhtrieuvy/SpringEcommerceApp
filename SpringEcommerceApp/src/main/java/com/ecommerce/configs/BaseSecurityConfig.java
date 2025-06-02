@@ -13,19 +13,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 
-/**
- * Base security configuration class that holds common configurations
- * including Cloudinary setup and CORS configuration
- */
+
 @Configuration
 public class BaseSecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(BaseSecurityConfig.class);
 
-    /**
-     * Creates and configures a Cloudinary instance for file uploads
-     * 
-     * @return a configured Cloudinary instance
-     */
+    
     @Bean
     public Cloudinary cloudinary() {
         logger.info("Configuring Cloudinary");
@@ -38,11 +31,7 @@ public class BaseSecurityConfig {
         return cloudinary;
     }
 
-    /**
-     * Configures CORS settings for the application
-     * 
-     * @return a configured CorsConfigurationSource
-     */
+   
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         logger.info("Configuring CORS");
@@ -57,7 +46,7 @@ public class BaseSecurityConfig {
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
-        // Thêm các headers liên quan đến Cross-Origin-Opener-Policy
+        
         HttpHeaders headers = new HttpHeaders();
         headers.add("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
         headers.add("Cross-Origin-Embedder-Policy", "require-corp");
