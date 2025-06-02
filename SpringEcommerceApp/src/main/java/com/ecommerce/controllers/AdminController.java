@@ -15,11 +15,9 @@ import com.ecommerce.services.UserService;
 import com.ecommerce.services.StoreService;
 import com.ecommerce.services.SellerRequestService;
 import com.ecommerce.utils.IpUtils;
-
 import com.ecommerce.services.ReportService;
 import com.ecommerce.services.RecentActivityService;
 import com.ecommerce.pojo.RecentActivity;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -28,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -47,7 +44,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
@@ -55,71 +51,47 @@ import jakarta.servlet.http.HttpServletRequest;
 public class AdminController {
     @Autowired
     private UserService userService;
-
     @Autowired
     private ProductService productService;
-
     @Autowired
     private OrderService orderService;
-
     @Autowired
     private CategoryService categoryService;
-
     @Autowired
     private RoleService roleService;
     @Autowired
     private StoreService storeService;
     @Autowired
-    private ReportService reportService;    @Autowired
+    private ReportService reportService;
+    @Autowired
     private RecentActivityService recentActivityService;
-
     @Autowired
     private SellerRequestService sellerRequestService;
 
     @GetMapping("")
     public String adminDashboard(Model model) {
-        // Thống kê tổng số người dùng
         List<User> users = userService.findAll();
         model.addAttribute("totalUsers", users.size());
-
-        // Thống kê số lượng sản phẩm
         List<Product> products = productService.findAll();
         model.addAttribute("totalProducts", products.size());
-
-        // Thống kê số lượng đơn hàng
         List<Order> orders = orderService.findAll();
         model.addAttribute("totalOrders", orders.size());
-
-        // Thống kê tổng doanh thu từ đơn hàng
         double totalRevenue = orders.stream()
                 .filter(order -> "COMPLETED".equals(order.getStatus()))
                 .mapToDouble(order -> order.getTotalAmount())
                 .sum();
         model.addAttribute("totalRevenue", totalRevenue);
-
-        // Lấy dữ liệu báo cáo thống kê từ service
-        // Mặc định lấy dữ liệu 30 ngày gần đây
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, -30);
         Date fromDate = cal.getTime();
         Date toDate = new Date();
-
-        // Thống kê doanh thu theo tháng cho biểu đồ
         Map<String, Object> revenueData = reportService.generateSalesReport("monthly", fromDate, toDate);
-        model.addAttribute("revenueData", revenueData.get("revenueByPeriod")); // Thống kê đơn hàng theo trạng thái
+        model.addAttribute("revenueData", revenueData.get("revenueByPeriod"));
         model.addAttribute("orderStatusData", revenueData.get("orderStatus"));
-
-        // Lấy hoạt động gần đây
         List<RecentActivity> recentActivities = recentActivityService.getRecentActivities(10);
         model.addAttribute("recentActivities", recentActivities);
-
-        // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "dashboard");
-
-        // Set the content fragment to be included in the layout
         model.addAttribute("content", "dashboard :: content");
-
-        // Return admin-layout template
         return "admin";
     }
 
@@ -131,24 +103,19 @@ public class AdminController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,
             Model model) {
-
         List<User> allUsers = userService.findAll();
-
-        // Áp dụng bộ lọc nếu có
         if (role != null && !role.isEmpty()) {
             allUsers = allUsers.stream()
                     .filter(user -> user.getRoles().stream()
                             .anyMatch(r -> r.getName().equals(role)))
                     .collect(Collectors.toList());
         }
-
         if (status != null && !status.isEmpty()) {
             boolean isActive = "active".equals(status);
             allUsers = allUsers.stream()
                     .filter(user -> user.isActive() == isActive)
                     .collect(Collectors.toList());
         }
-
         if (keyword != null && !keyword.isEmpty()) {
             allUsers = allUsers.stream()
                     .filter(user -> (user.getUsername() != null
@@ -159,26 +126,17 @@ public class AdminController {
                                     && user.getFullname().toLowerCase().contains(keyword.toLowerCase())))
                     .collect(Collectors.toList());
         }
-
-        // Phân trang
         int start = page * size;
         int end = Math.min(start + size, allUsers.size());
-
-        List<User> paginatedUsers = allUsers.subList(start, end);        // Lấy danh sách các vai trò
+        List<User> paginatedUsers = allUsers.subList(start, end);
         List<Role> allRoles = roleService.findAll();
         model.addAttribute("users", paginatedUsers);
         model.addAttribute("allRoles", allRoles);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", (int) Math.ceil((double) allUsers.size() / size));
-        // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "users");
-        
-        // Thêm empty User object cho form binding
         model.addAttribute("user", new User());
-
-        // Set the content fragment to be included in the layout
         model.addAttribute("content", "users :: content");
-
         return "admin";
     }
 
@@ -190,24 +148,19 @@ public class AdminController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,
             Model model) {
-
         List<Product> allProducts = productService.findAll();
-
-        // Áp dụng bộ lọc nếu có
         if (category != null) {
             allProducts = allProducts.stream()
                     .filter(product -> product.getCategory() != null &&
                             product.getCategory().getId().equals(category))
                     .collect(Collectors.toList());
         }
-
         if (status != null && !status.isEmpty()) {
             boolean isActive = "active".equals(status);
             allProducts = allProducts.stream()
                     .filter(product -> product.isActive() == isActive)
                     .collect(Collectors.toList());
         }
-
         if (keyword != null && !keyword.isEmpty()) {
             allProducts = allProducts.stream()
                     .filter(product -> (product.getName() != null
@@ -215,36 +168,28 @@ public class AdminController {
                             (product.getDescription() != null
                                     && product.getDescription().toLowerCase().contains(keyword.toLowerCase())))
                     .collect(Collectors.toList());
-        } // Phân trang
+        }
         int start = page * size;
-        int end = Math.min(start + size, allProducts.size());        List<Product> paginatedProducts = allProducts.subList(start, end); 
-        
-        // Lấy danh sách danh mục và stores
+        int end = Math.min(start + size, allProducts.size());
+        List<Product> paginatedProducts = allProducts.subList(start, end);
         List<Category> categories = categoryService.findAll();
-        List<Store> stores = storeService.findAll(); // Lấy tất cả các cửa hàng thay vì sellers
-        
-        // Add empty Product object for form binding with th:object
+        List<Store> stores = storeService.findAll();
         Product emptyProduct = new Product();
-        emptyProduct.setCategory(new Category()); // Initialize nested category object
-        emptyProduct.setStore(new Store()); // Initialize nested store object
-        
+        emptyProduct.setCategory(new Category());
+        emptyProduct.setStore(new Store());
         model.addAttribute("products", paginatedProducts);
         model.addAttribute("categories", categories);
-        model.addAttribute("stores", stores); // Truyền stores thay vì sellers
-        model.addAttribute("product", emptyProduct); // Add empty product for form binding
+        model.addAttribute("stores", stores);
+        model.addAttribute("product", emptyProduct);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", (int) Math.ceil((double) allProducts.size() / size));
-        // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "products");
-
-        // Set the content fragment to be included in the layout
         model.addAttribute("content", "products :: content");
         System.out.println("Debug: Total products in DB: " + allProducts.size());
         System.out
                 .println("Debug: Filter params: category=" + category + ", status=" + status + ", keyword=" + keyword);
         System.out.println("Debug: Page=" + page + ", Size=" + size);
         System.out.println("Debug: Products after pagination: " + paginatedProducts.size());
-
         return "admin";
     }
 
@@ -257,16 +202,12 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate,
             @RequestParam(required = false) String keyword,
             Model model) {
-
         List<Order> allOrders = orderService.findAll();
-
-        // Áp dụng bộ lọc nếu có
         if (status != null && !status.isEmpty()) {
             allOrders = allOrders.stream()
                     .filter(order -> status.equals(order.getStatus()))
                     .collect(Collectors.toList());
         }
-
         if (fromDate != null && toDate != null) {
             allOrders = allOrders.stream()
                     .filter(order -> !order.getOrderDate().before(fromDate) && !order.getOrderDate().after(toDate))
@@ -280,7 +221,6 @@ public class AdminController {
                     .filter(order -> !order.getOrderDate().after(toDate))
                     .collect(Collectors.toList());
         }
-
         if (keyword != null && !keyword.isEmpty()) {
             allOrders = allOrders.stream()
                     .filter(order -> (order.getId() != null && order.getId().toString().contains(keyword)) ||
@@ -288,21 +228,14 @@ public class AdminController {
                                     order.getUser().getFullname().toLowerCase().contains(keyword.toLowerCase())))
                     .collect(Collectors.toList());
         }
-
-        // Phân trang
         int start = page * size;
         int end = Math.min(start + size, allOrders.size());
-
         List<Order> paginatedOrders = allOrders.subList(start, end);
         model.addAttribute("orders", paginatedOrders);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", (int) Math.ceil((double) allOrders.size() / size));
-        // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "orders");
-
-        // Set the content fragment to be included in the layout
         model.addAttribute("content", "orders :: content");
-
         return "admin";
     }
 
@@ -313,17 +246,14 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate,
             Model model) {
-
-        // Nếu không có ngày được chọn, mặc định là 30 ngày gần đây
         if (fromDate == null) {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.DAY_OF_MONTH, -30);
             fromDate = cal.getTime();
         }
-
         if (toDate == null) {
-            toDate = new Date(); // Ngày hiện tại
-        } // Lấy dữ liệu báo cáo thống kê từ service
+            toDate = new Date();
+        }
         Map<String, Object> reportData;
         switch (reportType) {
             case "sales":
@@ -335,34 +265,25 @@ public class AdminController {
             default:
                 reportData = reportService.generateSalesReport(periodType, fromDate, toDate);
         }
-
         model.addAttribute("reportData", reportData);
         model.addAttribute("reportType", reportType);
         model.addAttribute("periodType", periodType);
         model.addAttribute("fromDate", fromDate);
         model.addAttribute("toDate", toDate);
-
-        // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "reports");
-
-        // Set the content fragment to be included in the layout
         model.addAttribute("content", "reports :: content");
-
         return "admin";
     }
 
     @GetMapping("/orders/print/{id}")
     public String printOrder(@PathVariable Long id, Model model) {
         Order order = orderService.findById(id);
-
         if (order == null) {
             model.addAttribute("errorMessage", "Không tìm thấy đơn hàng!");
             return "redirect:/admin/orders";
         }
-
         model.addAttribute("order", order);
         model.addAttribute("printDate", new Date());
-
         return "order-print";
     }
 
@@ -371,21 +292,14 @@ public class AdminController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate) {
-
-        // Lọc đơn hàng theo điều kiện
         List<Order> orders = orderService.findByStatusAndDateRange(status, fromDate, toDate);
-
-        // Sử dụng OrderService để tạo file Excel
         byte[] excelContent = orderService.generateOrderExcel(orders);
-
-        // Thiết lập header cho response
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(
                 MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headers.setContentDispositionFormData("attachment",
                 "orders_export_" + new SimpleDateFormat("yyyyMMdd").format(new Date()) + ".xlsx");
         headers.setContentLength(excelContent.length);
-
         return new ResponseEntity<>(excelContent, headers, HttpStatus.OK);
     }
 
@@ -394,42 +308,31 @@ public class AdminController {
             @RequestParam(defaultValue = "sales") String reportType,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate) {
-
-        // Nếu không có ngày được chọn, mặc định là 30 ngày gần đây
         if (fromDate == null) {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.DAY_OF_MONTH, -30);
             fromDate = cal.getTime();
         }
-
         if (toDate == null) {
-            toDate = new Date(); // Ngày hiện tại
+            toDate = new Date();
         }
-
-        // Sử dụng ReportService để tạo file Excel
         byte[] excelContent = reportService.exportReportToExcel(reportType, fromDate, toDate);
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(
                 MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headers.setContentDispositionFormData("attachment", reportType + "-report.xlsx");
         headers.setContentLength(excelContent.length);
-
         return new ResponseEntity<>(excelContent, headers, HttpStatus.OK);
     }
-
-    // ==================== User Management Methods ====================
 
     @PostMapping("/users/add")
     public String addUser(@ModelAttribute User user,
             @RequestParam(required = false) List<String> roles,
             RedirectAttributes redirectAttributes) {
-
-        try { // Xử lý thêm vai trò
+        try {
             if (roles != null && !roles.isEmpty()) {
                 Set<Role> userRoles = new HashSet<>();
                 for (String roleName : roles) {
-                    // Sử dụng phương thức mới chuẩn hóa tên vai trò
                     Role role = roleService.findByNameNormalized(roleName);
                     if (role != null) {
                         userRoles.add(role);
@@ -437,40 +340,27 @@ public class AdminController {
                 }
                 user.setRoles(userRoles);
             }
-
-            // Mặc định là active
             user.setActive(true);
-
-            // Lưu người dùng
             userService.addUser(user);
-
-            // Thêm thông báo thành công
             redirectAttributes.addFlashAttribute("successMessage", "Người dùng đã được thêm thành công!");
-
         } catch (Exception e) {
-            // Thêm thông báo lỗi
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi thêm người dùng: " + e.getMessage());
         }
-
         return "redirect:/admin/users";
     }
 
     @GetMapping("/users/edit/{id}")
     public String showEditUserForm(@PathVariable Long id, Model model) {
         User user = userService.findById(id);
-
         if (user == null) {
             model.addAttribute("errorMessage", "Không tìm thấy người dùng!");
             return "redirect:/admin/users";
         }
-
         List<Role> allRoles = roleService.findAll();
-
         model.addAttribute("user", user);
         model.addAttribute("allRoles", allRoles);
         model.addAttribute("activeMenu", "users");
         model.addAttribute("content", "edit-user :: content");
-
         return "admin";
     }
 
@@ -479,27 +369,20 @@ public class AdminController {
             @ModelAttribute User user,
             @RequestParam(required = false) List<String> roles,
             RedirectAttributes redirectAttributes) {
-
         try {
-            // Kiểm tra người dùng tồn tại
             User existingUser = userService.findById(id);
             if (existingUser == null) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy người dùng!");
                 return "redirect:/admin/users";
             }
-
-            // Cập nhật thông tin
             existingUser.setFullname(user.getFullname());
             existingUser.setEmail(user.getEmail());
-
-            // Cập nhật mật khẩu nếu có thay đổi
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
                 existingUser.setPassword(user.getPassword());
-            } // Cập nhật vai trò
+            }
             if (roles != null && !roles.isEmpty()) {
                 Set<Role> userRoles = new HashSet<>();
                 for (String roleName : roles) {
-                    // Sử dụng phương thức mới chuẩn hóa tên vai trò
                     Role role = roleService.findByNameNormalized(roleName);
                     if (role != null) {
                         userRoles.add(role);
@@ -507,21 +390,12 @@ public class AdminController {
                 }
                 existingUser.setRoles(userRoles);
             }
-
-            // Cập nhật trạng thái
             existingUser.setActive(user.isActive());
-
-            // Lưu người dùng
             userService.update(existingUser);
-
-            // Thêm thông báo thành công
             redirectAttributes.addFlashAttribute("successMessage", "Cập nhật người dùng thành công!");
-
         } catch (Exception e) {
-            // Thêm thông báo lỗi
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi cập nhật người dùng: " + e.getMessage());
         }
-
         return "redirect:/admin/users";
     }
 
@@ -529,15 +403,11 @@ public class AdminController {
     public String blockUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             User user = userService.findById(id);
-
             if (user != null) {
-                // Đảo ngược trạng thái
                 user.setActive(!user.isActive());
                 userService.update(user);
-
                 String message = user.isActive() ? "Người dùng đã được kích hoạt thành công."
                         : "Người dùng đã bị khóa thành công.";
-
                 redirectAttributes.addFlashAttribute("successMessage", message);
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy người dùng!");
@@ -546,7 +416,6 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Lỗi khi thay đổi trạng thái người dùng: " + e.getMessage());
         }
-
         return "redirect:/admin/users";
     }
 
@@ -554,7 +423,6 @@ public class AdminController {
     public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             User user = userService.findById(id);
-
             if (user != null) {
                 userService.delete(id);
                 redirectAttributes.addFlashAttribute("successMessage", "Người dùng đã được xóa thành công.");
@@ -564,54 +432,40 @@ public class AdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi xóa người dùng: " + e.getMessage());
         }
-
         return "redirect:/admin/users";
     }
 
-    // ==================== Product Management Methods ====================    @PostMapping("/products/add")
     public String addProduct(@AuthenticationPrincipal UserDetails userDetails,
             @ModelAttribute Product product,
             @RequestParam(value = "image", required = false) MultipartFile image,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         try {
-            // Validate category
             if (product.getCategory() == null || product.getCategory().getId() == null) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng chọn danh mục!");
                 return "redirect:/admin/products";
             }
-            
-            // Validate store
             if (product.getStore() == null || product.getStore().getId() == null) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng chọn cửa hàng!");
                 return "redirect:/admin/products";
             }
-
-            // Load full category and store objects
             Category category = categoryService.findById(product.getCategory().getId());
             if (category == null) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Danh mục không tồn tại!");
                 return "redirect:/admin/products";
             }
             product.setCategory(category);
-
             com.ecommerce.pojo.Store store = storeService.findById(product.getStore().getId());
             if (store == null) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Cửa hàng không tồn tại!");
                 return "redirect:/admin/products";
             }
             product.setStore(store);
-
-            // Handle image upload if provided
             if (image != null && !image.isEmpty()) {
                 String imagePath = saveProductImage(image);
                 product.setImage(imagePath);
             }
-
-            // Save product
             Product savedProduct = productService.save(product);
-
-            // Log activity if user is authenticated
             if (userDetails != null) {
                 User currentUser = userService.findByUsername(userDetails.getUsername());
                 if (currentUser != null) {
@@ -624,31 +478,25 @@ public class AdminController {
                             ipAddress);
                 }
             }
-
             redirectAttributes.addFlashAttribute("successMessage", "Thêm sản phẩm thành công!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi thêm sản phẩm: " + e.getMessage());
         }
-
         return "redirect:/admin/products";
     }
 
     @GetMapping("/products/edit/{id}")
     public String showEditProductForm(@PathVariable Long id, Model model) {
         Product product = productService.findById(id);
-
         if (product == null) {
             model.addAttribute("errorMessage", "Không tìm thấy sản phẩm!");
             return "redirect:/admin/products";
         }
-
         List<Category> categories = categoryService.findAll();
-
         model.addAttribute("product", product);
         model.addAttribute("categories", categories);
         model.addAttribute("activeMenu", "products");
         model.addAttribute("content", "edit-product :: content");
-
         return "admin";
     }
 
@@ -662,44 +510,31 @@ public class AdminController {
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         try {
-            // Lấy thông tin sản phẩm hiện tại
             Product existingProduct = productService.findById(id);
             if (existingProduct == null) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy sản phẩm!");
                 return "redirect:/admin/products";
             }
-
-            // Cập nhật thông tin cơ bản
             existingProduct.setName(product.getName());
             existingProduct.setDescription(product.getDescription());
             existingProduct.setPrice(product.getPrice());
             existingProduct.setQuantity(product.getQuantity());
             existingProduct.setActive(product.isActive());
-
-            // Cập nhật danh mục
             Category category = categoryService.findById(categoryId);
             if (category != null) {
                 existingProduct.setCategory(category);
             }
-
-            // Cập nhật cửa hàng nếu có
             if (storeId != null) {
                 com.ecommerce.pojo.Store store = storeService.findById(storeId);
                 if (store != null) {
                     existingProduct.setStore(store);
                 }
             }
-
-            // Xử lý tải lên hình ảnh mới nếu có
             if (image != null && !image.isEmpty()) {
                 String imagePath = saveProductImage(image);
                 existingProduct.setImage(imagePath);
             }
-
-            // Lưu sản phẩm đã cập nhật
             Product updatedProduct = productService.update(existingProduct);
-
-            // Log activity if user is authenticated
             if (userDetails != null) {
                 User currentUser = userService.findByUsername(userDetails.getUsername());
                 if (currentUser != null) {
@@ -712,12 +547,10 @@ public class AdminController {
                             ipAddress);
                 }
             }
-
             redirectAttributes.addFlashAttribute("successMessage", "Cập nhật sản phẩm thành công!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi cập nhật sản phẩm: " + e.getMessage());
         }
-
         return "redirect:/admin/products";
     }
 
@@ -725,15 +558,11 @@ public class AdminController {
     public String toggleProductStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             Product product = productService.findById(id);
-
             if (product != null) {
-                // Đảo ngược trạng thái
                 product.setActive(!product.isActive());
                 productService.update(product);
-
                 String message = product.isActive() ? "Sản phẩm đã được kích hoạt thành công."
                         : "Sản phẩm đã bị vô hiệu hóa thành công.";
-
                 redirectAttributes.addFlashAttribute("successMessage", message);
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy sản phẩm!");
@@ -742,7 +571,6 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Lỗi khi thay đổi trạng thái sản phẩm: " + e.getMessage());
         }
-
         return "redirect:/admin/products";
     }
 
@@ -750,7 +578,6 @@ public class AdminController {
     public String deleteProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             Product product = productService.findById(id);
-
             if (product != null) {
                 productService.delete(id);
                 redirectAttributes.addFlashAttribute("successMessage", "Xóa sản phẩm thành công!");
@@ -760,22 +587,16 @@ public class AdminController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi xóa sản phẩm: " + e.getMessage());
         }
-
         return "redirect:/admin/products";
     }
 
-    // Helper method to save product image
     private String saveProductImage(MultipartFile image) {
         try {
-            // Trong môi trường thực tế, có thể sẽ lưu vào thư mục trên server hoặc cloud
-            // storage
-            // Đây là bản demo đơn giản
             String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
             String uploadDir = "src/main/resources/static/images/products/";
             java.nio.file.Path path = java.nio.file.Paths.get(uploadDir + fileName);
             java.nio.file.Files.createDirectories(path.getParent());
             java.nio.file.Files.copy(image.getInputStream(), path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
             return "/images/products/" + fileName;
         } catch (Exception e) {
             e.printStackTrace();
@@ -783,8 +604,6 @@ public class AdminController {
         }
     }
 
-    // ==================== Order Management Methods ====================
-    // @PostMapping("/orders/update-status")
     public String updateOrderStatus(@AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long orderId,
             @RequestParam String status,
@@ -794,16 +613,11 @@ public class AdminController {
         try {
             Order order = orderService.findById(orderId);
             if (order != null) {
-                // Lưu trạng thái trước đó để thông báo
                 String previousStatus = order.getStatus();
-                // Cập nhật trạng thái mới
                 order.setStatus(status);
-
-                // Lưu thông tin người dùng thực hiện thao tác (nếu có authentication)
                 Long userId = null;
                 User currentUser = null;
                 try {
-                    // Lấy thông tin người dùng đang đăng nhập từ Spring Security
                     Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext()
                             .getAuthentication().getPrincipal();
                     if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
@@ -815,13 +629,9 @@ public class AdminController {
                         }
                     }
                 } catch (Exception e) {
-                    // Không xử lý nếu không thể lấy thông tin người dùng
-                } // Cập nhật đơn hàng mà không tạo lịch sử (để tránh bị trùng lặp)
+                }
                 orderService.updateWithoutHistory(order);
-
-                // Thêm lịch sử trạng thái với ghi chú
-                orderService.addOrderStatusHistory(order, status, note, userId); // Log activity if user is
-                                                                                 // authenticated
+                orderService.addOrderStatusHistory(order, status, note, userId);
                 if (userDetails != null && currentUser != null) {
                     String ipAddress = IpUtils.getClientIpAddress(request);
                     recentActivityService.logOrderStatusChanged(
@@ -831,14 +641,8 @@ public class AdminController {
                             status,
                             ipAddress);
                 }
-
-                // Nếu trạng thái là completed, có thể thực hiện các hành động bổ sung
                 if ("COMPLETED".equals(status)) {
-                    // Xử lý khi đơn hàng hoàn thành
-                    // Ví dụ: gửi email thông báo, cập nhật điểm thưởng, v.v.
                 }
-
-                // Thông báo thành công
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Cập nhật trạng thái đơn hàng từ '" + getStatusDisplayName(previousStatus) +
                                 "' thành '" + getStatusDisplayName(status) + "' thành công!");
@@ -849,47 +653,37 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Lỗi khi cập nhật trạng thái đơn hàng: " + e.getMessage());
         }
-
         return "redirect:/admin/orders";
     }
 
     @GetMapping("/orders/detail/{id}")
     public String viewOrderDetail(@PathVariable Long id, Model model) {
         Order order = orderService.findById(id);
-
         if (order == null) {
             model.addAttribute("errorMessage", "Không tìm thấy đơn hàng!");
             return "redirect:/admin/orders";
         }
-
         model.addAttribute("order", order);
         model.addAttribute("activeMenu", "orders");
         model.addAttribute("content", "order-detail :: content");
-
         return "admin";
     }
 
     @GetMapping("/orders/{id}/history")
     public String viewOrderHistory(@PathVariable Long id, Model model) {
         Order order = orderService.findById(id);
-
         if (order == null) {
             model.addAttribute("errorMessage", "Không tìm thấy đơn hàng!");
             return "redirect:/admin/orders";
         }
-
-        
         List<OrderStatusHistory> history = orderService.getOrderStatusHistory(id);
-
         model.addAttribute("order", order);
         model.addAttribute("history", history);
         model.addAttribute("activeMenu", "orders");
         model.addAttribute("content", "order-history :: content");
-
         return "admin";
     }
 
-    
     private String getStatusDisplayName(String statusCode) {
         switch (statusCode) {
             case "PENDING":
@@ -907,8 +701,6 @@ public class AdminController {
         }
     }
 
-    // ==================== Store Management Methods ====================
-
     @GetMapping("/stores")
     public String manageStores(
             @RequestParam(defaultValue = "0") int page,
@@ -916,18 +708,13 @@ public class AdminController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,
             Model model) {
-
-        // Lấy danh sách cửa hàng từ service
         List<Map<String, Object>> allStores = storeService.findAllWithUserInfo();
-
-        // Áp dụng bộ lọc nếu có
         if (status != null && !status.isEmpty()) {
             boolean isActive = "active".equals(status);
             allStores = allStores.stream()
                     .filter(store -> (boolean) store.get("active") == isActive)
                     .collect(Collectors.toList());
         }
-
         if (keyword != null && !keyword.isEmpty()) {
             allStores = allStores.stream()
                     .filter(store -> ((String) store.get("name") != null &&
@@ -939,42 +726,29 @@ public class AdminController {
                                     ((String) store.get("username")).toLowerCase().contains(keyword.toLowerCase())))
                     .collect(Collectors.toList());
         }
-
         int start = page * size;
         int end = Math.min(start + size, allStores.size());
-
         List<Map<String, Object>> paginatedStores = allStores.subList(start, end);
-
         model.addAttribute("stores", paginatedStores);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", (int) Math.ceil((double) allStores.size() / size));
-
-        // Thêm menu active để đánh dấu menu hiện tại
         model.addAttribute("activeMenu", "stores");
-
-        // Set the content fragment to be included in the layout
         model.addAttribute("content", "stores :: content");
-
         return "admin";
     }
 
     @GetMapping("/stores/view/{id}")
     public String viewStore(@PathVariable Long id, Model model) {
         Map<String, Object> store = storeService.findByIdWithUserInfo(id);
-
         if (store == null) {
             model.addAttribute("errorMessage", "Không tìm thấy cửa hàng!");
             return "redirect:/admin/stores";
         }
-
-        // Get products for this store
         List<Product> storeProducts = productService.findByStoreId(id);
-
         model.addAttribute("store", store);
         model.addAttribute("products", storeProducts);
         model.addAttribute("activeMenu", "stores");
         model.addAttribute("content", "store-detail :: content");
-
         return "admin";
     }
 
@@ -982,7 +756,6 @@ public class AdminController {
     public String toggleStoreStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             boolean success = storeService.toggleStatus(id);
-
             if (success) {
                 redirectAttributes.addFlashAttribute("successMessage", "Trạng thái cửa hàng đã được cập nhật!");
             } else {
@@ -992,11 +765,9 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Lỗi khi thay đổi trạng thái cửa hàng: " + e.getMessage());
         }
-
         return "redirect:/admin/stores";
     }
 
-    // ==================== Seller Request Management Methods ====================    @GetMapping("/seller-requests")
     public String manageSellerRequests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -1004,44 +775,37 @@ public class AdminController {
             @RequestParam(defaultValue = "createdDate") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             Model model) {
-
         try {
-            // Use the new SellerRequestService with DTO-based pagination
             Map<String, Object> paginationResult = sellerRequestService.getSellerRequestsPaginated(
-                page, size, status, sortBy, sortDir);
-
-            // Extract pagination data
+                    page, size, status, sortBy, sortDir);
             @SuppressWarnings("unchecked")
-            List<com.ecommerce.dtos.SellerRequestDTO> requests = 
-                (List<com.ecommerce.dtos.SellerRequestDTO>) paginationResult.get("content");
-            
-            // Convert DTOs to Maps for backward compatibility with existing template
+            List<com.ecommerce.dtos.SellerRequestDTO> requests = (List<com.ecommerce.dtos.SellerRequestDTO>) paginationResult
+                    .get("content");
             List<Map<String, Object>> requestMaps = requests.stream()
-                .map(dto -> {
-                    Map<String, Object> map = new java.util.HashMap<>();
-                    map.put("id", dto.getId());
-                    map.put("shopName", dto.getShopName());
-                    map.put("description", dto.getDescription());
-                    map.put("status", dto.getStatus());
-                    map.put("createdDate", dto.getCreatedDate());
-                    map.put("sellerType", dto.getSellerType());
-                    map.put("userId", dto.getUserId());
-                    map.put("username", dto.getUsername());
-                    map.put("fullname", dto.getFullname());
-                    map.put("email", dto.getEmail());
-                    map.put("displayStatus", dto.getDisplayStatus());
-                    map.put("daysSinceCreated", dto.getDaysSinceCreated());
-                    map.put("isPending", dto.isPending());
-                    map.put("isApproved", dto.isApproved());
-                    map.put("isRejected", dto.isRejected());
-                    map.put("formattedCreatedDate", dto.getFormattedCreatedDate());
-                    map.put("isOverdue", dto.isOverdue());
-                    map.put("priorityLevel", dto.getPriorityLevel());
-                    map.put("statusBadgeClass", dto.getStatusBadgeClass());
-                    return map;
-                })
-                .collect(Collectors.toList());
-
+                    .map(dto -> {
+                        Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("id", dto.getId());
+                        map.put("shopName", dto.getShopName());
+                        map.put("description", dto.getDescription());
+                        map.put("status", dto.getStatus());
+                        map.put("createdDate", dto.getCreatedDate());
+                        map.put("sellerType", dto.getSellerType());
+                        map.put("userId", dto.getUserId());
+                        map.put("username", dto.getUsername());
+                        map.put("fullname", dto.getFullname());
+                        map.put("email", dto.getEmail());
+                        map.put("displayStatus", dto.getDisplayStatus());
+                        map.put("daysSinceCreated", dto.getDaysSinceCreated());
+                        map.put("isPending", dto.isPending());
+                        map.put("isApproved", dto.isApproved());
+                        map.put("isRejected", dto.isRejected());
+                        map.put("formattedCreatedDate", dto.getFormattedCreatedDate());
+                        map.put("isOverdue", dto.isOverdue());
+                        map.put("priorityLevel", dto.getPriorityLevel());
+                        map.put("statusBadgeClass", dto.getStatusBadgeClass());
+                        return map;
+                    })
+                    .collect(Collectors.toList());
             model.addAttribute("requests", requestMaps);
             model.addAttribute("currentPage", paginationResult.get("currentPage"));
             model.addAttribute("totalPages", paginationResult.get("totalPages"));
@@ -1050,66 +814,51 @@ public class AdminController {
             model.addAttribute("hasPrevious", paginationResult.get("hasPrevious"));
             model.addAttribute("first", paginationResult.get("first"));
             model.addAttribute("last", paginationResult.get("last"));
-            
-            // Add status filter and sorting parameters
             model.addAttribute("currentStatus", status);
             model.addAttribute("currentSortBy", sortBy);
             model.addAttribute("currentSortDir", sortDir);
-            
-            // Add status counts for statistics
             @SuppressWarnings("unchecked")
             Map<String, Long> statusCounts = (Map<String, Long>) paginationResult.get("statusCounts");
             model.addAttribute("statusCounts", statusCounts);
-
         } catch (Exception e) {
-            // Fallback to old method if there's an error
             System.err.println("Error using new pagination method, falling back to old method: " + e.getMessage());
             e.printStackTrace();
-            
             List<Map<String, Object>> allRequests = userService.findAllSellerRequests();
-
-            // Apply filter if provided
             if (status != null && !status.isEmpty()) {
                 allRequests = allRequests.stream()
                         .filter(request -> status.equals(request.get("status")))
                         .collect(Collectors.toList());
             }
-
-            // Manual pagination
             int start = page * size;
             int end = Math.min(start + size, allRequests.size());
             List<Map<String, Object>> paginatedRequests = allRequests.subList(start, end);
-
             model.addAttribute("requests", paginatedRequests);
             model.addAttribute("currentPage", page);
             model.addAttribute("totalPages", (int) Math.ceil((double) allRequests.size() / size));
         }
-
-        // Add menu active attribute
         model.addAttribute("activeMenu", "sellerRequests");
-
-        // Set the content fragment for the layout
         model.addAttribute("content", "seller-requests :: content");
-
         return "admin";
-    }    @PostMapping("/seller-requests/approve/{id}")
-    public String approveSellerRequest(@PathVariable Long id, 
+    }
+
+    @PostMapping("/seller-requests/approve/{id}")
+    public String approveSellerRequest(@PathVariable Long id,
             @RequestParam(required = false) String notes,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         try {
             String adminUsername = userDetails.getUsername();
             sellerRequestService.approveRequest(id, adminUsername, notes);
-            
             redirectAttributes.addFlashAttribute("successMessage",
                     "Đã phê duyệt yêu cầu trở thành người bán thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", 
+            redirectAttributes.addFlashAttribute("errorMessage",
                     "Lỗi khi phê duyệt yêu cầu: " + e.getMessage());
         }
-
         return "redirect:/admin/seller-requests";
-    }    @PostMapping("/seller-requests/reject/{id}")
+    }
+
+    @PostMapping("/seller-requests/reject/{id}")
     public String rejectSellerRequest(
             @PathVariable Long id,
             @RequestParam(required = false) String reason,
@@ -1118,14 +867,12 @@ public class AdminController {
         try {
             String adminUsername = userDetails.getUsername();
             sellerRequestService.rejectRequest(id, adminUsername, reason);
-            
-            redirectAttributes.addFlashAttribute("successMessage", 
+            redirectAttributes.addFlashAttribute("successMessage",
                     "Đã từ chối yêu cầu trở thành người bán!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", 
+            redirectAttributes.addFlashAttribute("errorMessage",
                     "Lỗi khi từ chối yêu cầu: " + e.getMessage());
         }
-
         return "redirect:/admin/seller-requests";
     }
 }

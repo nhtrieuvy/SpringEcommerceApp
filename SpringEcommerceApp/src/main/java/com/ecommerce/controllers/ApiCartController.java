@@ -6,18 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/cart")
-@CrossOrigin(origins = { "https://localhost:3000",
-        "http://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*", methods = { RequestMethod.GET,
-                RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }, maxAge = 3600)
-public class ApiCartController {
 
+public class ApiCartController {
     @Autowired
     private CartService cartService;
 
@@ -37,11 +33,9 @@ public class ApiCartController {
         try {
             Long productId = Long.parseLong(payload.get("productId").toString());
             int quantity = Integer.parseInt(payload.get("quantity").toString());
-
             if (quantity <= 0) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-
             CartItem cartItem = cartService.addToCart(productId, quantity);
             if (cartItem != null) {
                 return new ResponseEntity<>(cartItem, HttpStatus.CREATED);
@@ -75,11 +69,9 @@ public class ApiCartController {
             @RequestBody Map<String, Object> payload) {
         try {
             int quantity = Integer.parseInt(payload.get("quantity").toString());
-
             if (quantity <= 0) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-
             CartItem cartItem = cartService.updateQuantity(productId, quantity);
             if (cartItem != null) {
                 return new ResponseEntity<>(cartItem, HttpStatus.OK);
@@ -140,12 +132,10 @@ public class ApiCartController {
             if (couponCode == null || couponCode.trim().isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
-
             CartService.CouponValidationResult result = cartService.validateCoupon(couponCode);
             Map<String, Object> response = new HashMap<>();
             response.put("isValid", result.isValid());
             response.put("discount", result.getDiscount());
-
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             e.printStackTrace();

@@ -6,16 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
-@CrossOrigin(origins = { "https://localhost:3000",
-        "http://localhost:3000" }, allowCredentials = "true", allowedHeaders = "*", methods = { RequestMethod.GET,
-                RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS }, maxAge = 3600)
-public class ApiCategoryController {
 
+public class ApiCategoryController {
     @Autowired
     private CategoryService categoryService;
 
@@ -52,7 +48,6 @@ public class ApiCategoryController {
             if (existingCategory == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-
             category.setId(id);
             Category updatedCategory = categoryService.update(category);
             return new ResponseEntity<>(updatedCategory, HttpStatus.OK);
@@ -67,7 +62,6 @@ public class ApiCategoryController {
         if (existingCategory == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-
         boolean deleted = categoryService.delete(id);
         if (deleted) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);

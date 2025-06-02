@@ -35,7 +35,6 @@ public class ApiSocialLoginController {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-
     // Response class
     public static class SocialAuthResponse {
         public boolean success;
@@ -189,8 +188,8 @@ public class ApiSocialLoginController {
 
             // Parse JSON payload
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> payloadMap = mapper.readValue(decodedPayload, 
-                mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
+            Map<String, Object> payloadMap = mapper.readValue(decodedPayload,
+                    mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
 
             // Kiểm tra các trường cần thiết
             if (!payloadMap.containsKey("email") || !payloadMap.containsKey("sub")) {
@@ -351,8 +350,8 @@ public class ApiSocialLoginController {
             }
 
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> userInfo = mapper.readValue(response.getBody(), 
-                mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
+            Map<String, Object> userInfo = mapper.readValue(response.getBody(),
+                    mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
 
             if (!userInfo.getOrDefault("id", "").equals(userId)) {
                 System.err.println("User ID không khớp với token");
