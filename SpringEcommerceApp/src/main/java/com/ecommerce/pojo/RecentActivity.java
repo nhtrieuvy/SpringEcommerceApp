@@ -9,10 +9,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import java.time.LocalDateTime;
 
-/**
- * Entity representing recent activities in the admin dashboard.
- * This tracks various system activities like logins, orders, product additions, etc.
- */
+
 @Entity
 @Table(name = "recent_activity")
 @NoArgsConstructor
@@ -26,27 +23,27 @@ public class RecentActivity {
     private Long id;
     
     @Column(name = "activity_type", nullable = false, length = 50)
-    private String activityType; // LOGIN, ORDER_CREATED, PRODUCT_ADDED, USER_REGISTERED, etc.
+    private String activityType; 
     
     @Column(name = "description", nullable = false, length = 500)
-    private String description; // Human readable description
+    private String description; 
     
     @Column(name = "user_email", length = 100)
-    private String userEmail; // Email of user who performed the action
+    private String userEmail; 
     
     @Column(name = "user_name", length = 100)
-    private String userName; // Name of user who performed the action
+    private String userName; 
     
     @Column(name = "entity_id")
-    private Long entityId; // ID of related entity (order ID, product ID, etc.)
+    private Long entityId; 
     
     @Column(name = "entity_type", length = 50)
-    private String entityType; // ORDER, PRODUCT, USER, etc.
+    private String entityType; 
       @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
     @Column(name = "ip_address", length = 45)
-    private String ipAddress; // IP address of the user
+    private String ipAddress; 
     
     @PrePersist
     protected void onCreate() {

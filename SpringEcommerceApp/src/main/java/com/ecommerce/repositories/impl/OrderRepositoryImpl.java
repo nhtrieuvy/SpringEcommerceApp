@@ -38,11 +38,8 @@ public class OrderRepositoryImpl implements OrderRepository {
         Query<Order> query = session.createQuery(hql, Order.class);
         query.setParameter("id", id);
         Order order = query.uniqueResult();
-
-        // Initialize payment if exists
         if (order != null && order.getPayment() != null) {
             try {
-                // Safely initialize payment by just accessing it
                 order.getPayment();
             } catch (Exception e) {
                 System.err.println("Error initializing payment for order ID " + order.getId() + ": " + e.getMessage());
@@ -62,7 +59,6 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public List<Order> findAll() {
         Session session = sessionFactory.getCurrentSession();
-        // Fetch orders with eager loading of order details, products, and payments
         String hql = "SELECT DISTINCT o FROM Order o " +
                 "LEFT JOIN FETCH o.orderDetails od " +
                 "LEFT JOIN FETCH od.product " +
@@ -76,14 +72,12 @@ public class OrderRepositoryImpl implements OrderRepository {
     public List<Order> findByUserId(Long userId) {
         Session session = sessionFactory.getCurrentSession();
 
-        // Debug: Check how many orders exist for this user
         String countHql = "SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId";
         Query<Long> countQuery = session.createQuery(countHql, Long.class);
         countQuery.setParameter("userId", userId);
         Long orderCount = countQuery.uniqueResult();
         System.out.println("Total orders for user " + userId + ": " + orderCount);
 
-        // Fetch orders WITHOUT JOIN FETCH to avoid duplication issues
         String orderHql = "SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.orderDate DESC";
         Query<Order> orderQuery = session.createQuery(orderHql, Order.class);
         orderQuery.setParameter("userId", userId);
@@ -91,21 +85,17 @@ public class OrderRepositoryImpl implements OrderRepository {
         List<Order> orders = orderQuery.list();
         System.out.println("Orders returned from simple query: " + orders.size());
 
-        // If no orders found, return empty list
         if (orders.isEmpty()) {
             return orders;
         }
 
-        // Initialize relationships manually for each order
         for (Order order : orders) {
             System.out.println("Processing order ID: " + order.getId());
             try {
-                // Initialize orderDetails collection
                 if (order.getOrderDetails() != null) {
                     Hibernate.initialize(order.getOrderDetails());
                     System.out.println("  Order details count: " + order.getOrderDetails().size());
 
-                    // Initialize products in order details
                     for (OrderDetail detail : order.getOrderDetails()) {
                         if (detail.getProduct() != null) {
                             Hibernate.initialize(detail.getProduct());
@@ -113,23 +103,19 @@ public class OrderRepositoryImpl implements OrderRepository {
                     }
                 }
 
-                // Initialize payment if exists
                 if (order.getPayment() != null) {
-                    order.getPayment().getId(); // Access a property to initialize
+                    order.getPayment().getId();
                 }
 
-                // Initialize orderDetails collection if not already done
                 if (order.getOrderDetails() != null) {
-                    order.getOrderDetails().size(); // This forces initialization
+                    order.getOrderDetails().size();
                 }
 
-                // Initialize statusHistory - do it separately to avoid conflicts
                 try {
                     if (order.getStatusHistory() != null) {
-                        order.getStatusHistory().size(); // This forces initialization
+                        order.getStatusHistory().size();
                     }
                 } catch (Exception e) {
-                    // If statusHistory fails to load, set it to empty set
                     System.err.println(
                             "Warning: Could not load statusHistory for order " + order.getId() + ": " + e.getMessage());
                 }
@@ -137,7 +123,6 @@ public class OrderRepositoryImpl implements OrderRepository {
             } catch (Exception e) {
                 System.err.println(
                         "Error initializing collections for order ID " + order.getId() + ": " + e.getMessage());
-                // Don't set payment to null, just log the error
             }
         }
 
@@ -179,11 +164,9 @@ public class OrderRepositoryImpl implements OrderRepository {
 
         List<Order> orders = query.list();
 
-        // Initialize payments for each order to avoid LazyInitializationException
         for (Order order : orders) {
             try {
                 if (order.getPayment() != null) {
-                    // Safely initialize payment by just accessing it
                     order.getPayment();
                 }
             } catch (Exception e) {
@@ -207,7 +190,6 @@ public class OrderRepositoryImpl implements OrderRepository {
         Session session = sessionFactory.getCurrentSession();
         String dateFormat;
 
-        // Format the date based on grouping parameter
         if ("daily".equals(groupBy)) {
             dateFormat = "DAY(orderDate), MONTH(orderDate), YEAR(orderDate)";
         } else if ("weekly".equals(groupBy)) {
@@ -234,7 +216,6 @@ public class OrderRepositoryImpl implements OrderRepository {
         Session session = sessionFactory.getCurrentSession();
         String dateFormat;
 
-        // Format the date based on grouping parameter
         if ("daily".equals(groupBy)) {
             dateFormat = "DAY(orderDate), MONTH(orderDate), YEAR(orderDate)";
         } else if ("weekly".equals(groupBy)) {
@@ -283,18 +264,19 @@ public class OrderRepositoryImpl implements OrderRepository {
 
         Query<Object[]> query = session.createQuery(hql, Object[].class);
         query.setParameter("fromDate", fromDate);
-        query.setParameter("toDate", toDate);        return query.list();
+        query.setParameter("toDate", toDate);
+        return query.list();
     }
 
     @Override
     public List<Order> findOrdersByStoreId(Long storeId) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT o FROM Order o " +
-                    "LEFT JOIN FETCH o.orderDetails od " +
-                    "LEFT JOIN FETCH od.product p " +
-                    "LEFT JOIN FETCH p.store s " +
-                    "WHERE s.id = :storeId " +
-                    "ORDER BY o.orderDate DESC";
+                "LEFT JOIN FETCH o.orderDetails od " +
+                "LEFT JOIN FETCH od.product p " +
+                "LEFT JOIN FETCH p.store s " +
+                "WHERE s.id = :storeId " +
+                "ORDER BY o.orderDate DESC";
         Query<Order> query = session.createQuery(hql, Order.class);
         query.setParameter("storeId", storeId);
         return query.list();
@@ -304,36 +286,40 @@ public class OrderRepositoryImpl implements OrderRepository {
     public List<Order> findOrdersByStoreIdAndStatus(Long storeId, String status) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT o FROM Order o " +
-                    "LEFT JOIN FETCH o.orderDetails od " +
-                    "LEFT JOIN FETCH od.product p " +
-                    "LEFT JOIN FETCH p.store s " +
-                    "WHERE s.id = :storeId AND o.status = :status " +
-                    "ORDER BY o.orderDate DESC";
+                "LEFT JOIN FETCH o.orderDetails od " +
+                "LEFT JOIN FETCH od.product p " +
+                "LEFT JOIN FETCH p.store s " +
+                "WHERE s.id = :storeId AND o.status = :status " +
+                "ORDER BY o.orderDate DESC";
         Query<Order> query = session.createQuery(hql, Order.class);
         query.setParameter("storeId", storeId);
         query.setParameter("status", status);
         return query.list();
-    }    @Override
+    }
+
+    @Override
     public List<Order> findOrdersBySellerId(Long sellerId) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT o FROM Order o " +
-                    "LEFT JOIN FETCH o.orderDetails od " +
-                    "LEFT JOIN FETCH od.product p " +
-                    "LEFT JOIN FETCH p.store s " +
-                    "WHERE s.seller.id = :sellerId " +
-                    "ORDER BY o.orderDate DESC";
+                "LEFT JOIN FETCH o.orderDetails od " +
+                "LEFT JOIN FETCH od.product p " +
+                "LEFT JOIN FETCH p.store s " +
+                "WHERE s.seller.id = :sellerId " +
+                "ORDER BY o.orderDate DESC";
         Query<Order> query = session.createQuery(hql, Order.class);
         query.setParameter("sellerId", sellerId);
         return query.list();
-    }    @Override
+    }
+
+    @Override
     public List<Order> findOrdersBySellerIdAndStatus(Long sellerId, String status) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT o FROM Order o " +
-                    "LEFT JOIN FETCH o.orderDetails od " +
-                    "LEFT JOIN FETCH od.product p " +
-                    "LEFT JOIN FETCH p.store s " +
-                    "WHERE s.seller.id = :sellerId AND o.status = :status " +
-                    "ORDER BY o.orderDate DESC";
+                "LEFT JOIN FETCH o.orderDetails od " +
+                "LEFT JOIN FETCH od.product p " +
+                "LEFT JOIN FETCH p.store s " +
+                "WHERE s.seller.id = :sellerId AND o.status = :status " +
+                "ORDER BY o.orderDate DESC";
         Query<Order> query = session.createQuery(hql, Order.class);
         query.setParameter("sellerId", sellerId);
         query.setParameter("status", status);

@@ -16,17 +16,17 @@ public class CartItem implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore // To avoid circular dependency and user details in cart item response
+    @JsonIgnore 
     private User user;
 
-    @ManyToOne(fetch = FetchType.EAGER) // Eager fetch product details
+    @ManyToOne(fetch = FetchType.EAGER) 
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Column(name = "quantity", nullable = false)
     private int quantity;
 
-    // Transient field to hold subtotal for this item, calculated on the fly
+    
     @Transient
     public double getSubtotal() {
         if (product != null) {
@@ -35,7 +35,7 @@ public class CartItem implements Serializable {
         return 0;
     }
 
-    // Getters and Setters
+   
     public Long getId() {
         return id;
     }

@@ -7,12 +7,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-/**
- * Entity representing the payment information for an order in the e-commerce system.
- * Each Payment is associated with exactly one Order and includes details about
- * the payment method, amount, transaction status, and payment processor-specific information.
- * It maintains a one-to-one bidirectional relationship with the Order entity.
- */
 @Entity
 @Table(name = "payments")
 @NoArgsConstructor
@@ -29,16 +23,15 @@ public class Payment {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "payment_method") 
-    private PaymentMethod paymentMethod; // cash, paypal, stripe, zalo pay, momo
-    
+    private PaymentMethod paymentMethod; 
     @Column(nullable = false)
     private double amount;
     
     @Column(nullable = false)
-    private String status; // e.g., PENDING, COMPLETED, FAILED
+    private String status; 
 
     @Column(name = "transaction_id")
-    private String transactionId; // For online payment gateway reference
+    private String transactionId; 
     
     @Column(name = "payment_date")
     private java.util.Date paymentDate;
@@ -48,10 +41,8 @@ public class Payment {
     private String paypalPayerId;
     
     @Column(name = "paypal_capture_id")
-    private String paypalCaptureId;    /**
-     * Validates that all required fields are set and have reasonable values
-     * @throws IllegalStateException if validation fails
-     */
+    private String paypalCaptureId;  
+    
     public void validate() {
         if (order == null) {
             throw new IllegalStateException("Payment must be associated with an order");
@@ -70,11 +61,11 @@ public class Payment {
         }
         
         if (paymentDate == null) {
-            paymentDate = new java.util.Date(); // Set default to current date if missing
+            paymentDate = new java.util.Date();
         }
     }
 
-    // Explicit getter and setter methods to ensure compilation compatibility
+   
     public Long getId() {
         return id;
     }

@@ -93,7 +93,6 @@ public class ProductServiceImpl implements ProductService {
     }    @Override
     public String uploadProductImage(MultipartFile imageFile) throws Exception {
         try {
-            // Upload image to Cloudinary
             @SuppressWarnings("unchecked")
             Map<String, Object> params = ObjectUtils.asMap(
                 "folder", "ecommerce/products",

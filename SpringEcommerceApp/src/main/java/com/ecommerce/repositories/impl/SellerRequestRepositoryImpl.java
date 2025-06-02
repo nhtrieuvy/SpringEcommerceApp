@@ -49,7 +49,7 @@ public class SellerRequestRepositoryImpl implements SellerRequestRepository {
         CriteriaQuery<SellerRequest> query = builder.createQuery(SellerRequest.class);
         Root<SellerRequest> root = query.from(SellerRequest.class);
         query.select(root);
-        // Sắp xếp theo ngày tạo mới nhất
+        
         query.orderBy(builder.desc(root.get("createdDate")));
         
         return session.createQuery(query).getResultList();
@@ -64,7 +64,7 @@ public class SellerRequestRepositoryImpl implements SellerRequestRepository {
             Root<SellerRequest> root = query.from(SellerRequest.class);
             query.select(root);
             query.where(builder.equal(root.get("status"), status));
-            // Sắp xếp theo ngày tạo mới nhất
+           
             query.orderBy(builder.desc(root.get("createdDate")));
             
             return session.createQuery(query).getResultList();

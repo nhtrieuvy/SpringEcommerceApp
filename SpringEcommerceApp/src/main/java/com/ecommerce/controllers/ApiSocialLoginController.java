@@ -189,7 +189,8 @@ public class ApiSocialLoginController {
 
             // Parse JSON payload
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> payloadMap = mapper.readValue(decodedPayload, Map.class);
+            Map<String, Object> payloadMap = mapper.readValue(decodedPayload, 
+                mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
 
             // Kiểm tra các trường cần thiết
             if (!payloadMap.containsKey("email") || !payloadMap.containsKey("sub")) {
@@ -349,11 +350,10 @@ public class ApiSocialLoginController {
                 return null;
             }
 
-            // Parse JSON response
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> userInfo = mapper.readValue(response.getBody(), Map.class);
+            Map<String, Object> userInfo = mapper.readValue(response.getBody(), 
+                mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
 
-            // Kiểm tra ID có khớp không
             if (!userInfo.getOrDefault("id", "").equals(userId)) {
                 System.err.println("User ID không khớp với token");
                 return null;
@@ -366,20 +366,17 @@ public class ApiSocialLoginController {
         }
     }
 
-    // Tạo user mới từ Google
     @Transactional
     private User createGoogleUser(String email, String name, String picture, String googleId) {
         try {
             System.out.println("Creating Google user with email: " + email);
 
-            // Kiểm tra lại xem user đã tồn tại chưa trước khi tạo mới
             User existingUser = userService.findByEmail(email);
             if (existingUser != null) {
                 System.out.println("User already exists with email: " + email + ", returning existing user");
                 return existingUser;
             }
 
-            // Kiểm tra xem email có bị trùng với username của user khác không
             User userWithUsername = userService.findByUsername(email);
             if (userWithUsername != null) {
                 System.out.println("WARNING: Username conflict - a user with username=" + email

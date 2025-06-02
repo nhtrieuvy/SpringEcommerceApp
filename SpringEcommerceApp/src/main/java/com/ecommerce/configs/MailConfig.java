@@ -34,7 +34,7 @@ public class MailConfig {
         mailSender.setHost(host);
         mailSender.setPort(port);
 
-        // Sử dụng thông tin đăng nhập Gmail đã cung cấp
+        
         mailSender.setUsername("nhanhgon24@gmail.com");
         mailSender.setPassword("ozxs stip hhfs amtr");
 

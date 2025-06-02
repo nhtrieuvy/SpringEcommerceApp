@@ -40,25 +40,24 @@ public class SellerRequest {
     private String bankName;
 
     @Column(name = "seller_type", nullable = false)
-    private String sellerType; // individual/business
+    private String sellerType; 
 
     @Column(name = "id_card_front", columnDefinition = "TEXT")
-    private String idCardFront; // URL to Cloudinary image
+    private String idCardFront; 
 
     @Column(name = "id_card_back", columnDefinition = "TEXT")
-    private String idCardBack; // URL to Cloudinary image
-
+    private String idCardBack; 
     @Column(name = "business_license", columnDefinition = "TEXT")
-    private String businessLicense; // URL to Cloudinary image
+    private String businessLicense; 
 
     @Column(name = "status", nullable = false)
-    private String status; // PENDING, APPROVED, REJECTED
+    private String status; 
 
     @Column(name = "status_notes")
-    private String statusNotes; // For rejection reason or approval notes
+    private String statusNotes; 
 
     @Column(name = "reviewed_by")
-    private String reviewedBy; // Username of the admin/staff who reviewed
+    private String reviewedBy; 
 
     @Column(name = "reviewed_date")
     @Temporal(TemporalType.TIMESTAMP)

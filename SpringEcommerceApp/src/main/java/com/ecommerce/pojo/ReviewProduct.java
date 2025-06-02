@@ -29,7 +29,7 @@ public class ReviewProduct {
 
     private Date createdAt;
 
-    // Getter & Setter for id
+    
     public Long getId() {
         return id;
     }
@@ -37,7 +37,7 @@ public class ReviewProduct {
         this.id = id;
     }
 
-    // Getter & Setter for userId
+    
     public Long getUserId() {
         return userId;
     }
@@ -45,7 +45,7 @@ public class ReviewProduct {
         this.userId = userId;
     }
 
-    // Getter & Setter for productId
+    
     public Long getProductId() {
         return productId;
     }
@@ -53,7 +53,7 @@ public class ReviewProduct {
         this.productId = productId;
     }
 
-    // Getter & Setter for rating
+    
     public Integer getRating() {
         return rating;
     }
@@ -61,7 +61,7 @@ public class ReviewProduct {
         this.rating = rating;
     }
 
-    // Getter & Setter for comment
+    
     public String getComment() {
         return comment;
     }

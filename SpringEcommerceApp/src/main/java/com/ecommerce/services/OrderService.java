@@ -23,16 +23,12 @@ public interface OrderService {    void save(Order order);
     Map<String, Double> getRevenueByCategoryDateRange(Date fromDate, Date toDate);
     byte[] generateOrderExcel(List<Order> orders);
     byte[] generateReportExcel(String reportType, Date fromDate, Date toDate);
-      // Phương thức mới để lấy lịch sử trạng thái đơn hàng
     List<OrderStatusHistory> getOrderStatusHistory(Long orderId);
     
-    // Phương thức thêm mới lịch sử trạng thái
     void addOrderStatusHistory(Order order, String status, String note, Long userId);
     
-    // Phương thức cập nhật đơn hàng mà không tự động tạo lịch sử trạng thái
     void updateWithoutHistory(Order order);
     
-    // Seller specific methods
     List<Order> findOrdersByStoreId(Long storeId);
     List<Order> findOrdersByStoreIdAndStatus(Long storeId, String status);
     List<Order> findOrdersBySellerId(Long sellerId);

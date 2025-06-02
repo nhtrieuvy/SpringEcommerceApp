@@ -30,8 +30,11 @@ public class OrderDetailRepositoryImpl implements OrderDetailRepository {
     public void delete(Long id) {
         Session session = sessionFactory.getCurrentSession();
         OrderDetail orderDetail = session.get(OrderDetail.class, id);
-        if (orderDetail != null) session.remove(orderDetail);
-    }    @Override
+        if (orderDetail != null)
+            session.remove(orderDetail);
+    }
+
+    @Override
     public OrderDetail findById(Long id) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT od FROM OrderDetail od LEFT JOIN FETCH od.product WHERE od.id = :id";
@@ -45,7 +48,9 @@ public class OrderDetailRepositoryImpl implements OrderDetailRepository {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT od FROM OrderDetail od LEFT JOIN FETCH od.product";
         return session.createQuery(hql, OrderDetail.class).list();
-    }    @Override
+    }
+
+    @Override
     public List<OrderDetail> findByOrderId(Long orderId) {
         Session session = sessionFactory.getCurrentSession();
         String hql = "SELECT DISTINCT od FROM OrderDetail od LEFT JOIN FETCH od.product WHERE od.order.id = :orderId";

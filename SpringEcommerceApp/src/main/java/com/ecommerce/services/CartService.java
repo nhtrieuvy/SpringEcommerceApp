@@ -4,45 +4,21 @@ import com.ecommerce.pojo.CartItem;
 import java.util.List;
 
 public interface CartService {
-    /**
-     * Get all cart items for the current authenticated user
-     * @return List of cart items
-     */
+   
     List<CartItem> getCurrentUserCartItems();
     
-    /**
-     * Add a product to cart
-     * @param productId ID of the product to add
-     * @param quantity Quantity to add
-     * @return The added cart item or null if failed
-     */
+    
     CartItem addToCart(Long productId, int quantity);
     
-    /**
-     * Remove a product from cart
-     * @param productId ID of the product to remove
-     * @return true if successful, false otherwise
-     */
     boolean removeFromCart(Long productId);
     
-    /**
-     * Update quantity of a cart item
-     * @param productId ID of the product in cart
-     * @param quantity New quantity
-     * @return The updated cart item or null if failed
-     */
+   
     CartItem updateQuantity(Long productId, int quantity);
     
-    /**
-     * Clear all items from cart
-     * @return true if successful, false otherwise
-     */
+    
     boolean clearCart();
     
-    /**
-     * Get total quantity of items in cart
-     * @return Total quantity
-     */
+   
     int getCartCount();
     
     /**

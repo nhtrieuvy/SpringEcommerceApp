@@ -10,7 +10,7 @@ import com.ecommerce.pojo.Role;
 
 public interface UserService extends UserDetailsService {
     User addUser(Map<String, String> params, MultipartFile avatar);
-    User addUser(User user); // Thêm phương thức mới để hỗ trợ đăng nhập mạng xã hội
+    User addUser(User user); 
     boolean authenticate(String username, String password);
     void update(User user);
     void delete(Long id);
@@ -21,18 +21,18 @@ public interface UserService extends UserDetailsService {
     List<User> findByRole(String roleName);
     List<User> searchUsers(String keyword);
     
-    // Phương thức mới cho chức năng profile
+   
     void updateAvatar(User user, MultipartFile avatar);
     void changePassword(User user, String newPassword);
     
-    // Phương thức thêm vai trò cho người dùng
+    
     void addRoleToUser(User user, Role role);
     void removeRoleFromUser(User user, Role role);
     
-    // Phương thức xóa cache người dùng
+    
     void clearUserCache(String username);
     
-    // New methods for managing seller requests
+    
     List<Map<String, Object>> findAllSellerRequests();
     boolean approveSellerRequest(Long id);
     boolean rejectSellerRequest(Long id, String reason);

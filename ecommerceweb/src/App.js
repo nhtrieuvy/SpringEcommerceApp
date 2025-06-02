@@ -29,13 +29,11 @@ import PageLayout from "./layout/PageLayout";
 import MyUserReducer from "./reducers/MyUserReducer";
 import { MyUserContext } from "./configs/MyContexts";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import "./App.css"; // Import CSS với theme xanh lá
+import "./App.css"; 
 
-// Google OAuth Client ID - thay thế bằng ID của bạn khi đăng ký trên Google Cloud Platform
 const GOOGLE_CLIENT_ID =
   "618407643524-0nasoq3jc5dvturarl9truih021cofag.apps.googleusercontent.com";
 
-// Tạo theme cho Material UI dựa trên các biến CSS
 const theme = createTheme({
   palette: {
     primary: {
@@ -118,23 +116,20 @@ const theme = createTheme({
   },
 });
 
-// Component bảo vệ route cho người dùng đã đăng nhập
 const ProtectedRoute = ({ children }) => {
   const [user] = React.useContext(MyUserContext);
   return user ? <Navigate to="/" /> : children;
 };
 
-// Component bảo vệ route cho người dùng chưa đăng nhập
+
 const AuthenticatedRoute = ({ children }) => {
   const [user] = React.useContext(MyUserContext);
   return user ? children : <Navigate to="/login" />;
 };
 
 const App = () => {
-  // Sử dụng useReducer với MyUserReducer, state ban đầu là null
   const [user, dispatch] = useReducer(MyUserReducer, null);
 
-  // Kiểm tra phiên đăng nhập khi tải trang
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -155,7 +150,7 @@ const App = () => {
     <MyUserContext.Provider value={[user, dispatch]}>
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
         <ThemeProvider theme={theme}>
-          <CssBaseline /> {/* Reset CSS để đồng nhất trên các trình duyệt */}{" "}
+          <CssBaseline />{" "}
           <BrowserRouter>
             <Header />
             <PageLayout>

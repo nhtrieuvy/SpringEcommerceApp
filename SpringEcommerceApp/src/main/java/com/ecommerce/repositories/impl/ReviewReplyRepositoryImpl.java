@@ -22,11 +22,11 @@ public class ReviewReplyRepositoryImpl implements ReviewReplyRepository {
         Session session = this.sessionFactory.getCurrentSession();
         try {
             session.persist(reply);
-            session.flush(); // Ensure the entity is persisted immediately
+            session.flush();
             System.out.println("Reply persisted successfully with ID: " + reply.getId());
         } catch (Exception e) {
             System.err.println("Error persisting reply: " + e.getMessage());
-            throw e; // Re-throw to handle at service level
+            throw e;
         }
     }
 

@@ -818,18 +818,7 @@ const Header = () => {
                                                     <ShoppingBagIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
                                                     Đơn hàng của tôi
                                                 </MenuItem>
-                                                <MenuItem 
-                                                    component={RouterLink} 
-                                                    to="/chat" 
-                                                    onClick={handleUserMenuClose}
-                                                    sx={{ 
-                                                        gap: 1,
-                                                        color: location.pathname === '/chat' ? 'var(--primary-main)' : 'inherit'
-                                                    }}
-                                                >
-                                                    <ChatIcon fontSize="small" sx={{ color: 'var(--primary-main)' }} />
-                                                    Tin nhắn
-                                                </MenuItem>{user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
+                                                {user && user.roles && user.roles.some(role => role.name === 'SELLER') && (
                                                     <Fragment>
                                                         <MenuItem 
                                                             component={RouterLink} 

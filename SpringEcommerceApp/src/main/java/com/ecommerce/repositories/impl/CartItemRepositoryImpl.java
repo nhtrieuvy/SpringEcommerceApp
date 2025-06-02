@@ -21,7 +21,7 @@ public class CartItemRepositoryImpl implements CartItemRepository {
 
     @Autowired
     private SessionFactory sessionFactory;
-    
+
     private Session getCurrentSession() {
         return sessionFactory.getCurrentSession();
     }
@@ -38,27 +38,33 @@ public class CartItemRepositoryImpl implements CartItemRepository {
     public Optional<CartItem> findByUserAndProduct(User user, Product product) {
         Session session = getCurrentSession();
         Query<CartItem> q = session.createQuery(
-                "FROM CartItem WHERE user.id = :userId AND product.id = :productId", 
+                "FROM CartItem WHERE user.id = :userId AND product.id = :productId",
                 CartItem.class);
         q.setParameter("userId", user.getId());
         q.setParameter("productId", product.getId());
-        
+
         return q.getResultStream().findFirst();
-    }    @Override
+    }
+
+    @Override
     public void deleteByUserAndProduct(User user, Product product) {
         Session session = getCurrentSession();
-        Query q = session.createQuery(
-                "DELETE FROM CartItem WHERE user.id = :userId AND product.id = :productId");
-        q.setParameter("userId", user.getId());
-        q.setParameter("productId", product.getId());
-        q.executeUpdate();
-    }    @Override
+        session.createMutationQuery(
+                "DELETE FROM CartItem WHERE user.id = :userId AND product.id = :productId")
+                .setParameter("userId", user.getId())
+                .setParameter("productId", product.getId())
+                .executeUpdate();
+    }
+
+    @Override
     public void deleteAllByUser(User user) {
         Session session = getCurrentSession();
-        Query q = session.createQuery("DELETE FROM CartItem WHERE user.id = :userId");
-        q.setParameter("userId", user.getId());
-        q.executeUpdate();
-    }@Override
+        session.createMutationQuery("DELETE FROM CartItem WHERE user.id = :userId")
+                .setParameter("userId", user.getId())
+                .executeUpdate();
+    }
+
+    @Override
     public CartItem save(CartItem cartItem) {
         Session session = getCurrentSession();
         // Using merge instead of saveOrUpdate (which is deprecated in Hibernate 6)

@@ -16,14 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class PasswordResetServiceImpl implements PasswordResetService {
 
-    private static final int EXPIRATION_TIME = 24; // Token hết hạn sau 24 giờ
-    
+    private static final int EXPIRATION_TIME = 24;
+
     @Autowired
     private PasswordResetTokenRepository passwordResetTokenRepository;
-    
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
@@ -32,29 +32,24 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         System.out.println("===== CREATING PASSWORD RESET TOKEN =====");
         System.out.println("User: " + user.getUsername() + " (ID: " + user.getId() + ")");
         System.out.println("Token: " + token);
-        
+
         try {
-            // Kiểm tra xem đã có token nào tồn tại cho user này chưa
             PasswordResetToken existingToken = passwordResetTokenRepository.findByUser(user);
             if (existingToken != null) {
                 System.out.println("Đã tìm thấy token cũ: " + existingToken.getToken());
                 System.out.println("Xóa token cũ");
-                // Nếu đã tồn tại token, xóa nó để tạo token mới
                 passwordResetTokenRepository.delete(existingToken);
             }
-            
-            // Tạo token mới
+
             PasswordResetToken myToken = new PasswordResetToken();
             myToken.setToken(token);
             myToken.setUser(user);
             myToken.setExpiryDate(calculateExpiryDate());
             System.out.println("Hạn sử dụng token: " + myToken.getExpiryDate());
-            
-            // Lưu token mới vào database
+
             System.out.println("Lưu token mới vào database");
             passwordResetTokenRepository.save(myToken);
-            
-            // Xác nhận token đã được lưu
+
             PasswordResetToken savedToken = passwordResetTokenRepository.findByToken(token);
             if (savedToken != null) {
                 System.out.println("Token đã được lưu thành công trong database!");
@@ -76,29 +71,26 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     public String validatePasswordResetToken(String token) {
         System.out.println("===== VALIDATING PASSWORD RESET TOKEN =====");
         System.out.println("Token cần xác thực: " + token);
-        
+
         try {
-            // Tìm token trong database
             System.out.println("Tìm kiếm token trong database...");
             PasswordResetToken passToken = passwordResetTokenRepository.findByToken(token);
-            
+
             if (passToken == null) {
                 System.err.println("LỖI: Token không tồn tại trong database!");
                 return "invalidToken";
             }
-            
+
             System.out.println("Tìm thấy token trong database. ID: " + passToken.getId());
-            
-            // Kiểm tra user
+
             User user = passToken.getUser();
             if (user == null) {
                 System.err.println("LỖI: Không tìm thấy user liên kết với token!");
                 return "userNotFound";
             }
-            
+
             System.out.println("User liên kết với token: " + user.getUsername());
-            
-            // Kiểm tra hạn sử dụng
+
             Calendar cal = Calendar.getInstance();
             if (passToken.getExpiryDate().before(cal.getTime())) {
                 System.err.println("LỖI: Token đã hết hạn!");
@@ -107,10 +99,10 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 passwordResetTokenRepository.delete(passToken);
                 return "expired";
             }
-            
+
             System.out.println("Token hợp lệ và chưa hết hạn!");
             System.out.println("===== KẾT THÚC XÁC THỰC TOKEN =====");
-            return null; // Trả về null nếu token hợp lệ
+            return null;
         } catch (Exception e) {
             System.err.println("LỖI khi xác thực token: " + e.getMessage());
             e.printStackTrace();
@@ -136,8 +128,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             user.setPassword(encodedPassword);
             userService.update(user);
             System.out.println("Mật khẩu đã được cập nhật thành công!");
-            
-            // Xóa token sau khi đã đổi mật khẩu thành công
+
             System.out.println("Tìm và xóa token...");
             PasswordResetToken token = passwordResetTokenRepository.findByUser(user);
             if (token != null) {
@@ -158,7 +149,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     public boolean checkIfValidOldPassword(User user, String oldPassword) {
         return passwordEncoder.matches(oldPassword, user.getPassword());
     }
-    
+
     private Date calculateExpiryDate() {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.HOUR, EXPIRATION_TIME);

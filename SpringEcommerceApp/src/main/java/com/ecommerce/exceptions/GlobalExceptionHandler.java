@@ -11,10 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import java.util.Map;
 import java.util.HashMap;
 
-/**
- * Global exception handler for consistent error responses across the
- * application
- */
+
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(OrderException.class)

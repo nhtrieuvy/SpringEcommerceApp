@@ -18,10 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-/**
- * JWT Security configuration that extends the base security configuration.
- * This class focuses on securing REST API endpoints with JWT authentication.
- */
+
 @Configuration
 @Order(1)
 public class JwtSecurityConfig extends BaseSecurityConfig {
@@ -35,7 +32,7 @@ public class JwtSecurityConfig extends BaseSecurityConfig {
                 logger.info("Configuring JWT security filter chain");
 
                 http
-                                .securityMatcher("/api/**") // Chỉ áp dụng cho các request bắt đầu với /api/
+                                .securityMatcher("/api/**") 
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
                                 .sessionManagement(session -> session
@@ -58,29 +55,10 @@ public class JwtSecurityConfig extends BaseSecurityConfig {
                                                                 "/api/payments/paypal/return/**")
                                                 .permitAll()
 
-                                                .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "STAFF") // Cho
-                                                                                                                    // phép
-                                                                                                                    // ADMIN
-                                                                                                                    // và
-                                                                                                                    // STAFF
-                                                                                                                    // truy
-                                                                                                                    // cập
-                                                                                                                    // API
-                                                                                                                    // admin
+                                                .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "STAFF") 
                                                 .requestMatchers("/api/seller/requests/**")
-                                                .hasAnyAuthority("ADMIN", "STAFF") // Chỉ ADMIN và
-                                                                                   // STAFF có thể
-                                                                                   // quản lý yêu cầu
-                                                                                   // seller
-                                                .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN") // Cho
-                                                                                                                      // phép
-                                                                                                                      // SELLER
-                                                                                                                      // và
-                                                                                                                      // ADMIN
-                                                                                                                      // truy
-                                                                                                                      // cập
-                                                                                                                      // API
-                                                                                                                      // seller
+                                                .hasAnyAuthority("ADMIN", "STAFF") 
+                                                .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN") 
                                                 .requestMatchers("/api/**").authenticated())
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                                 .exceptionHandling(ex -> ex

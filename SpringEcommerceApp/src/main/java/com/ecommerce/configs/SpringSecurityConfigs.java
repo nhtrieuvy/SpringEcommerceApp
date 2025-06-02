@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package com.ecommerce.configs;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +19,7 @@ import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Primary security configuration for traditional web application endpoints.
- * Extends BaseSecurityConfig to inherit common configurations.
- */
+
 @Configuration
 @EnableWebSecurity
 @EnableTransactionManagement
@@ -82,7 +76,7 @@ public class SpringSecurityConfigs extends BaseSecurityConfig {
     @Bean
     public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
         return new HandlerMappingIntrospector();
-    } // CorsConfigurationSource is now inherited from BaseSecurityConfig
+    }
 
     @Bean
     public StandardServletMultipartResolver multipartResolver() {

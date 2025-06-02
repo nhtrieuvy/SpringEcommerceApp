@@ -15,14 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderStatusHistoryRepositoryImpl implements OrderStatusHistoryRepository {
 
     @PersistenceContext
-    private EntityManager entityManager;    @Override
+    private EntityManager entityManager;
+
+    @Override
     @SuppressWarnings("unchecked")
     public List<OrderStatusHistory> findByOrderId(Long orderId) {
-        // Use a custom query to create OrderStatusHistory objects with only the fields we need
-        // This avoids the lazy loading and circular reference issues
+
         Query query = entityManager.createQuery(
-            "SELECT new com.ecommerce.pojo.OrderStatusHistory(h.id, h.status, h.note, h.createdAt) " +
-            "FROM OrderStatusHistory h WHERE h.order.id = :orderId ORDER BY h.createdAt DESC");
+                "SELECT new com.ecommerce.pojo.OrderStatusHistory(h.id, h.status, h.note, h.createdAt) " +
+                        "FROM OrderStatusHistory h WHERE h.order.id = :orderId ORDER BY h.createdAt DESC");
         query.setParameter("orderId", orderId);
         return query.getResultList();
     }

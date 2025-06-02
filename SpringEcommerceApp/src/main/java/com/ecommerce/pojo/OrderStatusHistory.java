@@ -4,14 +4,7 @@ import java.util.Date;
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-/**
- * Entity representing the history of status changes for an order in the
- * e-commerce system.
- * This tracks the progression of an order through its lifecycle, storing
- * information
- * about each status change, when it occurred, who performed it, and any notes.
- * It maintains a many-to-one relationship with the Order entity.
- */
+
 @Entity
 @Table(name = "order_status_history")
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })

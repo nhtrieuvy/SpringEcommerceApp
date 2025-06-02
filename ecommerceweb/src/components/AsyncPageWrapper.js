@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Skeleton, Container } from '@mui/material';
 
-// Component wrapper cho các trang cần loading data
+
 const AsyncPageWrapper = ({ 
     children, 
     isLoading = false, 
     loadingComponent = null,
-    minLoadingTime = 300 // Thời gian loading tối thiểu để tránh nhấp nháy
+    minLoadingTime = 300 
 }) => {
     const [showLoading, setShowLoading] = useState(isLoading);
 
@@ -14,7 +14,7 @@ const AsyncPageWrapper = ({
         if (isLoading) {
             setShowLoading(true);
         } else {
-            // Đảm bảo loading hiển thị ít nhất minLoadingTime ms
+           
             const timer = setTimeout(() => {
                 setShowLoading(false);
             }, minLoadingTime);

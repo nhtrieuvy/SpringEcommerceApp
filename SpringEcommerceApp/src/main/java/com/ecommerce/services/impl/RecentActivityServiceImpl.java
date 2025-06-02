@@ -48,7 +48,6 @@ public class RecentActivityServiceImpl implements RecentActivityService {
   @Override
   @Transactional(readOnly = true)
   public List<RecentActivity> getRecentActivities(int page, int size) {
-    // Tính limit dựa trên page và size
     int limit = size;
     return recentActivityRepository.findRecentActivities(limit);
   }
@@ -83,8 +82,6 @@ public class RecentActivityServiceImpl implements RecentActivityService {
     LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysToKeep);
     recentActivityRepository.deleteOldActivities(cutoffDate);
   }
-
-  // Các phương thức tiện ích để log hoạt động cụ thể
 
   @Override
   @Async

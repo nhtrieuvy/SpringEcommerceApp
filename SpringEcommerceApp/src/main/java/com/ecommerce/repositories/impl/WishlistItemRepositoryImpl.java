@@ -21,7 +21,7 @@ public class WishlistItemRepositoryImpl implements WishlistItemRepository {
 
     @Autowired
     private SessionFactory sessionFactory;
-    
+
     private Session getCurrentSession() {
         return sessionFactory.getCurrentSession();
     }
@@ -38,40 +38,47 @@ public class WishlistItemRepositoryImpl implements WishlistItemRepository {
     public Optional<WishlistItem> findByUserAndProduct(User user, Product product) {
         Session session = getCurrentSession();
         Query<WishlistItem> q = session.createQuery(
-                "FROM WishlistItem WHERE user.id = :userId AND product.id = :productId", 
+                "FROM WishlistItem WHERE user.id = :userId AND product.id = :productId",
                 WishlistItem.class);
         q.setParameter("userId", user.getId());
         q.setParameter("productId", product.getId());
-        
+
         return q.getResultStream().findFirst();
     }
-    
+
     @Override
     public boolean existsByUserAndProduct(User user, Product product) {
         Session session = getCurrentSession();
         Query<Long> q = session.createQuery(
-                "SELECT COUNT(*) FROM WishlistItem WHERE user.id = :userId AND product.id = :productId", 
+                "SELECT COUNT(*) FROM WishlistItem WHERE user.id = :userId AND product.id = :productId",
                 Long.class);
         q.setParameter("userId", user.getId());
         q.setParameter("productId", product.getId());
-        
+
         return q.uniqueResult() > 0;
-    }    @Override
+    }
+
+    @Override
     public void deleteByUserAndProduct(User user, Product product) {
         Session session = getCurrentSession();
-        Query q = session.createQuery(
-                "DELETE FROM WishlistItem WHERE user.id = :userId AND product.id = :productId");
+        Query<WishlistItem> q = session.createQuery(
+                "DELETE FROM WishlistItem WHERE user.id = :userId AND product.id = :productId", WishlistItem.class);
         q.setParameter("userId", user.getId());
         q.setParameter("productId", product.getId());
         q.executeUpdate();
-    }    @Override
+    }
+
+    @Override
     public void deleteAllByUser(User user) {
         Session session = getCurrentSession();
-        Query q = session.createQuery("DELETE FROM WishlistItem WHERE user.id = :userId");
+        Query<WishlistItem> q = session.createQuery("DELETE FROM WishlistItem WHERE user.id = :userId",
+                WishlistItem.class);
         q.setParameter("userId", user.getId());
         q.executeUpdate();
     }
-      // Phương thức để lưu hoặc cập nhật một WishlistItem    @Override
+
+    // Phương thức để lưu hoặc cập nhật một WishlistItem
+    @Override
     public WishlistItem save(WishlistItem wishlistItem) {
         Session session = getCurrentSession();
         // Using merge instead of saveOrUpdate (which is deprecated in Hibernate 6)
