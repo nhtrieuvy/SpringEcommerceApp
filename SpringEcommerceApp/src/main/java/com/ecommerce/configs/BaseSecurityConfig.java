@@ -39,7 +39,7 @@ public class BaseSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "https://localhost:3000",
-                "https://d0d3-2405-4802-37-ca00-5cb4-2712-7f6b-9f68.ngrok-free.app"));
+                "https://38ed-2405-4802-813a-3050-18ef-9eaa-a3b9-da03.ngrok-free.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
