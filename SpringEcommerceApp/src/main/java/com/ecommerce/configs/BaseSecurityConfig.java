@@ -2,6 +2,7 @@ package com.ecommerce.configs;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -18,14 +19,23 @@ import org.springframework.http.HttpHeaders;
 public class BaseSecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(BaseSecurityConfig.class);
 
+    @Value("${cloudinary.cloud_name:}")
+    private String cloudinaryCloudName;
+
+    @Value("${cloudinary.api_key:}")
+    private String cloudinaryApiKey;
+
+    @Value("${cloudinary.api_secret:}")
+    private String cloudinaryApiSecret;
+
     
     @Bean
     public Cloudinary cloudinary() {
         logger.info("Configuring Cloudinary");
         Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", "dd0q3guu9",
-                "api_key", "867579141935144",
-                "api_secret", "lTIKfHjxzWqaHk9hn8GptW6owIE",
+                "cloud_name", cloudinaryCloudName,
+                "api_key", cloudinaryApiKey,
+                "api_secret", cloudinaryApiSecret,
                 "secure", true));
         logger.info("Cloudinary configuration completed");
         return cloudinary;

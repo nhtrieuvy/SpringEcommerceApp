@@ -1,3 +1,50 @@
+# NetBeans private files
 /nbproject/private/
+
+# Maven target directory
 SpringEcommerceApp/target/
+
+# Sensitive configuration files
+SpringEcommerceApp/src/main/resources/application.properties
+SpringEcommerceApp/src/main/resources/database.properties
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keystore files
+*.p12
+*.jks
+*.keystore
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Node modules (Frontend)
+ecommerceweb/node_modules/
+ecommerceweb/build/
+ecommerceweb/dist/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
