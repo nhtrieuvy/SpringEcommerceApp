@@ -55,7 +55,8 @@ const SellerStores = () => {
   
   // State for store dialog
   const [openDialog, setOpenDialog] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);  const [currentStore, setCurrentStore] = useState({
+  const [isEditing, setIsEditing] = useState(false);  
+  const [currentStore, setCurrentStore] = useState({
     name: '',
     description: '',
     address: '',
@@ -141,7 +142,8 @@ const SellerStores = () => {
       ...currentStore,
       [name]: value
     });
-  };  const handleSubmitStore = async () => {
+  };  
+  const handleSubmitStore = async () => {
     try {
       let response;
       

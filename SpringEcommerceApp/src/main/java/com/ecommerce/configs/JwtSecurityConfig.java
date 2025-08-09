@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-
 @Configuration
 @Order(1)
 public class JwtSecurityConfig extends BaseSecurityConfig {
@@ -32,7 +31,7 @@ public class JwtSecurityConfig extends BaseSecurityConfig {
                 logger.info("Configuring JWT security filter chain");
 
                 http
-                                .securityMatcher("/api/**") 
+                                .securityMatcher("/api/**")
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
                                 .sessionManagement(session -> session
@@ -49,16 +48,18 @@ public class JwtSecurityConfig extends BaseSecurityConfig {
                                                                 "/api/review/product/**",
                                                                 "/api/review/reply/**")
                                                 .permitAll()
-                                                .requestMatchers("/api/payments/momo/return",
+                                                .requestMatchers(
                                                                 "/api/payments/momo/return/**",
                                                                 "/api/payments/momo/notify",
                                                                 "/api/payments/paypal/return/**")
                                                 .permitAll()
 
-                                                .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "STAFF") 
+                                                .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "STAFF")
                                                 .requestMatchers("/api/seller/requests/**")
-                                                .hasAnyAuthority("ADMIN", "STAFF") 
-                                                .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN") 
+                                                .hasAnyAuthority("ADMIN", "STAFF")
+                                                .requestMatchers("/api/seller/register").hasAnyAuthority("USER")
+                                                .requestMatchers("api/seller/request-status").permitAll()
+                                                .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN")
                                                 .requestMatchers("/api/**").authenticated())
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                                 .exceptionHandling(ex -> ex

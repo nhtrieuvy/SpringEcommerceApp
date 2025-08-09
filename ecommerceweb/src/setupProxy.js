@@ -7,7 +7,7 @@ module.exports = function (app) {
   
   // Create appropriate target URL based on environment
   const targetUrl = isNgrok 
-    ? 'https://d0d3-2405-4802-37-ca00-5cb4-2712-7f6b-9f68.ngrok-free.app'
+    ? 'https://38ed-2405-4802-813a-3050-18ef-9eaa-a3b9-da03.ngrok-free.app'
     : 'https://localhost:8443';
   
   console.log(`Setting up proxy with target: ${targetUrl}`);

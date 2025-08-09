@@ -17,9 +17,9 @@ public class MomoConfig {
     private String secretKey;
     @Value("${momo.endpoint:https://test-payment.momo.vn/v2/gateway/api/create}")
     private String endpoint;
-    @Value("${momo.returnUrl:https://d0d3-2405-4802-37-ca00-5cb4-2712-7f6b-9f68.ngrok-free.app/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/return}")
+    @Value("${momo.returnUrl:https://38ed-2405-4802-813a-3050-18ef-9eaa-a3b9-da03.ngrok-free.app/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/return}")
     private String returnUrl;
-    @Value("${momo.notifyUrl:https://d0d3-2405-4802-37-ca00-5cb4-2712-7f6b-9f68.ngrok-free.app/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/notify}")
+    @Value("${momo.notifyUrl:https://38ed-2405-4802-813a-3050-18ef-9eaa-a3b9-da03.ngrok-free.app/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/notify}")
     private String notifyUrl;
 
     @Value("${momo.requestType:captureWallet}")
