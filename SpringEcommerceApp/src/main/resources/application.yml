@@ -1,0 +1,83 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /SpringEcommerceApp-1.0-SNAPSHOT
+  undertow:
+    use-relative-redirects: true
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:true}
+    key-store: ${SERVER_SSL_KEY_STORE:file:../ecommerceweb/keystore.p12}
+    key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD:123456}
+    key-store-type: ${SERVER_SSL_KEY_STORE_TYPE:PKCS12}
+
+spring:
+  forward-headers-strategy: none
+  servlet:
+    multipart:
+      location: /
+      max-file-size: 5MB
+      max-request-size: 25MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nhanhgon24@gmail.com
+    password: ozxs stip hhfs amtr
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  thymeleaf:
+    cache: false
+
+app:
+  email:
+    from: nhanhgon24@gmail.com
+  url: ${APP_URL:https://localhost:8080}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: TRACE
+    com.ecommerce: DEBUG
+    org.thymeleaf: DEBUG
+
+paypal:
+  client:
+    id: AU9JPC-5jvlkaN9wXRX3M0rrkqNPR7oJtpXkEbw1A2kaRmYwkGwMry4BJ3mLcPj40H-p3Kq09_qV-ZT8
+    secret: EG6hZBqV8IWF7z3IQTz52RMVkpaqFDdp2W00bQ1PdhKtVm535iIRK_7g1EWXn88EChUVBgGBhEvZiZtK
+  mode: sandbox
+
+momo:
+  partnerCode: MOMO
+  accessKey: F8BBA842ECF85
+  secretKey: K951B6PE1waDMi640xX08PD3vg6EkVlz
+  endpoint: https://test-payment.momo.vn/v2/gateway/api/create
+  returnUrl: ${app.url}/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/return
+  notifyUrl: ${app.url}/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/notify
+  requestType: captureWallet
+
+hibernate:
+  dialect: org.hibernate.dialect.MySQLDialect
+  showSql: true
+  connection:
+    driverClass: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ecommercedb?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: Admin@123
+    provider_class: org.hibernate.hikaricp.internal.HikariCPConnectionProvider
+  hbm2ddl:
+    auto: update
+  hikari:
+    minimumIdle: 5
+    maximumPoolSize: 10
+    idleTimeout: 30000
+    maxLifetime: 1800000
+    connectionTimeout: 30000
+    autoCommit: false
+    dataSource:
+      cachePrepStmts: true
+      prepStmtCacheSize: 250
+      prepStmtCacheSqlLimit: 2048

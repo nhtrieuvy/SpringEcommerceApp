@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Repository
 public class UserRepositoryImpl implements UserRepository {
@@ -19,7 +19,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Autowired
     private SessionFactory sessionFactory;
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     private final Map<String, User> usernameCache = new ConcurrentHashMap<>();
     private final Map<Long, User> idCache = new ConcurrentHashMap<>();

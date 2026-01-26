@@ -9,6 +9,7 @@ import com.ecommerce.services.UserService;
 import com.ecommerce.services.SellerRequestService;
 import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Date;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,12 +38,13 @@ import org.hibernate.query.Query;
 public class UserServiceImpl implements UserService {    @Autowired
     private UserRepository userRepository;
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
     @Autowired
     private Cloudinary cloudinary;
     @Autowired
     private SessionFactory sessionFactory;
     @Autowired
+    @Lazy
     private SellerRequestService sellerRequestService;
     
     // Cache đơn giản để lưu trữ thông tin UserDetails

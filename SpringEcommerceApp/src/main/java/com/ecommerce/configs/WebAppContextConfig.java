@@ -9,7 +9,6 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
@@ -20,7 +19,6 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
  * @author nhanh
  */
 @Configuration
-@EnableWebMvc
 @EnableTransactionManagement
 @ComponentScan(basePackages = {
         "com.ecommerce.controllers",
