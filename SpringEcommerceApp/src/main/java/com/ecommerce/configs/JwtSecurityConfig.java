@@ -15,16 +15,23 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @Order(1)
-public class JwtSecurityConfig extends BaseSecurityConfig {
+public class JwtSecurityConfig {
         private static final Logger logger = LoggerFactory.getLogger(JwtSecurityConfig.class);
 
         @Autowired
         private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+        private final CorsConfigurationSource corsConfigurationSource;
+
+        public JwtSecurityConfig(CorsConfigurationSource corsConfigurationSource) {
+                this.corsConfigurationSource = corsConfigurationSource;
+        }
 
         @Bean
         public SecurityFilterChain jwtFilterChain(HttpSecurity http) throws Exception {
@@ -32,7 +39,7 @@ public class JwtSecurityConfig extends BaseSecurityConfig {
 
                 http
                                 .securityMatcher("/api/**")
-                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                                 .csrf(csrf -> csrf.disable())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -58,7 +65,7 @@ public class JwtSecurityConfig extends BaseSecurityConfig {
                                                 .requestMatchers("/api/seller/requests/**")
                                                 .hasAnyAuthority("ADMIN", "STAFF")
                                                 .requestMatchers("/api/seller/register").hasAnyAuthority("USER")
-                                                .requestMatchers("api/seller/request-status").permitAll()
+                                                .requestMatchers("/api/seller/request-status").permitAll()
                                                 .requestMatchers("/api/seller/**").hasAnyAuthority("SELLER", "ADMIN")
                                                 .requestMatchers("/api/**").authenticated())
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

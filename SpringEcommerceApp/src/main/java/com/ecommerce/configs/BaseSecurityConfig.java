@@ -10,6 +10,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +28,9 @@ public class BaseSecurityConfig {
 
     @Value("${cloudinary.api_secret:}")
     private String cloudinaryApiSecret;
+
+    @Value("${app.url:}")
+    private String appUrl;
 
     
     @Bean
@@ -47,9 +51,13 @@ public class BaseSecurityConfig {
         logger.info("Configuring CORS");
 
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "https://localhost:3000",
-                "https://38ed-2405-4802-813a-3050-18ef-9eaa-a3b9-da03.ngrok-free.app"));
+        List<String> allowedOrigins = new ArrayList<>();
+        allowedOrigins.add("http://localhost:3000");
+        allowedOrigins.add("https://localhost:3000");
+        if (appUrl != null && !appUrl.isBlank()) {
+            allowedOrigins.add(appUrl);
+        }
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));

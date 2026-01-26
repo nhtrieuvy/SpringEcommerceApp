@@ -34,7 +34,7 @@ public class Order {
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties({ "orders", "password", "role" })
     private User user;
-    @Column(nullable = false)
+    @Column(name = "order_date", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
 

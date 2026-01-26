@@ -9,7 +9,6 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EnableTransactionManagement
-@PropertySource("classpath:database.properties")
 public class HibernateConfigs {
 
     @Autowired
@@ -58,13 +56,8 @@ public class HibernateConfigs {
         props.setProperty("hibernate.jdbc.batch_versioned_data", "true");
 
       
-        props.setProperty("hibernate.cache.use_second_level_cache", "true");
-        props.setProperty("hibernate.cache.use_query_cache", "true");
-        props.setProperty("hibernate.cache.region.factory_class",
-                "org.hibernate.cache.jcache.internal.JCacheRegionFactory");
-        props.setProperty("hibernate.javax.cache.provider", "org.ehcache.jsr107.EhcacheCachingProvider");
-        props.setProperty("hibernate.javax.cache.uri", "classpath:ehcache.xml");
-        props.setProperty("hibernate.javax.cache.missing_cache_strategy", "create");
+        props.setProperty("hibernate.cache.use_second_level_cache", "false");
+        props.setProperty("hibernate.cache.use_query_cache", "false");
 
         return props;
     }
