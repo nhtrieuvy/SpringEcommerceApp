@@ -9,11 +9,13 @@ A full-featured e-commerce platform built with a Spring MVC backend and a React 
 
 The application is designed as a monorepo with a clear separation between the backend and frontend, communicating via a REST API.
 
+
 -   **Backend (`SpringEcommerceApp/`)** 🖥️: A robust Java-based application built with Spring MVC. Handles business logic, persistence, REST API and a server-side admin panel (Thymeleaf).
 
 -   **Frontend (`ecommerceweb/`)** ⚛️: A modern SPA built with React + Material-UI. Responsive UI, development proxy to backend to simplify cross-origin calls.
 
 -   **Database** 🗄️: MySQL (managed with Hibernate ORM).
+
 
 ---
 
