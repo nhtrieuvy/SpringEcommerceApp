@@ -22,10 +22,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/review")
 public class ApiReviewController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiReviewController.class);
+
     @Autowired
     private ReviewProductService reviewProductService;
     @Autowired
@@ -42,31 +46,32 @@ public class ApiReviewController {
                         .body(Map.of("error", "Bạn cần đăng nhập để đánh giá sản phẩm"));
             }
             String username = authentication.getName();
-            System.out.println("Current authenticated user: " + username);
+            logger.debug("Current authenticated user: {}", username);
             Object principal = authentication.getPrincipal();
             Long userId = null;
             if (principal instanceof com.ecommerce.security.UserPrincipal) {
                 userId = ((com.ecommerce.security.UserPrincipal) principal).getUser().getId();
-                System.out.println("Found UserPrincipal with userId: " + userId);
+                logger.debug("Found UserPrincipal with userId: {}", userId);
             } else if (principal instanceof com.ecommerce.pojo.User) {
                 userId = ((com.ecommerce.pojo.User) principal).getId();
-                System.out.println("Found User with userId: " + userId);
+                logger.debug("Found User with userId: {}", userId);
             } else if (review.getUserId() != null) {
                 userId = review.getUserId();
-                System.out.println("Using provided userId from request: " + userId);
+                logger.debug("Using provided userId from request: {}", userId);
             } else {
-                System.out.println("Principal type: " + (principal != null ? principal.getClass().getName() : "null"));
-                System.out.println("Authentication details: " + authentication);
+                logger.debug("Principal type: {}",
+                        principal != null ? principal.getClass().getName() : "null");
+                logger.debug("Authentication details: {}", authentication);
                 if (review.getUserId() != null) {
                     userId = review.getUserId();
-                    System.out.println("Using provided userId: " + userId);
+                    logger.debug("Using provided userId: {}", userId);
                 } else {
-                    System.out.println("Warning: Could not extract userId from authentication and no userId provided");
+                    logger.warn("Could not extract userId from authentication and no userId provided");
                 }
             }
             if (userId != null) {
                 review.setUserId(userId);
-                System.out.println("Setting review userId to: " + userId);
+                logger.debug("Setting review userId to: {}", userId);
             }
             ReviewProduct savedReview = reviewProductService.addReview(review);
             return ResponseEntity.ok(savedReview);
@@ -114,27 +119,28 @@ public class ApiReviewController {
                         .body(Map.of("error", "Bạn cần đăng nhập để trả lời đánh giá"));
             }
             String username = authentication.getName();
-            System.out.println("Current authenticated user for reply: " + username);
+            logger.debug("Current authenticated user for reply: {}", username);
             Object principal = authentication.getPrincipal();
             Long userId = null;
             if (principal instanceof com.ecommerce.security.UserPrincipal) {
                 userId = ((com.ecommerce.security.UserPrincipal) principal).getUser().getId();
-                System.out.println("Found UserPrincipal with userId: " + userId);
+                logger.debug("Found UserPrincipal with userId: {}", userId);
             } else if (principal instanceof com.ecommerce.pojo.User) {
                 userId = ((com.ecommerce.pojo.User) principal).getId();
-                System.out.println("Found User with userId: " + userId);
+                logger.debug("Found User with userId: {}", userId);
             } else if (reply.getUserId() != null) {
                 userId = reply.getUserId();
-                System.out.println("Using provided userId from request: " + userId);
+                logger.debug("Using provided userId from request: {}", userId);
             } else {
-                System.out.println("Principal type: " + (principal != null ? principal.getClass().getName() : "null"));
-                System.out.println("Authentication details: " + authentication);
+                logger.debug("Principal type: {}",
+                        principal != null ? principal.getClass().getName() : "null");
+                logger.debug("Authentication details: {}", authentication);
             }
             if (userId != null) {
                 reply.setUserId(userId);
-                System.out.println("Setting reply userId to: " + userId);
+                logger.debug("Setting reply userId to: {}", userId);
             } else if (reply.getUserId() == null) {
-                System.out.println("Warning: Could not extract userId, using default");
+                logger.warn("Could not extract userId, using default");
                 reply.setUserId(1L);
             }
             ReviewReply savedReply = reviewReplyService.addReply(reply);
@@ -172,7 +178,7 @@ public class ApiReviewController {
                         }
                     }
                 } catch (Exception ex) {
-                    System.err.println("Cannot load user data for review #" + review.getId() + ": " + ex.getMessage());
+                    logger.warn("Cannot load user data for review #{}", review.getId(), ex);
                 }
                 enhancedReviews.add(enhancedReview);
             }
@@ -215,7 +221,7 @@ public class ApiReviewController {
                         }
                     }
                 } catch (Exception ex) {
-                    System.err.println("Cannot load user data for reply #" + reply.getId() + ": " + ex.getMessage());
+                    logger.warn("Cannot load user data for reply #{}", reply.getId(), ex);
                 }
                 enhancedReplies.add(enhancedReply);
             }

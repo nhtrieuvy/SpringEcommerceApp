@@ -19,6 +19,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,8 @@ import java.util.Map;
 @RequestMapping("/api/seller/products")
 
 public class ApiSellerProductController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiSellerProductController.class);
+
     @Autowired
     private ProductService productService;
     @Autowired
@@ -64,7 +68,7 @@ public class ApiSellerProductController {
             }
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting products for seller", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -91,7 +95,7 @@ public class ApiSellerProductController {
             }
             return new ResponseEntity<>(products, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting products by store: {}", storeId, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -104,9 +108,9 @@ public class ApiSellerProductController {
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest request) {
         try {
-            System.out.println("Received createProduct request with product: " + product);
-            System.out.println("Store ID: " + storeId);
-            System.out.println("Category ID: " + categoryId);
+            logger.debug("Received createProduct request with product: {}", product);
+            logger.debug("Store ID: {}", storeId);
+            logger.debug("Category ID: {}", categoryId);
             User currentUser = userService.findByUsername(userDetails.getUsername());
             if (currentUser == null) {
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -137,7 +141,7 @@ public class ApiSellerProductController {
             }
             return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error creating product", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -154,11 +158,11 @@ public class ApiSellerProductController {
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest request) {
         try {
-            System.out.println("Received product update request");
-            System.out.println("Product ID: " + id);
-            System.out.println("Name: " + name);
-            System.out.println("Category ID: " + categoryId);
-            System.out.println("Image provided: " + (imageFile != null && !imageFile.isEmpty()));
+            logger.debug("Received product update request");
+            logger.debug("Product ID: {}", id);
+            logger.debug("Name: {}", name);
+            logger.debug("Category ID: {}", categoryId);
+            logger.debug("Image provided: {}", imageFile != null && !imageFile.isEmpty());
             User currentUser = userService.findByUsername(userDetails.getUsername());
             if (currentUser == null) {
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -202,7 +206,7 @@ public class ApiSellerProductController {
             response.put("success", true);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error updating product: {}", id, e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("message", "Không thể cập nhật sản phẩm: " + e.getMessage());
             errorResponse.put("success", false);
@@ -238,7 +242,7 @@ public class ApiSellerProductController {
                     IpUtils.getClientIpAddress(request));
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error deleting product: {}", id, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -268,7 +272,7 @@ public class ApiSellerProductController {
             response.put("product", updatedProduct);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error uploading product image for product: {}", id, e);
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Không thể tải lên hình ảnh: " + e.getMessage());
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -286,11 +290,11 @@ public class ApiSellerProductController {
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            System.out.println("Received update product with image request");
-            System.out.println("Product ID: " + id);
-            System.out.println("Name: " + name);
-            System.out.println("Category ID: " + categoryId);
-            System.out.println("Image provided: " + (imageFile != null && !imageFile.isEmpty()));
+            logger.debug("Received update product with image request");
+            logger.debug("Product ID: {}", id);
+            logger.debug("Name: {}", name);
+            logger.debug("Category ID: {}", categoryId);
+            logger.debug("Image provided: {}", imageFile != null && !imageFile.isEmpty());
             User currentUser = userService.findByUsername(userDetails.getUsername());
             if (currentUser == null) {
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -328,7 +332,7 @@ public class ApiSellerProductController {
             response.put("success", true);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error updating product with image: {}", id, e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("message", "Không thể cập nhật sản phẩm: " + e.getMessage());
             errorResponse.put("success", false);
@@ -357,7 +361,7 @@ public class ApiSellerProductController {
             Product updatedProduct = productService.update(existingProduct);
             return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error updating product status: {}", id, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -386,7 +390,7 @@ public class ApiSellerProductController {
             }
             return new ResponseEntity<>(stores, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting stores for seller", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -402,11 +406,11 @@ public class ApiSellerProductController {
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @AuthenticationPrincipal UserDetails userDetails) {
         try {
-            System.out.println("Received create product with image request");
-            System.out.println("Name: " + name);
-            System.out.println("Store ID: " + storeId);
-            System.out.println("Category ID: " + categoryId);
-            System.out.println("Image provided: " + (imageFile != null && !imageFile.isEmpty()));
+            logger.debug("Received create product with image request");
+            logger.debug("Name: {}", name);
+            logger.debug("Store ID: {}", storeId);
+            logger.debug("Category ID: {}", categoryId);
+            logger.debug("Image provided: {}", imageFile != null && !imageFile.isEmpty());
             User currentUser = userService.findByUsername(userDetails.getUsername());
             if (currentUser == null) {
                 return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -444,7 +448,7 @@ public class ApiSellerProductController {
             response.put("success", true);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error creating product with image", e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("message", "Không thể tạo sản phẩm: " + e.getMessage());
             errorResponse.put("success", false);

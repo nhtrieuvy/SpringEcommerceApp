@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -14,6 +16,8 @@ import java.util.HashMap;
 @RequestMapping("/api/wishlist")
 
 public class ApiWishlistController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiWishlistController.class);
+
     @Autowired
     private WishlistService wishlistService;
 
@@ -23,7 +27,7 @@ public class ApiWishlistController {
             List<WishlistItem> wishlistItems = wishlistService.getCurrentUserWishlistItems();
             return new ResponseEntity<>(wishlistItems, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting wishlist items", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -42,7 +46,7 @@ public class ApiWishlistController {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error adding to wishlist", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -57,7 +61,7 @@ public class ApiWishlistController {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error removing from wishlist: {}", productId, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -70,7 +74,7 @@ public class ApiWishlistController {
             response.put("count", count);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting wishlist count", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -85,7 +89,7 @@ public class ApiWishlistController {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error moving wishlist item to cart: {}", productId, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -100,7 +104,7 @@ public class ApiWishlistController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error moving all wishlist items to cart", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -113,7 +117,7 @@ public class ApiWishlistController {
             response.put("inWishlist", inWishlist);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error checking wishlist item: {}", productId, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -128,7 +132,7 @@ public class ApiWishlistController {
                 return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error clearing wishlist", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

@@ -24,10 +24,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/seller")
 public class ApiSellerController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiSellerController.class);
+
     @Autowired
     private SellerRequestService sellerRequestService;
     @Autowired
@@ -78,7 +82,7 @@ public class ApiSellerController {
                     "success", false,
                     "message", e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error registering seller", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi đăng ký: " + e.getMessage()));
@@ -109,7 +113,7 @@ public class ApiSellerController {
             }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error checking seller request status", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi kiểm tra trạng thái: " + e.getMessage()));
@@ -128,7 +132,7 @@ public class ApiSellerController {
                     page, size, status, sortBy, sortDir);
             return ResponseEntity.ok(paginationResult);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting seller requests", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi lấy danh sách yêu cầu: " + e.getMessage()));
@@ -148,7 +152,7 @@ public class ApiSellerController {
                     "success", true,
                     "request", request));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting seller request by id: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi lấy thông tin yêu cầu: " + e.getMessage()));
@@ -183,7 +187,7 @@ public class ApiSellerController {
                     "success", true,
                     "statistics", statistics));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting seller request statistics", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi lấy thống kê yêu cầu: " + e.getMessage()));
@@ -213,7 +217,7 @@ public class ApiSellerController {
                     "success", false,
                     "message", e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error approving seller request: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi phê duyệt yêu cầu: " + e.getMessage()));
@@ -248,7 +252,7 @@ public class ApiSellerController {
                     "success", false,
                     "message", e.getMessage()));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error rejecting seller request: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi từ chối yêu cầu: " + e.getMessage()));
@@ -258,7 +262,7 @@ public class ApiSellerController {
     private User findUserFromRequest(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
-            System.out.println("Getting user from SecurityContext: " + authentication.getName());
+            logger.debug("Getting user from SecurityContext: {}", authentication.getName());
             User user = userService.findByUsername(authentication.getName());
             if (user != null) {
                 return user;
@@ -266,7 +270,7 @@ public class ApiSellerController {
         }
         String jwtUsername = (String) request.getAttribute("jwt_username");
         if (jwtUsername != null) {
-            System.out.println("Getting user from request attribute: " + jwtUsername);
+            logger.debug("Getting user from request attribute: {}", jwtUsername);
             User user = userService.findByUsername(jwtUsername);
             if (user != null) {
                 return user;
@@ -278,11 +282,11 @@ public class ApiSellerController {
                 String token = authHeader.substring(7);
                 String username = JwtUtils.extractUsername(token);
                 if (username != null) {
-                    System.out.println("Getting user from JWT token: " + username);
+                    logger.debug("Getting user from JWT token: {}", username);
                     return userService.findByUsername(username);
                 }
             } catch (Exception e) {
-                System.out.println("Error extracting username from token: " + e.getMessage());
+                logger.warn("Error extracting username from token: {}", e.getMessage(), e);
             }
         }
         return null;
@@ -348,19 +352,19 @@ public class ApiSellerController {
                     int month = orderCal.get(Calendar.MONTH) + 1;
                     int quarter = (month - 1) / 3 + 1;
                     String quarterKey = year + "-Q" + quarter;
-                    revenueByPeriod.merge(quarterKey, order.getTotalAmount(), Double::sum);
+                    revenueByPeriod.merge(quarterKey, order.getTotalAmount(), (current, add) -> current + add);
                 }
             } else if ("year".equals(period)) {
                 periodFormat = new SimpleDateFormat("yyyy");
                 for (Order order : filteredOrders) {
                     String yearKey = periodFormat.format(order.getOrderDate());
-                    revenueByPeriod.merge(yearKey, order.getTotalAmount(), Double::sum);
+                    revenueByPeriod.merge(yearKey, order.getTotalAmount(), (current, add) -> current + add);
                 }
             } else {
                 periodFormat = new SimpleDateFormat("yyyy-MM");
                 for (Order order : filteredOrders) {
                     String monthKey = periodFormat.format(order.getOrderDate());
-                    revenueByPeriod.merge(monthKey, order.getTotalAmount(), Double::sum);
+                    revenueByPeriod.merge(monthKey, order.getTotalAmount(), (current, add) -> current + add);
                 }
             }
             Map<String, Integer> productSales = new HashMap<>();
@@ -369,8 +373,12 @@ public class ApiSellerController {
                 if (order.getOrderDetails() != null) {
                     order.getOrderDetails().forEach(detail -> {
                         String productName = detail.getProduct().getName();
-                        productSales.merge(productName, detail.getQuantity(), Integer::sum);
-                        productRevenue.merge(productName, detail.getQuantity() * detail.getPrice(), Double::sum);
+                        Integer quantity = detail.getQuantity();
+                        int safeQuantity = quantity != null ? quantity : 0;
+                        productSales.merge(productName, safeQuantity,
+                                (current, add) -> (current == null ? 0 : current) + (add == null ? 0 : add));
+                        productRevenue.merge(productName, safeQuantity * detail.getPrice(),
+                            (current, add) -> current + add);
                     });
                 }
             }
@@ -392,7 +400,8 @@ public class ApiSellerController {
                         String categoryName = detail.getProduct().getCategory() != null
                                 ? detail.getProduct().getCategory().getName()
                                 : "Uncategorized";
-                        categoryRevenue.merge(categoryName, detail.getQuantity() * detail.getPrice(), Double::sum);
+                        categoryRevenue.merge(categoryName, detail.getQuantity() * detail.getPrice(),
+                            (current, add) -> current + add);
                     });
                 }
             }
@@ -429,7 +438,7 @@ public class ApiSellerController {
                     "success", true,
                     "data", statistics));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting seller statistics", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi lấy thống kê: " + e.getMessage()));

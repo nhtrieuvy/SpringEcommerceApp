@@ -11,6 +11,10 @@ server:
     key-store-type: ${SERVER_SSL_KEY_STORE_TYPE:PKCS12}
 
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
   forward-headers-strategy: none
   servlet:
     multipart:
@@ -35,6 +39,9 @@ app:
   email:
     from: nhanhgon24@gmail.com
   url: ${APP_URL:https://localhost:8080}
+  security:
+    seed-admin-enabled: true
+    seed-admin-password: password
 
 logging:
   level:

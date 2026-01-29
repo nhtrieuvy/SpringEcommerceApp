@@ -11,11 +11,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/password")
 
 public class ApiPasswordResetController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiPasswordResetController.class);
+
     @Autowired
     private UserService userService;
     @Autowired
@@ -45,7 +49,7 @@ public class ApiPasswordResetController {
                     "success", true,
                     "message", "Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư của bạn."));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error sending password reset email", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Có lỗi xảy ra khi gửi email đặt lại mật khẩu: " + e.getMessage()));
@@ -55,7 +59,7 @@ public class ApiPasswordResetController {
     @GetMapping("/reset/validate")
     public ResponseEntity<?> validateResetToken(@RequestParam("token") String token) {
         String result = passwordResetService.validatePasswordResetToken(token);
-        System.out.println("Kết quả xác thực token: " + result);
+        logger.debug("Kết quả xác thực token: {}", result);
         Map<String, Object> response = new HashMap<>();
         if (result != null) {
             response.put("success", false);
@@ -118,7 +122,7 @@ public class ApiPasswordResetController {
                     "success", true,
                     "message", "Mật khẩu đã được đặt lại thành công"));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error resetting password", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Có lỗi xảy ra khi đặt lại mật khẩu: " + e.getMessage()));

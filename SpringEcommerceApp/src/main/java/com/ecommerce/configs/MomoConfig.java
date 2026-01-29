@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-// @PropertySource("classpath:application.properties")
 public class MomoConfig {
 
     @Value("${momo.partnerCode:MOMO}")
@@ -53,25 +52,4 @@ public class MomoConfig {
         return requestType;
     }
 
-    // public String getApiEndpoint() {
-    // return apiEndpoint;
-    // }
-
-    // If the MoMo SDK requires an initialized client object (like PayPal's
-    // APIContext),
-    // you would create a @Bean method here to provide it.
-    // For example:
-    /*
-     * @Bean
-     * public MomoClient momoClient() {
-     * // Initialize and configure your MoMo client using the properties above
-     * // This is highly dependent on the specific MoMo SDK
-     * MomoClient client = new MomoClient(partnerCode, accessKey, secretKey);
-     * // any other configurations
-     * return client;
-     * }
-     */
-
-    // For now, this config class primarily makes the credentials available.
-    // The actual usage will depend on how MoMo's API or SDK works.
 }

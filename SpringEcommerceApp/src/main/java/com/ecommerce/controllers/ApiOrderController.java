@@ -26,6 +26,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +38,8 @@ import java.util.Map;
 @RequestMapping("/api/orders")
 
 public class ApiOrderController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiOrderController.class);
+
     @Autowired
     private OrderService orderService;
     @Autowired
@@ -168,17 +172,15 @@ public class ApiOrderController {
             }
             try {
                 List<OrderSummaryDTO> orders = orderService.findByUserIdAsDTO(user.getId());
-                System.out.println("Controller: About to return " + orders.size() + " order DTOs to frontend");
+                logger.debug("About to return {} order DTOs to frontend", orders.size());
                 return ResponseEntity.ok(orders);
             } catch (Exception e) {
-                System.err.println("Error fetching orders for user " + user.getId() + ": " + e.getMessage());
-                e.printStackTrace();
+                logger.error("Error fetching orders for user {}", user.getId(), e);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("success", false, "message", "Lỗi khi tải dữ liệu đơn hàng: " + e.getMessage()));
             }
         } catch (Exception e) {
-            System.err.println("Unexpected error in getMyOrders: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Unexpected error in getMyOrders", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi hệ thống: " + e.getMessage()));
         }
@@ -208,7 +210,7 @@ public class ApiOrderController {
             try {
                 emailService.sendOrderConfirmationEmail(order);
             } catch (Exception e) {
-                System.err.println("Failed to send order confirmation email: " + e.getMessage());
+                logger.warn("Failed to send order confirmation email", e);
             }
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -258,7 +260,7 @@ public class ApiOrderController {
             try {
                 emailService.sendOrderStatusUpdateEmail(order, previousStatus, "PROCESSING");
             } catch (Exception e) {
-                System.err.println("Failed to send payment completion email: " + e.getMessage());
+                logger.warn("Failed to send payment completion email", e);
             }
             Map<String, Object> orderResponse = Map.of(
                     "id", order.getId(),
@@ -271,7 +273,7 @@ public class ApiOrderController {
                     "message", "Payment completed successfully",
                     "order", orderResponse));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error marking payment completed for order: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
@@ -316,10 +318,9 @@ public class ApiOrderController {
             }
             try {
                 emailService.sendOrderStatusUpdateEmail(order, previousStatus, status);
-                System.out.println("Email notification sent successfully for order #" + order.getId());
+                logger.debug("Email notification sent successfully for order #{}", order.getId());
             } catch (Exception e) {
-                System.err.println("Failed to send order status update email: " + e.getMessage());
-                e.printStackTrace();
+                logger.warn("Failed to send order status update email", e);
             }
             Map<String, Object> safeOrderData = Map.of(
                     "id", order.getId(),
@@ -479,7 +480,7 @@ public class ApiOrderController {
                     "success", true,
                     "order", orderResponse));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting full order details: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
@@ -509,15 +510,14 @@ public class ApiOrderController {
             Payment payment = new Payment();
             try {
                 String paymentMethodStr = orderDTO.getPaymentMethod();
-                System.out.println("DEBUG: Received payment method: '" + paymentMethodStr + "'");
+                logger.debug("Received payment method: '{}'", paymentMethodStr);
                 PaymentMethod paymentMethod = PaymentMethod
                         .valueOf(paymentMethodStr != null ? paymentMethodStr.toUpperCase()
                                 : PaymentMethod.CASH_ON_DELIVERY.name());
                 payment.setPaymentMethod(paymentMethod);
-                System.out.println("DEBUG: Successfully set payment method to: " + paymentMethod);
+                logger.debug("Successfully set payment method to: {}", paymentMethod);
             } catch (IllegalArgumentException e) {
-                System.err.println("ERROR: Invalid payment method '" + orderDTO.getPaymentMethod() +
-                        "', falling back to CASH_ON_DELIVERY. Error: " + e.getMessage());
+                logger.warn("Invalid payment method '{}', falling back to CASH_ON_DELIVERY", orderDTO.getPaymentMethod(), e);
                 payment.setPaymentMethod(PaymentMethod.CASH_ON_DELIVERY);
             }
             payment.setAmount(orderDTO.getTotal() != null ? orderDTO.getTotal() : 0.0);
@@ -585,7 +585,7 @@ public class ApiOrderController {
             try {
                 emailService.sendOrderConfirmationEmail(order);
             } catch (Exception e) {
-                System.err.println("Failed to send order confirmation email: " + e.getMessage());
+                logger.warn("Failed to send order confirmation email", e);
             }
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -625,23 +625,22 @@ public class ApiOrderController {
             Payment payment = paymentService.getPaymentByOrderId(order.getId());
             boolean isNewPayment = false;
             if (payment == null) {
-                System.out.println("DEBUG: Creating new payment record for order: " + order.getId());
+                logger.debug("Creating new payment record for order: {}", order.getId());
                 payment = new Payment();
                 payment.setOrder(order);
                 payment.setPaymentMethod(PaymentMethod.PAYPAL);
                 payment.setAmount(amount);
                 isNewPayment = true;
             } else {
-                System.out.println("DEBUG: Updating existing payment record: " + payment.getId() +
-                        " with current PaymentMethod: " + payment.getPaymentMethod() +
-                        " and status: " + payment.getStatus());
+                logger.debug("Updating existing payment record: {} with PaymentMethod: {} and status: {}",
+                        payment.getId(), payment.getPaymentMethod(), payment.getStatus());
                 if (payment.getPaymentMethod() != PaymentMethod.PAYPAL) {
-                    System.out.println("WARNING: Payment method was " + payment.getPaymentMethod() +
-                            ", updating to PAYPAL for PayPal completion");
+                    logger.warn("Payment method was {}, updating to PAYPAL for PayPal completion",
+                            payment.getPaymentMethod());
                     payment.setPaymentMethod(PaymentMethod.PAYPAL);
                 }
             }
-            System.out.println("Setting payment status to COMPLETED...");
+            logger.debug("Setting payment status to COMPLETED...");
             payment.setStatus("COMPLETED");
             payment.setTransactionId(paypalOrderId);
             payment.setPaypalPayerId(paypalPayerId);
@@ -650,16 +649,15 @@ public class ApiOrderController {
             try {
                 if (isNewPayment) {
                     Payment savedPayment = paymentService.save(payment);
-                    System.out.println("Payment saved successfully with ID: " + savedPayment.getId() + " and status: "
-                            + savedPayment.getStatus());
+                    logger.debug("Payment saved successfully with ID: {} and status: {}",
+                            savedPayment.getId(), savedPayment.getStatus());
                 } else {
                     Payment updatedPayment = paymentService.update(payment);
-                    System.out.println("Payment updated successfully: ID=" + updatedPayment.getId() + ", Status="
-                            + updatedPayment.getStatus());
+                    logger.debug("Payment updated successfully: ID={}, Status={}",
+                            updatedPayment.getId(), updatedPayment.getStatus());
                 }
             } catch (Exception paymentException) {
-                System.err.println("Error saving/updating payment: " + paymentException.getMessage());
-                paymentException.printStackTrace();
+                logger.error("Error saving/updating payment", paymentException);
                 throw paymentException;
             }
             String previousStatus = order.getStatus();
@@ -673,7 +671,7 @@ public class ApiOrderController {
             try {
                 emailService.sendOrderStatusUpdateEmail(order, previousStatus, "PROCESSING");
             } catch (Exception e) {
-                System.err.println("Failed to send payment completion email: " + e.getMessage());
+                logger.warn("Failed to send payment completion email", e);
             }
             Map<String, Object> orderResponse = Map.of(
                     "id", order.getId(),
@@ -694,7 +692,7 @@ public class ApiOrderController {
                     "order", orderResponse,
                     "payment", paymentResponse));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error marking PayPal payment completed for order: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }
@@ -764,13 +762,12 @@ public class ApiOrderController {
                         .body(Map.of("success", false, "message", "User not found"));
             }
             List<OrderSummaryDTO> orderDTOs = orderService.findOrdersBySellerIdAsDTO(user.getId());
-            System.out.println("Orders found for seller ID " + user.getId() + ": " + orderDTOs.size());
+            logger.debug("Orders found for seller ID {}: {}", user.getId(), orderDTOs.size());
             if (!orderDTOs.isEmpty()) {
                 OrderSummaryDTO firstOrder = orderDTOs.get(0);
-                System.out.println("Sample order data - ID: " + firstOrder.getId()
-                        + ", Customer: " + firstOrder.getCustomerName()
-                        + ", Store: " + firstOrder.getStoreName()
-                        + ", First Product: " + firstOrder.getFirstProductName());
+                logger.debug("Sample order data - ID: {}, Customer: {}, Store: {}, First Product: {}",
+                        firstOrder.getId(), firstOrder.getCustomerName(),
+                        firstOrder.getStoreName(), firstOrder.getFirstProductName());
             }
             if (status != null && !status.isEmpty() && !status.equals("ALL")) {
                 orderDTOs = orderDTOs.stream()

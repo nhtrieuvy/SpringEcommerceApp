@@ -8,13 +8,17 @@ import com.ecommerce.services.UserService;
 import java.util.Calendar;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional
 public class PasswordResetServiceImpl implements PasswordResetService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PasswordResetServiceImpl.class);
 
     private static final int EXPIRATION_TIME = 24;
 
@@ -25,19 +29,19 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private UserService userService;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public void createPasswordResetTokenForUser(User user, String token) {
-        System.out.println("===== CREATING PASSWORD RESET TOKEN =====");
-        System.out.println("User: " + user.getUsername() + " (ID: " + user.getId() + ")");
-        System.out.println("Token: " + token);
+        logger.debug("===== CREATING PASSWORD RESET TOKEN =====");
+        logger.debug("User: {} (ID: {})", user.getUsername(), user.getId());
+        logger.debug("Token: {}", token);
 
         try {
             PasswordResetToken existingToken = passwordResetTokenRepository.findByUser(user);
             if (existingToken != null) {
-                System.out.println("Đã tìm thấy token cũ: " + existingToken.getToken());
-                System.out.println("Xóa token cũ");
+                logger.debug("Đã tìm thấy token cũ: {}", existingToken.getToken());
+                logger.debug("Xóa token cũ");
                 passwordResetTokenRepository.delete(existingToken);
             }
 
@@ -45,67 +49,65 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             myToken.setToken(token);
             myToken.setUser(user);
             myToken.setExpiryDate(calculateExpiryDate());
-            System.out.println("Hạn sử dụng token: " + myToken.getExpiryDate());
+            logger.debug("Hạn sử dụng token: {}", myToken.getExpiryDate());
 
-            System.out.println("Lưu token mới vào database");
+            logger.debug("Lưu token mới vào database");
             passwordResetTokenRepository.save(myToken);
 
             PasswordResetToken savedToken = passwordResetTokenRepository.findByToken(token);
             if (savedToken != null) {
-                System.out.println("Token đã được lưu thành công trong database!");
-                System.out.println("ID: " + savedToken.getId());
-                System.out.println("Token: " + savedToken.getToken());
-                System.out.println("User ID: " + savedToken.getUser().getId());
+                logger.debug("Token đã được lưu thành công trong database!");
+                logger.debug("ID: {}", savedToken.getId());
+                logger.debug("Token: {}", savedToken.getToken());
+                logger.debug("User ID: {}", savedToken.getUser().getId());
             } else {
-                System.err.println("LỖI: Token không được tìm thấy trong database sau khi lưu!");
+                logger.error("LỖI: Token không được tìm thấy trong database sau khi lưu!");
             }
         } catch (Exception e) {
-            System.err.println("LỖI khi tạo password reset token: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("LỖI khi tạo password reset token", e);
             throw e;
         }
-        System.out.println("===== KẾT THÚC TẠO TOKEN =====");
+        logger.debug("===== KẾT THÚC TẠO TOKEN =====");
     }
 
     @Override
     public String validatePasswordResetToken(String token) {
-        System.out.println("===== VALIDATING PASSWORD RESET TOKEN =====");
-        System.out.println("Token cần xác thực: " + token);
+        logger.debug("===== VALIDATING PASSWORD RESET TOKEN =====");
+        logger.debug("Token cần xác thực: {}", token);
 
         try {
-            System.out.println("Tìm kiếm token trong database...");
+            logger.debug("Tìm kiếm token trong database...");
             PasswordResetToken passToken = passwordResetTokenRepository.findByToken(token);
 
             if (passToken == null) {
-                System.err.println("LỖI: Token không tồn tại trong database!");
+                logger.error("LỖI: Token không tồn tại trong database!");
                 return "invalidToken";
             }
 
-            System.out.println("Tìm thấy token trong database. ID: " + passToken.getId());
+            logger.debug("Tìm thấy token trong database. ID: {}", passToken.getId());
 
             User user = passToken.getUser();
             if (user == null) {
-                System.err.println("LỖI: Không tìm thấy user liên kết với token!");
+                logger.error("LỖI: Không tìm thấy user liên kết với token!");
                 return "userNotFound";
             }
 
-            System.out.println("User liên kết với token: " + user.getUsername());
+            logger.debug("User liên kết với token: {}", user.getUsername());
 
             Calendar cal = Calendar.getInstance();
             if (passToken.getExpiryDate().before(cal.getTime())) {
-                System.err.println("LỖI: Token đã hết hạn!");
-                System.err.println("Hạn sử dụng: " + passToken.getExpiryDate());
-                System.err.println("Thời gian hiện tại: " + cal.getTime());
+                logger.error("LỖI: Token đã hết hạn!");
+                logger.error("Hạn sử dụng: {}", passToken.getExpiryDate());
+                logger.error("Thời gian hiện tại: {}", cal.getTime());
                 passwordResetTokenRepository.delete(passToken);
                 return "expired";
             }
 
-            System.out.println("Token hợp lệ và chưa hết hạn!");
-            System.out.println("===== KẾT THÚC XÁC THỰC TOKEN =====");
+            logger.debug("Token hợp lệ và chưa hết hạn!");
+            logger.debug("===== KẾT THÚC XÁC THỰC TOKEN =====");
             return null;
         } catch (Exception e) {
-            System.err.println("LỖI khi xác thực token: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("LỖI khi xác thực token", e);
             return "error";
         }
     }
@@ -121,26 +123,25 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     @Override
     public void changeUserPassword(User user, String password) {
-        System.out.println("===== CHANGING USER PASSWORD =====");
-        System.out.println("User: " + user.getUsername());
+        logger.debug("===== CHANGING USER PASSWORD =====");
+        logger.debug("User: {}", user.getUsername());
         try {
             String encodedPassword = passwordEncoder.encode(password);
             user.setPassword(encodedPassword);
             userService.update(user);
-            System.out.println("Mật khẩu đã được cập nhật thành công!");
+            logger.debug("Mật khẩu đã được cập nhật thành công!");
 
-            System.out.println("Tìm và xóa token...");
+            logger.debug("Tìm và xóa token...");
             PasswordResetToken token = passwordResetTokenRepository.findByUser(user);
             if (token != null) {
-                System.out.println("Tìm thấy token. Xóa token: " + token.getToken());
+                logger.debug("Tìm thấy token. Xóa token: {}", token.getToken());
                 passwordResetTokenRepository.delete(token);
             } else {
-                System.out.println("Không tìm thấy token cho user này.");
+                logger.debug("Không tìm thấy token cho user này.");
             }
-            System.out.println("===== KẾT THÚC THAY ĐỔI MẬT KHẨU =====");
+            logger.debug("===== KẾT THÚC THAY ĐỔI MẬT KHẨU =====");
         } catch (Exception e) {
-            System.err.println("LỖI khi thay đổi mật khẩu: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("LỖI khi thay đổi mật khẩu", e);
             throw e;
         }
     }

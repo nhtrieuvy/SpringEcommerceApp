@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.HashMap;
@@ -20,6 +22,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/payments")
 public class ApiPaymentController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiPaymentController.class);
+
     @Autowired
     private PaymentService paymentService;
     @Autowired
@@ -127,7 +131,7 @@ public class ApiPaymentController {
             PaymentResponseDTO response = paymentService.executePaypalPayment(paymentId, payerId);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to execute PayPal payment", e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Failed to execute PayPal payment: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
@@ -142,12 +146,11 @@ public class ApiPaymentController {
             setDefaultUrls(paymentRequestDTO, request);
             PaymentResponseDTO paymentResponse = paymentService.processPayment(paymentRequestDTO);
             if (paymentResponse.getRedirectUrl() != null) {
-                System.out.println("MoMo redirect URL: " + paymentResponse.getRedirectUrl());
+                logger.info("MoMo redirect URL: {}", paymentResponse.getRedirectUrl());
             }
             return ResponseEntity.ok(paymentResponse);
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("MoMo payment creation error: " + e.getMessage());
+            logger.error("MoMo payment creation error", e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Failed to create MoMo payment: " + e.getMessage());
             error.put("details", e.toString());
@@ -196,8 +199,8 @@ public class ApiPaymentController {
                 String errorMessage = message != null ? message : "Thanh toán thất bại";
                 String errorDetail = mapMoMoErrorCode(resultCode);
                 String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
-                System.out.println("MoMo payment return failed for order: " + orderId +
-                        ", message: " + message + ", resultCode: " + resultCode);
+                logger.warn("MoMo payment return failed for order: {}, message: {}, resultCode: {}",
+                    orderId, message, resultCode);
                 redirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
                         "status=error&" +
                         "message=" + java.net.URLEncoder.encode(errorMessage, "UTF-8") + "&" +
@@ -209,8 +212,7 @@ public class ApiPaymentController {
                     .header("Location", redirectUrl)
                     .build();
         } catch (Exception e) {
-            System.err.println("Error in MoMo return callback: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error in MoMo return callback", e);
             String frontendBaseUrl = "https://localhost:3000";
             try {
                 String errorRedirectUrl = frontendBaseUrl + "/checkout/momo/return?" +
@@ -245,7 +247,7 @@ public class ApiPaymentController {
             String responseTime = allParams.get("responseTime");
             String extraData = allParams.get("extraData");
             String signature = allParams.get("signature");
-            System.out.println("MoMo IPN received - Order ID: " + orderId + ", Result Code: " + resultCode);
+            logger.info("MoMo IPN received - Order ID: {}, Result Code: {}", orderId, resultCode);
             boolean isValidPayment = moMoService.verifyMoMoPayment(
                     partnerCode, orderId, requestId, amount, orderInfo, orderType,
                     transId, resultCode, message, payType, responseTime, extraData, signature);
@@ -253,26 +255,25 @@ public class ApiPaymentController {
                 if ("0".equals(resultCode)) {
                     String extractedOrderId = extractOrderIdFromMoMoOrderId(orderId);
                     boolean paymentUpdated = paymentService.updatePaymentStatus(extractedOrderId, "COMPLETED", transId);
-                    System.out.println(
-                            "MoMo payment confirmed for order: " + extractedOrderId + ", updated: " + paymentUpdated);
+                    logger.info("MoMo payment confirmed for order: {}, updated: {}", extractedOrderId, paymentUpdated);
                     return ResponseEntity.ok(Map.of(
                             "status", "success",
                             "message", "Payment confirmed",
                             "paymentUpdated", paymentUpdated));
                 } else {
-                    System.out.println("MoMo payment failed for order: " + orderId + ", message: " + message);
+                    logger.warn("MoMo payment failed for order: {}, message: {}", orderId, message);
                     return ResponseEntity.ok(Map.of(
                             "status", "failed",
                             "message", "Payment failed: " + message));
                 }
             } else {
-                System.err.println("Invalid MoMo signature for order: " + orderId);
+                logger.warn("Invalid MoMo signature for order: {}", orderId);
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", "error",
                         "message", "Invalid signature"));
             }
         } catch (Exception e) {
-            System.err.println("Error in MoMo IPN callback: " + e.getMessage());
+            logger.error("Error in MoMo IPN callback", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing notification");
         }
     }
@@ -281,21 +282,21 @@ public class ApiPaymentController {
         if (momoOrderId == null) {
             return null;
         }
-        System.out.println("Extracting order ID from MoMo order ID: " + momoOrderId);
+        logger.debug("Extracting order ID from MoMo order ID: {}", momoOrderId);
         if (momoOrderId.startsWith("ORDER_")) {
             String extracted = momoOrderId.substring("ORDER_".length());
-            System.out.println("Full extracted part (after ORDER_ prefix): " + extracted);
+            logger.debug("Full extracted part (after ORDER_ prefix): {}", extracted);
             if (extracted.contains("_")) {
                 String orderIdPart = extracted.split("_")[0];
-                System.out.println("Extracted order ID (first part before underscore): " + orderIdPart);
+                logger.debug("Extracted order ID (first part before underscore): {}", orderIdPart);
                 try {
                     Long.parseLong(orderIdPart);
                     return orderIdPart;
                 } catch (NumberFormatException e) {
-                    System.out.println("Extracted part is not numeric: " + orderIdPart);
+                    logger.debug("Extracted part is not numeric: {}", orderIdPart);
                 }
             }
-            System.out.println("Extracted order ID (no underscore found): " + extracted);
+            logger.debug("Extracted order ID (no underscore found): {}", extracted);
             return extracted;
         }
         if (momoOrderId.contains("orderId=ORDER_")) {
@@ -304,15 +305,15 @@ public class ApiPaymentController {
             if (endIndex == -1)
                 endIndex = momoOrderId.length();
             String extracted = momoOrderId.substring(startIndex, endIndex);
-            System.out.println("Extracted from URL parameter: " + extracted);
+            logger.debug("Extracted from URL parameter: {}", extracted);
             if (extracted.contains("_")) {
                 String orderIdPart = extracted.split("_")[0];
-                System.out.println("Extracted order ID from URL (first part before underscore): " + orderIdPart);
+                logger.debug("Extracted order ID from URL (first part before underscore): {}", orderIdPart);
                 try {
                     Long.parseLong(orderIdPart);
                     return orderIdPart;
                 } catch (NumberFormatException e) {
-                    System.out.println("Extracted part from URL is not numeric: " + orderIdPart);
+                    logger.debug("Extracted part from URL is not numeric: {}", orderIdPart);
                 }
             }
             return extracted;

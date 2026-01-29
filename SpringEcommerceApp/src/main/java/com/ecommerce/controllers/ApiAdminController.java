@@ -13,12 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/admin")
 public class ApiAdminController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiAdminController.class);
 
     @Autowired
     private UserService userService;
@@ -75,7 +78,7 @@ public class ApiAdminController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting users", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy danh sách người dùng: " + e.getMessage()));
         }
@@ -93,7 +96,7 @@ public class ApiAdminController {
             // user.setPassword(null); // Không trả về mật khẩu
             return ResponseEntity.ok(Map.of("success", true, "user", user));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting user by id: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy thông tin người dùng: " + e.getMessage()));
         }
@@ -134,7 +137,7 @@ public class ApiAdminController {
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật thông tin người dùng thành công"));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error updating user: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message",
                             "Lỗi khi cập nhật thông tin người dùng: " + e.getMessage()));
@@ -174,7 +177,7 @@ public class ApiAdminController {
 
             return ResponseEntity.ok(Map.of("success", true, "roles", roleDetails));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting roles", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy danh sách quyền: " + e.getMessage()));
         }
@@ -274,9 +277,8 @@ public class ApiAdminController {
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Cập nhật quyền cho người dùng thành công"));
         } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Chi tiết lỗi khi cập nhật quyền: " + e);
-            System.err.println("RoleIds được gửi: " + request.get("roleIds"));
+            logger.error("Chi tiết lỗi khi cập nhật quyền", e);
+            logger.error("RoleIds được gửi: {}", request.get("roleIds"));
 
             // Trả về chi tiết lỗi để dễ khắc phục
             String errorMsg = "Lỗi khi cập nhật quyền cho người dùng: ";
@@ -362,7 +364,7 @@ public class ApiAdminController {
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa quyền thành công"));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error removing role {} from user {}", roleId, userId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi xóa quyền: " + e.getMessage()));
         }
@@ -404,7 +406,7 @@ public class ApiAdminController {
                             "content", users));
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting users by role: {}", roleName, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi khi lấy danh sách người dùng theo vai trò: " + e.getMessage()));
@@ -428,7 +430,7 @@ public class ApiAdminController {
                 return ((Number) obj).longValue();
             }
         } catch (Exception e) {
-            System.err.println("Error converting to Long: " + e.getMessage());
+            logger.warn("Error converting to Long", e);
         }
 
         return null;
