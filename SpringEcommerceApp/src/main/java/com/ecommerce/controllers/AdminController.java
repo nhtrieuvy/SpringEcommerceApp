@@ -38,6 +38,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,6 +51,7 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
+    private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
     @Autowired
     private UserService userService;
     @Autowired
@@ -185,11 +188,10 @@ public class AdminController {
         model.addAttribute("totalPages", (int) Math.ceil((double) allProducts.size() / size));
         model.addAttribute("activeMenu", "products");
         model.addAttribute("content", "products :: content");
-        System.out.println("Debug: Total products in DB: " + allProducts.size());
-        System.out
-                .println("Debug: Filter params: category=" + category + ", status=" + status + ", keyword=" + keyword);
-        System.out.println("Debug: Page=" + page + ", Size=" + size);
-        System.out.println("Debug: Products after pagination: " + paginatedProducts.size());
+        logger.debug("Total products in DB: {}", allProducts.size());
+        logger.debug("Filter params: category={}, status={}, keyword={}", category, status, keyword);
+        logger.debug("Page={}, Size={}", page, size);
+        logger.debug("Products after pagination: {}", paginatedProducts.size());
         return "admin";
     }
 
@@ -599,7 +601,7 @@ public class AdminController {
             java.nio.file.Files.copy(image.getInputStream(), path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             return "/images/products/" + fileName;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error saving product image", e);
             return null;
         }
     }
@@ -821,8 +823,7 @@ public class AdminController {
             Map<String, Long> statusCounts = (Map<String, Long>) paginationResult.get("statusCounts");
             model.addAttribute("statusCounts", statusCounts);
         } catch (Exception e) {
-            System.err.println("Error using new pagination method, falling back to old method: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error using new pagination method, falling back to old method", e);
             List<Map<String, Object>> allRequests = userService.findAllSellerRequests();
             if (status != null && !status.isEmpty()) {
                 allRequests = allRequests.stream()

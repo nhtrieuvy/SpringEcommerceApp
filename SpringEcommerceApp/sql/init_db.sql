@@ -213,6 +213,11 @@ VALUES
   ('seller', '$2a$10$7EqJtq98hPqEX7fNZaFWoOa5Cw9D6A2qOtH9mI1K1kQZy1uE1K9Ui', 'seller@example.com', 'Seller User', '0900000003', NOW(), NOW(), 1),
   ('user', '$2a$10$7EqJtq98hPqEX7fNZaFWoOa5Cw9D6A2qOtH9mI1K1kQZy1uE1K9Ui', 'user@example.com', 'Regular User', '0900000004', NOW(), NOW(), 1);
 
+-- Extra admin user (password: password)
+INSERT INTO users (username, password, email, fullname, phone, created_date, last_login, is_active)
+VALUES
+  ('admin2', '$2a$10$7EqJtq98hPqEX7fNZaFWoOa5Cw9D6A2qOtH9mI1K1kQZy1uE1K9Ui', 'admin2@example.com', 'Admin User 2', '0900000005', NOW(), NOW(), 1);
+
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u
 JOIN roles r ON r.name = CASE u.username
@@ -221,6 +226,16 @@ JOIN roles r ON r.name = CASE u.username
   WHEN 'seller' THEN 'SELLER'
   ELSE 'USER'
 END;
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id FROM users u
+JOIN roles r ON r.name = 'ADMIN'
+WHERE u.username = 'admin2';
+
+-- Force-reset admin passwords (password: password)
+UPDATE users
+SET password = '$2a$10$7EqJtq98hPqEX7fNZaFWoOa5Cw9D6A2qOtH9mI1K1kQZy1uE1K9Ui'
+WHERE username IN ('admin', 'admin2');
 
 INSERT INTO categories (name, description) VALUES
   ('Electronics', 'Phones, laptops, accessories'),

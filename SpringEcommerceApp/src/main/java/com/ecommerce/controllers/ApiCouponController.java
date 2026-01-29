@@ -3,6 +3,8 @@ package com.ecommerce.controllers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +12,8 @@ import java.util.Map;
 @RequestMapping("/api/coupons")
 
 public class ApiCouponController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiCouponController.class);
+
     @PostMapping("/validate")
     public ResponseEntity<?> validateCoupon(@RequestBody Map<String, String> payload) {
         try {
@@ -40,7 +44,7 @@ public class ApiCouponController {
             }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error validating coupon", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("isValid", false, "message", "Lỗi hệ thống, vui lòng thử lại sau"));
         }

@@ -120,17 +120,11 @@ public class UserRepositoryImpl implements UserRepository {
         }
 
         String normalizedUsername = username.trim();
-
-        User cachedUser = usernameCache.get(normalizedUsername);
-        if (cachedUser != null) {
-            return cachedUser;
-        }
-
         try {
             Session session = sessionFactory.getCurrentSession();
             Query<User> query = session.createQuery("FROM User WHERE username = :username", User.class);
             query.setParameter("username", normalizedUsername);
-            query.setCacheable(true);
+            query.setCacheable(false);
 
             User user = query.uniqueResult();
 
@@ -144,7 +138,7 @@ public class UserRepositoryImpl implements UserRepository {
             return user;
         } catch (Exception e) {
             System.err.println("Error finding user by username: " + e.getMessage());
-            return null;
+            return usernameCache.get(normalizedUsername);
         }
     }
 
@@ -160,7 +154,7 @@ public class UserRepositoryImpl implements UserRepository {
             Session session = sessionFactory.getCurrentSession();
             Query<User> query = session.createQuery("FROM User WHERE email = :email", User.class);
             query.setParameter("email", normalizedEmail);
-            query.setCacheable(true);
+            query.setCacheable(false);
 
             User user = query.uniqueResult();
 
@@ -185,13 +179,39 @@ public class UserRepositoryImpl implements UserRepository {
         if (username == null || password == null) {
             return false;
         }
+        String normalizedUsername = username.trim();
 
-        User user = this.findByUsername(username);
-        if (user == null) {
+        try {
+            Session session = sessionFactory.getCurrentSession();
+            Query<User> query = session.createQuery("FROM User WHERE username = :username", User.class);
+            query.setParameter("username", normalizedUsername);
+            query.setCacheable(false);
+            User user = query.uniqueResult();
+
+            if (user == null) {
+                Query<User> emailQuery = session.createQuery("FROM User WHERE email = :email", User.class);
+                emailQuery.setParameter("email", normalizedUsername.toLowerCase());
+                emailQuery.setCacheable(false);
+                user = emailQuery.uniqueResult();
+            }
+
+            if (user == null || user.getPassword() == null) {
+                return false;
+            }
+
+            // refresh caches for subsequent reads
+            if (user.getUsername() != null) {
+                usernameCache.put(user.getUsername(), user);
+            }
+            if (user.getId() != null) {
+                idCache.put(user.getId(), user);
+            }
+
+            return passwordEncoder.matches(password, user.getPassword());
+        } catch (Exception e) {
+            System.err.println("Error authenticating user: " + e.getMessage());
             return false;
         }
-
-        return passwordEncoder.matches(password, user.getPassword());
     }
 
     @Override

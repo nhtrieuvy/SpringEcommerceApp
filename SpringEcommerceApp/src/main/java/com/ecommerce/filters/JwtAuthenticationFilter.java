@@ -13,10 +13,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Autowired
     private UserService userService;
@@ -25,36 +29,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException { // Thêm CORS headers vào response
-        String origin = request.getHeader("Origin");
-        if (origin != null && (origin.equals("https://localhost:3000") ||
-                origin.contains("ngrok-free.app"))) {
-            response.setHeader("Access-Control-Allow-Origin", origin);
-        } else {
-            response.setHeader("Access-Control-Allow-Origin", "https://localhost:3000");
-        }
-        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With");
-        response.setHeader("Access-Control-Allow-Credentials", "true");
-        response.setHeader("Access-Control-Max-Age", "3600");
+            FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. Cho phép request OPTIONS đi qua mà không kiểm tra JWT
-        if (request.getMethod().equals("OPTIONS")) {
-            System.out.println("OPTIONS request detected, skipping JWT authentication");
-            response.setStatus(HttpServletResponse.SC_OK);
-            return; // Chú ý: trả về ngay lập tức, không tiếp tục filter chain cho OPTIONS
-        }
-
-        System.out.println(
-                "JwtAuthenticationFilter processing request: " + request.getMethod() + " " + request.getRequestURI());
+        logger.debug("JwtAuthenticationFilter processing request: {} {}",
+            request.getMethod(), request.getRequestURI());
 
         final String authHeader = request.getHeader("Authorization");
-        System.out.println("Authorization header: " + authHeader);
+        logger.debug("Authorization header: {}", authHeader);
 
         // 2. Nếu không có header Authorization hoặc không bắt đầu bằng "Bearer ", bỏ
         // qua
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("No JWT token found, continue filter chain");
+            logger.debug("No JWT token found, continue filter chain");
             filterChain.doFilter(request, response);
             return;
         }
@@ -63,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = authHeader.substring(7);
             String username = JwtUtils.extractUsername(jwt);
-            System.out.println("Extracted username from token: " + username);
+            logger.debug("Extracted username from token: {}", username);
 
             // 4. Kiểm tra username và authentication trong context
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -82,27 +68,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     // 7. Đặt authentication vào SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("Authentication set in SecurityContext for user: " + username);
+                    logger.debug("Authentication set in SecurityContext for user: {}", username);
 
                     // 8. Thêm attribute username vào request
                     request.setAttribute("jwt_username", username);
                 } else {
-                    System.out.println("JWT validation failed or user not found");
+                    logger.warn("JWT validation failed or user not found");
                 }
             }
         } catch (Exception e) {
-            System.out.println("Error processing JWT token: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error processing JWT token", e);
         }
 
         // 9. Tiếp tục filter chain
         filterChain.doFilter(request, response);
 
         // 10. Kiểm tra lại xác thực sau khi xử lý
-        System.out.println("After filter chain, authentication: " +
-                (SecurityContextHolder.getContext().getAuthentication() != null
-                        ? SecurityContextHolder.getContext().getAuthentication().getName()
-                        : "null"));
+        logger.debug("After filter chain, authentication: {}",
+            SecurityContextHolder.getContext().getAuthentication() != null
+                ? SecurityContextHolder.getContext().getAuthentication().getName()
+                : "null");
     }
 
 }

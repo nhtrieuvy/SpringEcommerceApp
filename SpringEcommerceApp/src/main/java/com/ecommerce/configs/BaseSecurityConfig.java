@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 
 
 @Configuration
@@ -51,23 +50,19 @@ public class BaseSecurityConfig {
         logger.info("Configuring CORS");
 
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> allowedOrigins = new ArrayList<>();
-        allowedOrigins.add("http://localhost:3000");
-        allowedOrigins.add("https://localhost:3000");
+        List<String> allowedOriginPatterns = new ArrayList<>();
+        allowedOriginPatterns.add("http://localhost:3000");
+        allowedOriginPatterns.add("https://localhost:3000");
+        allowedOriginPatterns.add("https://*.ngrok-free.app");
         if (appUrl != null && !appUrl.isBlank()) {
-            allowedOrigins.add(appUrl);
+            allowedOriginPatterns.add(appUrl);
         }
-        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedOriginPatterns(allowedOriginPatterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-        headers.add("Cross-Origin-Embedder-Policy", "require-corp");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

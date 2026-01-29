@@ -29,7 +29,9 @@ public class MoMoServiceImpl implements MoMoService {
     private MomoConfig moMoConfig;
 
     private final OkHttpClient httpClient = new OkHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public PaymentResponseDTO createMoMoPayment(Order order) {

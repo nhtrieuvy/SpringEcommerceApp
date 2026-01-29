@@ -19,6 +19,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -26,6 +28,8 @@ import java.util.ArrayList;
 @RequestMapping("/api/products")
 
 public class ApiProductController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiProductController.class);
+
     @Autowired
     private ProductService productService;
     @Autowired
@@ -48,7 +52,7 @@ public class ApiProductController {
             }
             return ResponseEntity.ok(products);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error fetching products", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching products: " + e.getMessage());
         }
@@ -63,7 +67,7 @@ public class ApiProductController {
             }
             return ResponseEntity.ok(product);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error fetching product: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching product: " + e.getMessage());
         }
@@ -77,9 +81,9 @@ public class ApiProductController {
             @RequestParam(required = false) Long storeId,
             HttpServletRequest request) {
         try {
-            System.out.println("Received product: " + product);
-            System.out.println("Category ID: " + categoryId);
-            System.out.println("Store ID: " + storeId);
+            logger.debug("Received product: {}", product);
+            logger.debug("Category ID: {}", categoryId);
+            logger.debug("Store ID: {}", storeId);
             if (categoryId != null) {
                 Category category = categoryService.findById(categoryId);
                 if (category != null) {
@@ -113,7 +117,7 @@ public class ApiProductController {
             }
             return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error creating product", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -169,7 +173,7 @@ public class ApiProductController {
             }
             return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error updating product: {}", id, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -200,7 +204,7 @@ public class ApiProductController {
             }
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error deleting product: {}", id, e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -220,7 +224,7 @@ public class ApiProductController {
                     page, size);
             return ResponseEntity.ok(products);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error searching products", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error searching products: " + e.getMessage());
         }
@@ -232,7 +236,7 @@ public class ApiProductController {
             List<ProductComparisonDTO> comparisonResults = productService.compareProductsByCategory(categoryId);
             return ResponseEntity.ok(comparisonResults);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error comparing products by category: {}", categoryId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error comparing products: " + e.getMessage());
         }
@@ -249,7 +253,7 @@ public class ApiProductController {
                     .compareProductsByCategory(product.getCategory().getId());
             return ResponseEntity.ok(comparisonResults);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error comparing products with product: {}", productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error comparing products: " + e.getMessage());
         }
@@ -282,7 +286,7 @@ public class ApiProductController {
             }
             return ResponseEntity.ok(recommendedProducts);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error fetching product recommendations", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching product recommendations: " + e.getMessage());
         }

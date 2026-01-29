@@ -3,6 +3,8 @@ package com.ecommerce.controllers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +14,8 @@ import java.util.Map;
 @RequestMapping("/api/shipping")
 
 public class ApiShippingController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiShippingController.class);
+
     @GetMapping("/methods")
     public ResponseEntity<?> getShippingMethods() {
         try {
@@ -42,7 +46,7 @@ public class ApiShippingController {
             shippingMethods.add(expressShipping);
             return ResponseEntity.ok(shippingMethods);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error getting shipping methods", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", e.getMessage()));
         }

@@ -20,10 +20,13 @@ import java.util.Date;
 import java.util.Base64;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @RestController
 @RequestMapping("/api")
 
 public class ApiUserController {
+    private static final Logger logger = LoggerFactory.getLogger(ApiUserController.class);
     public static class LoginRequest {
         public String username;
         public String password;
@@ -60,9 +63,9 @@ public class ApiUserController {
    
     public ResponseEntity<?> registerUser(@RequestBody Map<String, String> params, HttpServletRequest request) {
         try {
-            System.out.println("=== REGISTER DEBUG ===");
-            System.out.println("Đã nhận request đăng ký dạng JSON");
-            System.out.println("Params: " + params);
+            logger.debug("=== REGISTER DEBUG ===");
+            logger.debug("Đã nhận request đăng ký dạng JSON");
+            logger.debug("Params: {}", params);
             String username = params.get("username");
             String email = params.get("email");
             String password = params.get("password");
@@ -106,15 +109,14 @@ public class ApiUserController {
                                     "resource_type", "auto"));
                     user.setAvatar((String) uploadResult.get("secure_url"));
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    System.err.println("Failed to upload avatar: " + e.getMessage());
+                    logger.error("Failed to upload avatar", e);
                 }
             }            User savedUser = userService.addUser(user);
             String ipAddress = IpUtils.getClientIpAddress(request);
             recentActivityService.logUserRegistration(savedUser.getEmail(), savedUser.getUsername(), ipAddress);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công", "user", savedUser));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error registering user", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi đăng ký: " + e.getMessage()));
         }
@@ -127,7 +129,7 @@ public class ApiUserController {
             @RequestParam(name = "avatar", required = false) MultipartFile avatar,
             HttpServletRequest request) {
         try {
-            System.out.println("=== REGISTER WITH FILE DEBUG ===");
+            logger.debug("=== REGISTER WITH FILE DEBUG ===");
             if (username == null || username.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("success", false, "message", "Username không được để trống"));
@@ -155,7 +157,7 @@ public class ApiUserController {
             User savedUser = userService.addUser(params, avatar);
             return ResponseEntity.ok(Map.of("success", true, "message", "Đăng ký thành công", "user", savedUser));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error registering user with file", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi đăng ký: " + e.getMessage()));
         }
@@ -168,32 +170,32 @@ public class ApiUserController {
             @RequestBody(required = false) LoginRequest loginRequestBody,
             HttpServletRequest request) {
         try {
-            System.out.println("=== LOGIN DEBUG ===");
+            logger.debug("=== LOGIN DEBUG ===");
             String loginUsername = username;
             String loginPassword = password;
             if (loginRequestBody != null) {
-                System.out.println("Login với JSON body");
+                logger.debug("Login với JSON body");
                 loginUsername = loginRequestBody.username;
                 loginPassword = loginRequestBody.password;
             } else {
-                System.out.println("Login với form parameters");
+                logger.debug("Login với form parameters");
             }
-            System.out.println("Login attempt - Username: " + loginUsername);
+            logger.debug("Login attempt - Username: {}", loginUsername);
             if (loginUsername == null || loginPassword == null) {
-                System.out.println("ERROR: Missing username or password");
+                logger.warn("ERROR: Missing username or password");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new AuthResponse(false, "Tên đăng nhập hoặc mật khẩu không được để trống", null, null));
             }
             try {
                 boolean authenticated = userService.authenticate(loginUsername, loginPassword);
                 if (!authenticated) {
-                    System.out.println("ERROR: Authentication failed for user: " + loginUsername);
+                    logger.warn("ERROR: Authentication failed for user: {}", loginUsername);
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                             .body(new AuthResponse(false, "Tên đăng nhập hoặc mật khẩu không chính xác", null, null));
                 }
                 User user = userService.findByUsername(loginUsername);
                 if (user == null) {
-                    System.out.println("ERROR: User authenticated but not found: " + loginUsername);
+                    logger.error("ERROR: User authenticated but not found: {}", loginUsername);
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(new AuthResponse(false, "Lỗi hệ thống: User không tồn tại sau khi xác thực", null,
                                     null));
@@ -203,17 +205,15 @@ public class ApiUserController {
                 String ipAddress = IpUtils.getClientIpAddress(request);
                 recentActivityService.logUserLogin(user.getEmail(), user.getUsername(), ipAddress);
                 String token = JwtUtils.generateToken(user.getUsername());
-                System.out.println("Login SUCCESS for user: " + loginUsername);
+                logger.info("Login SUCCESS for user: {}", loginUsername);
                 return ResponseEntity.ok(new AuthResponse(true, "Đăng nhập thành công", token, user));
             } catch (Exception e) {
-                System.err.println("ERROR during authentication: " + e.getMessage());
-                e.printStackTrace();
+                logger.error("ERROR during authentication", e);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(new AuthResponse(false, "Lỗi xác thực: " + e.getMessage(), null, null));
             }
         } catch (Exception e) {
-            System.err.println("ERROR in login endpoint: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("ERROR in login endpoint", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new AuthResponse(false, "Lỗi đăng nhập: " + e.getMessage(), null, null));
         }
@@ -254,22 +254,22 @@ public class ApiUserController {
             @RequestParam(value = "avatar", required = false) MultipartFile avatar,
             HttpServletRequest request) {
         try {
-            System.out.println("Update profile request: " + request.getRequestURI());
-            System.out.println("Authorization header: " + request.getHeader("Authorization"));
+            logger.debug("Update profile request: {}", request.getRequestURI());
+            logger.debug("Authorization header: {}", request.getHeader("Authorization"));
             User currentUser = findUserFromRequest(request);
             if (currentUser == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "success", false,
                         "message", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại."));
             }
-            System.out.println("Found user: " + currentUser.getUsername());
+            logger.debug("Found user: {}", currentUser.getUsername());
             updateUserInfo(params, avatar, currentUser);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Cập nhật thông tin thành công!",
                     "user", currentUser));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error updating user profile", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi cập nhật thông tin: " + e.getMessage()));
@@ -301,15 +301,15 @@ public class ApiUserController {
     public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request,
             HttpServletRequest httpRequest) {
         try {
-            System.out.println("Change password request: " + httpRequest.getRequestURI());
-            System.out.println("Authorization header: " + httpRequest.getHeader("Authorization"));
+            logger.debug("Change password request: {}", httpRequest.getRequestURI());
+            logger.debug("Authorization header: {}", httpRequest.getHeader("Authorization"));
             User currentUser = findUserFromRequest(httpRequest);
             if (currentUser == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
                         "success", false,
                         "message", "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại."));
             }
-            System.out.println("Found user for password change: " + currentUser.getUsername());
+            logger.debug("Found user for password change: {}", currentUser.getUsername());
             if (!userService.authenticate(currentUser.getUsername(), request.currentPassword)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                         "success", false,
@@ -320,7 +320,7 @@ public class ApiUserController {
                     "success", true,
                     "message", "Đổi mật khẩu thành công!"));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error changing password", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "success", false,
                     "message", "Lỗi đổi mật khẩu: " + e.getMessage()));
@@ -329,7 +329,7 @@ public class ApiUserController {
     private User findUserFromRequest(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getName() != null) {
-            System.out.println("Getting user from SecurityContext: " + authentication.getName());
+            logger.debug("Getting user from SecurityContext: {}", authentication.getName());
             User user = userService.findByUsername(authentication.getName());
             if (user != null) {
                 return user;
@@ -337,7 +337,7 @@ public class ApiUserController {
         }
         String jwtUsername = (String) request.getAttribute("jwt_username");
         if (jwtUsername != null) {
-            System.out.println("Getting user from request attribute: " + jwtUsername);
+            logger.debug("Getting user from request attribute: {}", jwtUsername);
             User user = userService.findByUsername(jwtUsername);
             if (user != null) {
                 return user;
@@ -349,11 +349,11 @@ public class ApiUserController {
                 String token = authHeader.substring(7);
                 String username = JwtUtils.extractUsername(token);
                 if (username != null) {
-                    System.out.println("Getting user from JWT token: " + username);
+                    logger.debug("Getting user from JWT token: {}", username);
                     return userService.findByUsername(username);
                 }
             } catch (Exception e) {
-                System.out.println("Error extracting username from token: " + e.getMessage());
+                logger.warn("Error extracting username from token: {}", e.getMessage());
             }
         }
         return null;
@@ -384,8 +384,8 @@ public class ApiUserController {
     
     public ResponseEntity<?> searchUsers(@RequestParam String q) {
         try {
-            System.out.println("=== USER SEARCH DEBUG ===");
-            System.out.println("Search query: " + q);
+            logger.debug("=== USER SEARCH DEBUG ===");
+            logger.debug("Search query: {}", q);
             if (q == null || q.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "message", "Search query cannot be empty"));
@@ -413,15 +413,14 @@ public class ApiUserController {
                         userMap.put("avatar", user.getAvatar());                        return userMap;
                     })
                     .collect(java.util.stream.Collectors.toList());
-            System.out.println("Found " + userResponse.size() + " users");
+            logger.debug("Found {} users", userResponse.size());
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "users", userResponse,
                 "count", userResponse.size()
             ));
         } catch (Exception e) {
-            System.err.println("Error searching users: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error searching users", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error searching users: " + e.getMessage()));
         }
