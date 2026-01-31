@@ -86,7 +86,7 @@ const ProductChatDialog = ({ open, onClose, product, seller }) => {
             setMessages([]);
             setError('');
         };
-    }, [open, seller?.id, user?.id, isAuthenticated]);
+    }, [open, seller?.id, seller?.avatar, seller?.storeName, seller?.username, user?.id, isAuthenticated]);
     
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !conversation || !user) return;

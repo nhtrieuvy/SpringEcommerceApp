@@ -8,7 +8,6 @@ import {
   Divider,
   Grid,
   TextField,
-  useTheme,
   IconButton,
 } from '@mui/material';
 import FacebookIcon from '@mui/icons-material/Facebook';
@@ -24,8 +23,6 @@ import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import { Link as RouterLink } from 'react-router-dom';
 
 const Footer = () => {
-  const theme = useTheme();
-
   return (
     <Box
       component="footer"

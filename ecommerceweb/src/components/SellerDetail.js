@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
     Typography,
@@ -20,7 +20,6 @@ import {
     DialogActions,
     Chip,
     List,
-    ListItem,
     IconButton,
     Tabs,
     Tab,
@@ -57,242 +56,11 @@ const SellerDetail = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState(0);
     const [products, setProducts] = useState([]);
-    const [productsLoading, setProductsLoading] = useState(false);
-    const [reviews, setReviews] = useState([]);
-    const [reviewsLoading, setReviewsLoading] = useState(false);
-    const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-    const [newReview, setNewReview] = useState({
-        rating: 5,
-        comment: '',
-    });
-    const [editingReview, setEditingReview] = useState(null);
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: '',
         severity: 'success'
     });
-    
-    // Fetch seller data
-    useEffect(() => {
-        const fetchSellerDetail = async () => {
-            setLoading(true);
-            try {
-                const response = await defaultApi.get(`/api/sellers/${id}`);
-                setSeller(response.data);
-                
-                // Fetch seller products
-                fetchSellerProducts();
-                
-                // Fetch seller reviews
-                fetchSellerReviews();
-            } catch (error) {
-                console.error("Error fetching seller details:", error);
-                setSnackbar({
-                    open: true,
-                    message: 'Không thể tải thông tin người bán, vui lòng thử lại sau',
-                    severity: 'error'
-                });
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (id) {
-            fetchSellerDetail();
-        }
-    }, [id]);
-    
-    // Fetch seller products
-    const fetchSellerProducts = async () => {
-        setProductsLoading(true);
-        try {
-            const response = await defaultApi.get(`/api/products?seller=${id}`);
-            setProducts(response.data);
-        } catch (error) {
-            console.error("Error fetching seller products:", error);
-        } finally {
-            setProductsLoading(false);
-        }    };
-      // Fetch seller reviews
-    const fetchSellerReviews = async () => {
-        setReviewsLoading(true);
-        try {
-            const response = await defaultApi.get(endpoint.GET_SELLER_REVIEWS(id));
-            
-            if (response.data && response.data.reviews) {
-                setReviews(response.data.reviews);
-                
-                // Also update the seller data with the latest average rating
-                if (response.data.averageRating !== undefined) {
-                    setSeller(prev => ({
-                        ...prev,
-                        rating: response.data.averageRating
-                    }));
-                }
-                
-                console.log("Fetched reviews:", response.data.reviews.length, "Average rating:", response.data.averageRating);
-            } else {
-                // Fallback for unexpected data structure
-                setReviews(response.data || []);
-            }
-        } catch (error) {
-            console.error("Error fetching seller reviews:", error);
-        } finally {
-            setReviewsLoading(false);
-        }
-    };
-    const handleOpenReviewDialog = () => {
-        if (!isAuthenticated) {
-            setSnackbar({
-                open: true,
-                message: 'Vui lòng đăng nhập để viết đánh giá',
-                severity: 'warning'
-            });
-            return;
-        }
-        setNewReview({
-            rating: 5,
-            comment: '',
-        });
-        setEditingReview(null);
-        setReviewDialogOpen(true);
-    };
-    
-    // Handle closing review dialog
-    const handleCloseReviewDialog = () => {
-        setReviewDialogOpen(false);
-        setEditingReview(null);
-    };
-    
-    // Handle review input change
-    const handleReviewChange = (e) => {
-        const { name, value } = e.target;
-        setNewReview(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-    
-    // Handle review rating change
-    const handleRatingChange = (event, newValue) => {
-        setNewReview(prev => ({
-            ...prev,
-            rating: newValue
-        }));
-    };
-      // Submit seller review
-    const handleReviewSubmit = async () => {
-        if (!isAuthenticated) {
-            setSnackbar({
-                open: true,
-                message: 'Vui lòng đăng nhập để viết đánh giá',
-                severity: 'warning'
-            });
-            return;
-        }
-        
-        try {
-            if (editingReview) {
-                // Update existing review
-                await authApi().put(endpoint.UPDATE_SELLER_REVIEW(editingReview.id), {
-                    rating: newReview.rating,
-                    comment: newReview.comment
-                });
-                setSnackbar({
-                    open: true,
-                    message: 'Đã cập nhật đánh giá thành công',
-                    severity: 'success'
-                });            } else {
-                // Create new review with user ID if available
-                const reviewData = {
-                    sellerId: id,
-                    rating: newReview.rating,
-                    comment: newReview.comment
-                };
-                
-                // Add userId if available from auth context
-                if (user && user.id) {
-                    reviewData.userId = user.id;
-                    console.log('Setting userId to:', user.id);
-                } else {
-                    console.log('User ID not available in context');
-                }
-                
-                console.log('Submitting review data:', JSON.stringify(reviewData));
-                
-                const response = await authApi().post(endpoint.CREATE_SELLER_REVIEW(), reviewData);
-                console.log('Review submission response:', response.data);
-                
-                setSnackbar({
-                    open: true,
-                    message: 'Đã gửi đánh giá thành công',
-                    severity: 'success'
-                });
-            }
-            
-            // Refresh reviews
-            fetchSellerReviews();
-            
-            // Also refresh ratings to update the count and average
-            fetchSellerRatings();
-            
-            handleCloseReviewDialog();
-        } catch (error) {
-            console.error("Error submitting review:", error);
-            setSnackbar({
-                open: true,
-                message: 'Không thể gửi đánh giá, vui lòng thử lại sau',
-                severity: 'error'
-            });
-        }
-    };
-    
-    // Edit review
-    const handleEditReview = (review) => {
-        setEditingReview(review);
-        setNewReview({
-            rating: review.rating,
-            comment: review.comment
-        });
-        setReviewDialogOpen(true);
-    };
-    
-    // Delete review
-    const handleDeleteReview = async (reviewId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) {
-            return;
-        }
-        
-        try {
-            await authApi().delete(endpoint.DELETE_SELLER_REVIEW(reviewId));
-            setSnackbar({
-                open: true,
-                message: 'Đã xóa đánh giá thành công',
-                severity: 'success'
-            });
-            fetchSellerReviews();
-        } catch (error) {
-            console.error("Error deleting review:", error);            setSnackbar({
-                open: true,
-                message: 'Không thể xóa đánh giá, vui lòng thử lại sau',
-                severity: 'error'
-            });
-        }
-    };
-    
-    // Check if user can modify a review
-    const canModifyReviewCheck = (review) => {
-        if (!user || !review) return false;
-        
-        // Nếu user là admin hoặc moderator, cho phép sửa/xóa bất kỳ review nào
-        if (user.roles && (user.roles.some(role => role.name === "ADMIN") || 
-                          user.roles.some(role => role.name === "MODERATOR"))) {
-            return true;
-        }
-        
-        // Người dùng chỉ có thể sửa/xóa review của chính họ
-        return review.user && review.user.id === user.id;
-    };
     
     // State
     const [ratings, setRatings] = useState([]);
@@ -303,6 +71,26 @@ const SellerDetail = () => {
     });
     const [editingRating, setEditingRating] = useState(null);
     
+    // Fetch seller ratings
+    const fetchSellerRatings = useCallback(async () => {
+        try {
+            const response = await defaultApi.get(endpoint.GET_SELLER_REVIEWS(id));
+            // Properly extract the reviews array, averageRating, and count
+            if (response.data && response.data.reviews) {
+                setRatings(response.data.reviews);
+                // Update the seller object with the new average rating if needed
+                if (response.data.averageRating !== undefined) {
+                    setSeller(prev => (prev ? { ...prev, rating: response.data.averageRating } : prev));
+                }
+            } else {
+                // Fallback if the structure is different
+                setRatings(response.data.reviews || response.data || []);
+            }
+        } catch (error) {
+            console.error("Error fetching seller ratings:", error);
+        }
+    }, [id]);
+
     // Fetch seller data
     useEffect(() => {
         const fetchSellerDetail = async () => {
@@ -333,28 +121,7 @@ const SellerDetail = () => {
         if (id) {
             fetchSellerDetail();
         }
-    }, [id]);    // Fetch seller ratings
-    const fetchSellerRatings = async () => {
-        try {
-            const response = await defaultApi.get(endpoint.GET_SELLER_REVIEWS(id));
-            // Properly extract the reviews array, averageRating, and count
-            if (response.data && response.data.reviews) {
-                setRatings(response.data.reviews);
-                // Update the seller object with the new average rating if needed
-                if (seller && response.data.averageRating) {
-                    setSeller(prev => ({
-                        ...prev,
-                        rating: response.data.averageRating
-                    }));
-                }
-            } else {
-                // Fallback if the structure is different
-                setRatings(response.data.reviews || response.data || []);
-            }
-        } catch (error) {
-            console.error("Error fetching seller ratings:", error);
-        }
-    };
+    }, [id, fetchSellerRatings]);
     
     // Handle tab change
     const handleTabChange = (event, newValue) => {
@@ -560,7 +327,7 @@ const SellerDetail = () => {
         );
     }
       return (
-        <AsyncPageWrapper isLoading={loading || productsLoading || reviewsLoading}>
+        <AsyncPageWrapper isLoading={loading}>
             <Box sx={{ background: 'linear-gradient(to bottom, #f9fafb 0%, #ffffff 100%)', minHeight: '100vh', pb: 8 }}>
             <Container maxWidth="lg" sx={{ py: 4 }}>
                 {renderBreadcrumbs()}

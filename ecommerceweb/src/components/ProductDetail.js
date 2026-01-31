@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
     Typography,
@@ -6,11 +6,8 @@ import {
     Box,
     Grid,
     Card,
-    CardContent,
-    CardMedia,
     Button,
     Paper,
-    Divider,
     Chip,
     Rating,
     IconButton,
@@ -30,12 +27,7 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
     List,
-    ListItem,
     Pagination,
 } from "@mui/material";
 
@@ -57,8 +49,6 @@ import SendIcon from '@mui/icons-material/Send';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ReplyIcon from '@mui/icons-material/Reply';
-import ThumbUpIcon from '@mui/icons-material/ThumbUp';
-import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import PersonIcon from '@mui/icons-material/Person';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -71,7 +61,6 @@ import { defaultApi, authApi, endpoint } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
 import AsyncPageWrapper from './AsyncPageWrapper';
 import '../styles/CartStyles.css';
-import { formatCurrency } from '../utils/FormatUtils';
 import ProductChatDialog from './ProductChatDialog';
 
 // Định nghĩa các hàm API trực tiếp trong component
@@ -110,7 +99,7 @@ const addToWishlist = async (productId) => {
 
 const removeFromWishlist = async (productId) => {
     try {
-        const res = await authApi().delete(endpoint.REMOVE_FROM_WISHLIST(productId));
+        await authApi().delete(endpoint.REMOVE_FROM_WISHLIST(productId));
         
         // Dispatch custom event
         window.dispatchEvent(new CustomEvent('wishlistUpdated'));
@@ -136,40 +125,21 @@ const isInWishlist = async (productId) => {
 const ProductDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const theme = useTheme();
     const { user, isAuthenticated } = useAuth();
-    
-    // Refs for cart animation
-    const productImageRef = useRef(null);
-    const cartIconRef = useRef(null);
-    const addToCartButtonRef = useRef(null);
-    // State for product data
+    const theme = useTheme();
+
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
     const [isFavorite, setIsFavorite] = useState(false);
-    const [activeTab, setActiveTab] = useState(0);
-    const [selectedImage, setSelectedImage] = useState(0);
-    const [relatedProducts, setRelatedProducts] = useState([]);
-    
-    // States for reviews
     const [reviews, setReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
-    const [editingReview, setEditingReview] = useState(null);
     const [newReview, setNewReview] = useState({
         rating: 5,
-        comment: '',
+        comment: ''
     });
-    
-    // Chat dialog state
-    const [chatDialogOpen, setChatDialogOpen] = useState(false);
-    
-    // State for pagination of related products
-    const [currentPage, setCurrentPage] = useState(1);
-    const [productsPerPage] = useState(4); // Show 4 products per page
-    const [totalPages, setTotalPages] = useState(0);
-    
+    const [editingReview, setEditingReview] = useState(null);
     const [replyDialogOpen, setReplyDialogOpen] = useState(false);
     const [replyToReviewId, setReplyToReviewId] = useState(null);
     const [replyContent, setReplyContent] = useState('');
@@ -178,15 +148,76 @@ const ProductDetail = () => {
         message: '',
         severity: 'success'
     });
-      // Fetch product data
+    const [activeTab, setActiveTab] = useState(0);
+    const [relatedProducts, setRelatedProducts] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const [chatDialogOpen, setChatDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(0);
+
+    const productsPerPage = 4;
+
+    const productImageRef = useRef(null);
+    const cartIconRef = useRef(null);
+    const addToCartButtonRef = useRef(null);
+
+    // Fetch product reviews
+    const fetchProductReviews = useCallback(async () => {
+        setReviewsLoading(true);
+        try {
+            const reviewSummaryResponse = await defaultApi.get(endpoint.GET_PRODUCT_REVIEWS(id));
+            console.log("Product reviews data:", reviewSummaryResponse.data);
+            
+            const reviewsData = reviewSummaryResponse.data.reviews;
+            const averageRating = reviewSummaryResponse.data.averageRating;
+            const ratingCount = reviewSummaryResponse.data.count;
+
+            // Update product state with new rating info
+            setProduct(prevProduct => {
+                if (!prevProduct) return null; // Should not happen if fetchProductDetail ran first
+                return {
+                    ...prevProduct,
+                    rating: averageRating,
+                    ratingCount: ratingCount
+                };
+            });
+            
+            // Fetch replies for each review
+            const reviewsWithReplies = await Promise.all(
+                reviewsData.map(async (review) => {
+                    try {
+                        const repliesResponse = await defaultApi.get(endpoint.GET_REVIEW_REPLIES(review.id));
+                        console.log(`Replies for review ${review.id}:`, repliesResponse.data);
+                        return {
+                            ...review,
+                            replies: repliesResponse.data || []
+                        };
+                    } catch (error) {
+                        console.error(`Error fetching replies for review ${review.id}:`, error);
+                        return {
+                            ...review,
+                            replies: []
+                        };
+                    }
+                })
+            );
+            
+            setReviews(reviewsWithReplies);
+        } catch (error) {
+            console.error("Error fetching product reviews:", error);
+        } finally {
+            setReviewsLoading(false);
+        }
+    }, [id]);
+
     useEffect(() => {
         const fetchProductDetail = async () => {
-            setLoading(true);
             try {
-                const response = await defaultApi.get(`/api/products/${id}`);
+                setLoading(true);
+                const response = await defaultApi.get(endpoint.GET_PRODUCT_DETAILS(id));
                 setProduct(response.data);
                 
-                // Check if the product is in wishlist via API instead of localStorage
+                // Check if product is in wishlist
                 if (isAuthenticated) {
                     try {
                         const isFav = await isInWishlist(response.data.id);
@@ -239,56 +270,7 @@ const ProductDetail = () => {
             fetchProductDetail();
         }
 
-    }, [id, productsPerPage, isAuthenticated]); // Added isAuthenticated to dependency array
-
-    // Fetch product reviews
-    const fetchProductReviews = async () => {
-        setReviewsLoading(true);
-        try {
-            const reviewSummaryResponse = await defaultApi.get(endpoint.GET_PRODUCT_REVIEWS(id));
-            console.log("Product reviews data:", reviewSummaryResponse.data);
-            
-            const reviewsData = reviewSummaryResponse.data.reviews;
-            const averageRating = reviewSummaryResponse.data.averageRating;
-            const ratingCount = reviewSummaryResponse.data.count;
-
-            // Update product state with new rating info
-            setProduct(prevProduct => {
-                if (!prevProduct) return null; // Should not happen if fetchProductDetail ran first
-                return {
-                    ...prevProduct,
-                    rating: averageRating,
-                    ratingCount: ratingCount
-                };
-            });
-            
-            // Fetch replies for each review
-            const reviewsWithReplies = await Promise.all(
-                reviewsData.map(async (review) => {
-                    try {
-                        const repliesResponse = await defaultApi.get(endpoint.GET_REVIEW_REPLIES(review.id));
-                        console.log(`Replies for review ${review.id}:`, repliesResponse.data);
-                        return {
-                            ...review,
-                            replies: repliesResponse.data || []
-                        };
-                    } catch (error) {
-                        console.error(`Error fetching replies for review ${review.id}:`, error);
-                        return {
-                            ...review,
-                            replies: []
-                        };
-                    }
-                })
-            );
-            
-            setReviews(reviewsWithReplies);
-        } catch (error) {
-            console.error("Error fetching product reviews:", error);
-        } finally {
-            setReviewsLoading(false);
-        }
-    };
+    }, [id, productsPerPage, isAuthenticated, fetchProductReviews]); // Added fetchProductReviews to dependency array
     
     // Handle change in quantity
     const handleQuantityChange = (newValue) => {
@@ -591,33 +573,6 @@ const ProductDetail = () => {
             });
         }
     };
-      // Delete reply
-    const handleDeleteReply = async (replyId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa trả lời này?')) {
-            return;
-        }
-        
-        try {
-            await authApi().delete(endpoint.DELETE_REVIEW_REPLY(replyId));
-            
-            setSnackbar({
-                open: true,
-                message: 'Đã xóa trả lời thành công',
-                severity: 'success'
-            });
-            
-            // Refresh reviews to update the view
-            fetchProductReviews();
-        } catch (error) {
-            console.error("Error deleting reply:", error);
-            setSnackbar({
-                open: true,
-                message: 'Không thể xóa trả lời, vui lòng thử lại sau',
-                severity: 'error'
-            });
-        }
-    };
-    
     // Check if user can modify a review
     const canModifyReviewCheck = (review) => {
         if (!user || !review) return false;
@@ -726,7 +681,6 @@ const ProductDetail = () => {
         
         // Clone the product image for animation
         const imgRect = productImageRef.current.getBoundingClientRect();
-        const cartRect = cartIconRef.current.getBoundingClientRect();
         
         // Create a flying item element
         const flyingItem = document.createElement('div');

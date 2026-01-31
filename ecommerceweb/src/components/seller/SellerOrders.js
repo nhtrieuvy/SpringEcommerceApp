@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import {
   Box,
   Container,
@@ -22,7 +22,6 @@ import {
   DialogContent,
   DialogActions,
   Card,
-  CardContent,
   Grid,
   Alert,
   CircularProgress,
@@ -52,20 +51,16 @@ import {
   MonetizationOn as MoneyIcon,
   FilterList as FilterListIcon,
   Refresh as RefreshIcon,
-  MoreVert as MoreVertIcon,
   Close as CloseIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   LocalShipping as ShippingIcon,
   Pending as PendingIcon,
   Assignment as AssignmentIcon,
-  Payment as PaymentIcon,
 } from "@mui/icons-material";
 import { styled, alpha } from "@mui/material/styles";
 import { authApi, endpoint } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/MyContexts";
-import { formatCurrency, formatDate, formatTime } from "../../utils/FormatUtils";
-import AsyncPageWrapper from '../AsyncPageWrapper';
 
 // Styled components for beautiful animations and effects
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -228,7 +223,7 @@ const SellerOrders = () => {
       textColor: '#757575'
     };
   };  // Load orders từ API
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -292,9 +287,9 @@ const SellerOrders = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStore]);
   // Load stores
-  const loadStores = async () => {
+  const loadStores = useCallback(async () => {
     try {
       const response = await authApi().get(endpoint.GET_SELLER_STORES);
       if (response.data && Array.isArray(response.data)) {
@@ -303,7 +298,7 @@ const SellerOrders = () => {
     } catch (error) {
       console.error("Lỗi tải cửa hàng:", error);
     }
-  };
+  }, []);
 
   // Format functions
   const formatDate = (dateString) => {
@@ -540,7 +535,7 @@ const SellerOrders = () => {
       loadOrders();
       loadStores();
     }
-  }, [user, selectedStore, statusFilter]);
+  }, [user, selectedStore, statusFilter, loadOrders, loadStores]);
 
   // Filter and pagination logic
   const filteredOrders = orders.filter(order => {

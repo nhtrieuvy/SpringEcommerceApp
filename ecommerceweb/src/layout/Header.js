@@ -36,11 +36,9 @@ import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import ChatIcon from '@mui/icons-material/Chat';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import InsightsIcon from '@mui/icons-material/Insights';
-import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { endpoint, authApi } from '../configs/Apis';
 import { MyUserContext } from '../configs/MyContexts';
@@ -61,7 +59,7 @@ const getCartItems = async () => {
 
 const removeFromCart = async (productId) => {
     try {
-        const res = await authApi().delete(endpoint.REMOVE_FROM_CART(productId));
+        await authApi().delete(endpoint.REMOVE_FROM_CART(productId));
         
         // Dispatch custom event
         window.dispatchEvent(new CustomEvent('cartUpdated'));

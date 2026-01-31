@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { authApi, endpoint, defaultApi } from '../configs/Apis';
 import { useAuth } from '../configs/MyContexts';
@@ -10,9 +10,9 @@ import {
   Container, Box, Grid, Paper, Typography, Button, CircularProgress,
   Alert, Card, CardMedia, CardContent, CardActions, Rating, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Snackbar, IconButton, Autocomplete, TextField, Dialog, DialogTitle,
-  DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel,
-  OutlinedInput, InputAdornment, Checkbox, FormGroup, FormControlLabel,
+    Snackbar, IconButton, TextField, Dialog, DialogTitle,
+    DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel,
+    InputAdornment, Checkbox, FormControlLabel,
   List, ListItem, ListItemText, ListItemAvatar, Avatar, Accordion, AccordionSummary,
   AccordionDetails
 } from '@mui/material';
@@ -107,7 +107,7 @@ const ProductComparison = () => {
             return [];
         }
     };    // Search products - now strictly enforcing category match
-    const searchProducts = async (term) => {
+    const searchProducts = useCallback(async (term) => {
         try {
             if (!term || term.length < 2) return [];
             setSearchLoading(true);
@@ -131,8 +131,9 @@ const ProductComparison = () => {
         } finally {
             setSearchLoading(false);
         }
-    };    // Handle product search with category validation
-    const handleSearch = async (term) => {
+    }, [currentCategoryId]);
+    // Handle product search with category validation
+    const handleSearch = useCallback(async (term) => {
         if (term.length >= 2) {
             if (!currentCategoryId && products.length > 0) {
                 // Extract category ID from the first product if not explicitly set
@@ -162,8 +163,9 @@ const ProductComparison = () => {
         } else {
             setSearchResults([]);
         }
-    };    // Filter products locally in the category - ensuring same category only
-    const filterProducts = (searchTerm, options = filterOptions) => {
+    }, [currentCategoryId, products, searchProducts, selectedProductIds]);
+    // Filter products locally in the category - ensuring same category only
+    const filterProducts = useCallback((searchTerm, options = filterOptions) => {
         if (!allCategoryProducts.length) return;
         
         // First ensure we only have products from the selected category
@@ -216,7 +218,7 @@ const ProductComparison = () => {
         }
         
         setFilteredProducts(filtered);
-    };
+    }, [allCategoryProducts, currentCategoryId, filterOptions, products]);
 
     // Handle filter options change
     const handleFilterChange = (field, value) => {
@@ -377,7 +379,7 @@ const ProductComparison = () => {
             handleSearch(searchTerm);
         }, 500);
         return () => clearTimeout(timeoutId);
-    }, [searchTerm]);
+    }, [searchTerm, handleSearch]);
     
     // Filter local products
     useEffect(() => {
@@ -385,7 +387,7 @@ const ProductComparison = () => {
             filterProducts(localSearchTerm);
         }, 300);
         return () => clearTimeout(timeoutId);
-    }, [localSearchTerm, allCategoryProducts]);
+    }, [localSearchTerm, allCategoryProducts, filterProducts]);
     
     // Recalculate price comparison percentages and find best products whenever products change
     useEffect(() => {
@@ -427,10 +429,23 @@ const ProductComparison = () => {
             if (sortedProducts.length < 6) {
                 sortedProducts.sort((a, b) => a.price - b.price);
             }
-            
-            setProducts(sortedProducts);
+
+            const isSame = products.length === sortedProducts.length && products.every((p, i) => {
+                const u = sortedProducts[i];
+                return (
+                    (p.id || p.productId) === (u.id || u.productId) &&
+                    p.priceComparisonPercent === u.priceComparisonPercent &&
+                    p.bestPrice === u.bestPrice &&
+                    p.bestRated === u.bestRated &&
+                    p.priceDifference === u.priceDifference
+                );
+            });
+
+            if (!isSame) {
+                setProducts(sortedProducts);
+            }
         }
-    }, [products.length, selectedProductIds]);
+    }, [products, selectedProductIds]);
 
     // Format price comparison percentage
     const formatPercentage = (percent) => {

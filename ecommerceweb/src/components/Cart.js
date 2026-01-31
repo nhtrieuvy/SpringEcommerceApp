@@ -13,12 +13,9 @@ import {
     TextField,
     Alert,
     Snackbar,
-    Card,
-    CardContent,
     Breadcrumbs,
     Badge,
-    Tooltip,
-    CircularProgress
+    
 } from '@mui/material';
 import { authApi, endpoint } from '../configs/Apis'; // Import authApi and endpoint
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -29,22 +26,17 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import StoreIcon from '@mui/icons-material/Store';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PaymentIcon from '@mui/icons-material/Payment';
-import ReceiptIcon from '@mui/icons-material/Receipt';
 import { useAuth } from '../configs/MyContexts';
-import { useTheme } from '@mui/material/styles';
 import '../styles/CartStyles.css';
 import ProductRecommendation from './ProductRecommendation';
 import { formatCurrency } from '../utils/FormatUtils';
 import AsyncPageWrapper from './AsyncPageWrapper';
 
 const Cart = () => {
-    const theme = useTheme();
     const navigate = useNavigate();
-    const { user, isAuthenticated } = useAuth();
+    const { isAuthenticated } = useAuth();
     
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);

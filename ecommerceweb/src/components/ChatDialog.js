@@ -10,21 +10,15 @@ import {
     Avatar,
     List,
     ListItem,
-    ListItemAvatar,
-    ListItemText,
     Divider,
-    Button,
     Alert,
-    CircularProgress,
-    Paper,
-    Chip
+    CircularProgress
 } from '@mui/material';
 import {
     Close as CloseIcon,
     Send as SendIcon,
     Person as PersonIcon,
-    Storefront as StorefrontIcon,
-    AccessTime as AccessTimeIcon
+    Storefront as StorefrontIcon
 } from '@mui/icons-material';
 import { MyUserContext } from '../configs/MyContexts';
 import { sendMessage, subscribeToMessages, markConversationAsRead } from '../utils/chatUtils';

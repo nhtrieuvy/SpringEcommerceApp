@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Typography,
@@ -18,16 +18,12 @@ import {
   Button,
 } from "@mui/material";
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -41,17 +37,9 @@ import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import {
   format,
-  subMonths,
-  subQuarters,
-  subYears,
-  startOfMonth,
-  endOfMonth,
-  startOfQuarter,
-  endOfQuarter,
   startOfYear,
   endOfYear,
 } from "date-fns";
-import { vi } from "date-fns/locale";
 import { authApi, endpoint } from "../../configs/Apis";
 import { useAuth } from "../../configs/MyContexts";
 
@@ -67,7 +55,7 @@ const COLORS = [
 ];
 
 const SellerStatistics = () => {
-  const { user } = useAuth();
+  useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState("month");
@@ -88,11 +76,7 @@ const SellerStatistics = () => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-  useEffect(() => {
-    fetchStatistics();
-  }, [selectedPeriod, selectedYear]);
-
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     try {
       setLoading(true);
       setError(null); // Calculate date range based on selected period and year
@@ -138,7 +122,11 @@ const SellerStatistics = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod, selectedYear]);
+
+  useEffect(() => {
+    fetchStatistics();
+  }, [fetchStatistics]);
 
   const getDateRange = (period, year) => {
     const now = new Date();

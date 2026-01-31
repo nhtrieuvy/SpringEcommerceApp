@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { MyUserContext } from '../configs/MyContexts';
 import { endpoint } from '../configs/Apis';
@@ -23,7 +23,6 @@ import {
   Chip,
   Tooltip,
   FormControl,
-  FormHelperText,
   FormLabel,
   RadioGroup,
   Radio,
@@ -38,7 +37,6 @@ import {
   StepLabel,
   AlertTitle
 } from '@mui/material';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import BadgeIcon from '@mui/icons-material/Badge';
 import SaveIcon from '@mui/icons-material/Save';
 import LockIcon from '@mui/icons-material/Lock';
@@ -178,16 +176,16 @@ const Profile = () => {  const [user, dispatch] = useContext(MyUserContext);
     'Hoàn tất'
   ];
   // Chức năng kiểm tra phải hiển thị tab bán hàng không
-  const showSellerRegistrationTab = () => {
+  const showSellerRegistrationTab = useCallback(() => {
     if (!user || !user.roles) return false;
     
     // Hiển thị tab đăng ký nếu là USER nhưng không phải SELLER, ADMIN hoặc STAFF
-    return user.roles.some(role => role.name === 'USER') && 
-           !user.roles.some(role => ['SELLER', 'ADMIN', 'STAFF'].includes(role.name));
-  };
+        return user.roles.some(role => role.name === 'USER') && 
+          !user.roles.some(role => ['SELLER', 'ADMIN', 'STAFF'].includes(role.name));
+      }, [user]);
 
   // Lấy trạng thái đăng ký seller 
-  const fetchSellerRequestStatus = async () => {
+  const fetchSellerRequestStatus = useCallback(async () => {
     try {
       const { authApi } = require('../configs/Apis');
       const response = await authApi().get(endpoint.SELLER_REQUEST_STATUS);
@@ -206,7 +204,7 @@ const Profile = () => {  const [user, dispatch] = useContext(MyUserContext);
     } catch (error) {
       console.error('Lỗi khi lấy trạng thái đăng ký seller:', error);
     }
-  };
+  }, []);
     // Cập nhật form từ thông tin user hiện tại
   useEffect(() => {
     if (user) {
@@ -219,18 +217,18 @@ const Profile = () => {  const [user, dispatch] = useContext(MyUserContext);
       });
       
       // Thiết lập giá trị mặc định cho form đăng ký seller
-      setSellerData({
-        ...sellerData,
+      setSellerData((prev) => ({
+        ...prev,
         shopName: user.fullname ? `Cửa hàng của ${user.fullname}` : '',
         email: user.email || ''
-      });
+      }));
       
       // Kiểm tra trạng thái đăng ký seller nếu phù hợp
       if (showSellerRegistrationTab()) {
         fetchSellerRequestStatus();
       }
     }
-  }, [user, requestStatusChanged]);
+  }, [user, requestStatusChanged, showSellerRegistrationTab, fetchSellerRequestStatus]);
     // Handle tab change
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -289,15 +287,11 @@ const Profile = () => {  const [user, dispatch] = useContext(MyUserContext);
   
   // Chuyển bước trong form đăng ký seller
   const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    setActiveStep((prevStep) => prevStep + 1);
   };
-  
+
   const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-  
-  const handleReset = () => {
-    setActiveStep(0);
+    setActiveStep((prevStep) => prevStep - 1);
   };
   
   // Mở/đóng dialog xác nhận đăng ký seller
