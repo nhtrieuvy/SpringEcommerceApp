@@ -495,7 +495,13 @@ public class ApiOrderController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("success", false, "message", "User not found"));
             }
-            OrderCreateDTO orderCreateDTO = convertToOrderCreateDTO(orderDTO, user.getId());
+            OrderCreateDTO orderCreateDTO;
+            try {
+                orderCreateDTO = convertToOrderCreateDTO(orderDTO, user.getId());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", e.getMessage()));
+            }
             try {
                 orderValidationService.validateOrderCreation(orderCreateDTO);
             } catch (Exception validationException) {
@@ -545,6 +551,11 @@ public class ApiOrderController {
             }
             if (orderDTO.getItems() != null && !orderDTO.getItems().isEmpty()) {
                 for (OrderDTO.OrderItemDTO itemDTO : orderDTO.getItems()) {
+                    if (itemDTO.getProductId() == null || itemDTO.getQuantity() == null || itemDTO.getPrice() == null) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(Map.of("success", false, "message",
+                                        "Invalid order item data (productId/quantity/price is required)"));
+                    }
                     OrderDetail detail = new OrderDetail();
                     Product product = productService.findById(itemDTO.getProductId());
                     if (product != null) {
@@ -556,8 +567,14 @@ public class ApiOrderController {
                 }
             }
             double calculatedTotal = order.calculateTotalAmount();
-            if (calculatedTotal == 0 && orderDTO.getTotal() != null) {
+            if (orderDTO.getTotal() != null && orderDTO.getTotal() > 0) {
                 order.setTotalAmount(orderDTO.getTotal());
+            } else {
+                order.setTotalAmount(calculatedTotal);
+            }
+            if (order.getTotalAmount() <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Total amount must be greater than 0"));
             }
             if (orderDTO.getShipping() != null) {
                 order.setShippingFee(orderDTO.getShipping());
@@ -791,10 +808,13 @@ public class ApiOrderController {
         double calculatedSubtotal = 0.0;
         if (orderDTO.getItems() != null && !orderDTO.getItems().isEmpty()) {
             for (OrderDTO.OrderItemDTO item : orderDTO.getItems()) {
-                if (item.getPrice() != null && item.getQuantity() != null) {
-                    calculatedSubtotal += item.getPrice() * item.getQuantity();
+                if (item.getProductId() == null || item.getQuantity() == null || item.getPrice() == null) {
+                    throw new IllegalArgumentException("Invalid order item data (productId/quantity/price is required)");
                 }
+                calculatedSubtotal += item.getPrice() * item.getQuantity();
             }
+        } else {
+            throw new IllegalArgumentException("Order must contain at least one item");
         }
         createDTO.setSubtotal(calculatedSubtotal);
         if (orderDTO.getShipping() != null) {

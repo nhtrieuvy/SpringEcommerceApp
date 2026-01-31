@@ -27,7 +27,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${app.email.from:noreply@ecommerce.com}")
     private String fromEmail;
 
-    @Value("${app.url:https://localhost:3000}")
+    @Value("${app.frontend-url:${app.url:https://localhost:3000}}")
     private String appUrl;
 
     @Override

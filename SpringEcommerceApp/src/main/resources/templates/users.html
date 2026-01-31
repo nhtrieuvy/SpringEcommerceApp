@@ -130,26 +130,29 @@
                       >
                         <i class="fas fa-edit"></i>
                       </button>
-                      <button
+                      <a
                         th:if="${user.active}"
                         class="btn btn-warning"
-                        th:onclick="'confirmBlockUser(' + ${user.id} + ')'"
+                        th:href="@{/admin/users/block/{id}(id=${user.id})}"
+                        onclick="return confirm('Bạn có chắc chắn muốn khóa người dùng này?')"
                       >
                         <i class="fas fa-lock"></i>
-                      </button>
-                      <button
+                      </a>
+                      <a
                         th:unless="${user.active}"
                         class="btn btn-success"
-                        th:onclick="'confirmUnblockUser(' + ${user.id} + ')'"
+                        th:href="@{/admin/users/unblock/{id}(id=${user.id})}"
+                        onclick="return confirm('Bạn có chắc chắn muốn mở khóa người dùng này?')"
                       >
                         <i class="fas fa-unlock"></i>
-                      </button>
-                      <button
+                      </a>
+                      <a
                         class="btn btn-danger"
-                        th:onclick="'confirmDeleteUser(' + ${user.id} + ')'"
+                        th:href="@{/admin/users/delete/{id}(id=${user.id})}"
+                        onclick="return confirm('Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác.')"
                       >
                         <i class="fas fa-trash"></i>
-                      </button>
+                      </a>
                     </div>
                   </td>
                 </tr>
@@ -282,7 +285,7 @@
                       type="checkbox"
                       th:value="${role.name}"
                       th:id="'role' + ${role.id}"
-                      name="roles"
+                      name="roleNames"
                       th:checked="${role.name == 'ROLE_USER'}"
                     />
                     <label
@@ -378,7 +381,7 @@
                       type="checkbox"
                       th:value="${role.name}"
                       th:id="'role' + ${role.id}"
-                      name="roles"
+                      name="roleNames"
                       th:checked="${#lists.contains(user.roles, role)}"
                     />
                     <label
@@ -406,31 +409,6 @@
         </div>
       </div>
 
-      <!-- JavaScript for confirmation dialogs -->
-      <script>
-        function confirmBlockUser(userId) {
-          if (confirm("Bạn có chắc chắn muốn khóa người dùng này?")) {
-            window.location.href = /*[[@{/admin/users/block/}]]*/ "/" + userId;
-          }
-        }
-
-        function confirmUnblockUser(userId) {
-          if (confirm("Bạn có chắc chắn muốn mở khóa người dùng này?")) {
-            window.location.href =
-              /*[[@{/admin/users/unblock/}]]*/ "/" + userId;
-          }
-        }
-
-        function confirmDeleteUser(userId) {
-          if (
-            confirm(
-              "Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác."
-            )
-          ) {
-            window.location.href = /*[[@{/admin/users/delete/}]]*/ "/" + userId;
-          }
-        }
-      </script>
     </section>
   </body>
 </html>

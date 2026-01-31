@@ -105,7 +105,7 @@ public class OrderValidationServiceImpl implements OrderValidationService {
             throw new OrderException("Payment method is required");
         }
 
-        String[] allowedMethods = { "CASH", "CARD", "PAYPAL", "MOMO", "BANK_TRANSFER" };
+        String[] allowedMethods = { "CASH", "CASH_ON_DELIVERY", "CARD", "PAYPAL", "MOMO", "BANK_TRANSFER" };
         boolean isValid = false;
         for (String method : allowedMethods) {
             if (method.equalsIgnoreCase(paymentMethod.trim())) {

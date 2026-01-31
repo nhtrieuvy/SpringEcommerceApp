@@ -58,4 +58,13 @@ public class OrderDetailRepositoryImpl implements OrderDetailRepository {
         query.setParameter("orderId", orderId);
         return query.list();
     }
+
+    @Override
+    public long countByProductId(Long productId) {
+        Session session = sessionFactory.getCurrentSession();
+        String hql = "SELECT COUNT(od.id) FROM OrderDetail od WHERE od.product.id = :productId";
+        Query<Long> query = session.createQuery(hql, Long.class);
+        query.setParameter("productId", productId);
+        return query.uniqueResult();
+    }
 }

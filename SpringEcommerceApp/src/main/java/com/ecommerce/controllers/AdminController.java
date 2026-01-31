@@ -328,8 +328,8 @@ public class AdminController {
     }
 
     @PostMapping("/users/add")
-    public String addUser(@ModelAttribute User user,
-            @RequestParam(required = false) List<String> roles,
+        public String addUser(@ModelAttribute User user,
+            @RequestParam(name = "roleNames", required = false) List<String> roles,
             RedirectAttributes redirectAttributes) {
         try {
             if (roles != null && !roles.isEmpty()) {
@@ -367,9 +367,9 @@ public class AdminController {
     }
 
     @PostMapping("/users/edit/{id}")
-    public String updateUser(@PathVariable Long id,
+        public String updateUser(@PathVariable Long id,
             @ModelAttribute User user,
-            @RequestParam(required = false) List<String> roles,
+            @RequestParam(name = "roleNames", required = false) List<String> roles,
             RedirectAttributes redirectAttributes) {
         try {
             User existingUser = userService.findById(id);
@@ -406,11 +406,27 @@ public class AdminController {
         try {
             User user = userService.findById(id);
             if (user != null) {
-                user.setActive(!user.isActive());
+                user.setActive(false);
                 userService.update(user);
-                String message = user.isActive() ? "Người dùng đã được kích hoạt thành công."
-                        : "Người dùng đã bị khóa thành công.";
-                redirectAttributes.addFlashAttribute("successMessage", message);
+                redirectAttributes.addFlashAttribute("successMessage", "Người dùng đã bị khóa thành công.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy người dùng!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Lỗi khi thay đổi trạng thái người dùng: " + e.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @GetMapping("/users/unblock/{id}")
+    public String unblockUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            User user = userService.findById(id);
+            if (user != null) {
+                user.setActive(true);
+                userService.update(user);
+                redirectAttributes.addFlashAttribute("successMessage", "Người dùng đã được kích hoạt thành công.");
             } else {
                 redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy người dùng!");
             }
@@ -437,9 +453,10 @@ public class AdminController {
         return "redirect:/admin/users";
     }
 
+    @PostMapping(value = "/products/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String addProduct(@AuthenticationPrincipal UserDetails userDetails,
             @ModelAttribute Product product,
-            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageFile", required = false) MultipartFile image,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         try {
@@ -508,7 +525,7 @@ public class AdminController {
             @ModelAttribute Product product,
             @RequestParam Long categoryId,
             @RequestParam(required = false) Long storeId,
-            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "imageFile", required = false) MultipartFile image,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         try {
@@ -576,6 +593,42 @@ public class AdminController {
         return "redirect:/admin/products";
     }
 
+    @GetMapping("/products/activate/{id}")
+    public String activateProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Product product = productService.findById(id);
+            if (product != null) {
+                product.setActive(true);
+                productService.update(product);
+                redirectAttributes.addFlashAttribute("successMessage", "Sản phẩm đã được kích hoạt thành công.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy sản phẩm!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Lỗi khi thay đổi trạng thái sản phẩm: " + e.getMessage());
+        }
+        return "redirect:/admin/products";
+    }
+
+    @GetMapping("/products/deactivate/{id}")
+    public String deactivateProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Product product = productService.findById(id);
+            if (product != null) {
+                product.setActive(false);
+                productService.update(product);
+                redirectAttributes.addFlashAttribute("successMessage", "Sản phẩm đã bị vô hiệu hóa thành công.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy sản phẩm!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Lỗi khi thay đổi trạng thái sản phẩm: " + e.getMessage());
+        }
+        return "redirect:/admin/products";
+    }
+
     @GetMapping("/products/delete/{id}")
     public String deleteProduct(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
@@ -594,18 +647,14 @@ public class AdminController {
 
     private String saveProductImage(MultipartFile image) {
         try {
-            String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-            String uploadDir = "src/main/resources/static/images/products/";
-            java.nio.file.Path path = java.nio.file.Paths.get(uploadDir + fileName);
-            java.nio.file.Files.createDirectories(path.getParent());
-            java.nio.file.Files.copy(image.getInputStream(), path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            return "/images/products/" + fileName;
+            return productService.uploadProductImage(image);
         } catch (Exception e) {
             logger.error("Error saving product image", e);
             return null;
         }
     }
 
+    @PostMapping("/orders/update-status")
     public String updateOrderStatus(@AuthenticationPrincipal UserDetails userDetails,
             @RequestParam Long orderId,
             @RequestParam String status,
@@ -770,6 +819,7 @@ public class AdminController {
         return "redirect:/admin/stores";
     }
 
+    @GetMapping("/seller-requests")
     public String manageSellerRequests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

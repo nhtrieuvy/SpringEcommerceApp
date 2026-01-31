@@ -41,7 +41,7 @@ public class Order {
     @Column(nullable = false, length = 50)
     private String status;
 
-    @Column(nullable = false)
+    @Column(name = "total_amount", nullable = false)
     private double totalAmount;
     
     @Column(name = "shipping_fee")

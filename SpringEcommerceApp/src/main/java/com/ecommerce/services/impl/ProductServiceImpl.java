@@ -4,6 +4,7 @@ import com.ecommerce.dtos.ProductComparisonDTO;
 import com.ecommerce.pojo.Product;
 import com.ecommerce.pojo.ReviewProduct;
 import com.ecommerce.repositories.ProductRepository;
+import com.ecommerce.repositories.OrderDetailRepository;
 import com.ecommerce.services.ProductService;
 import com.ecommerce.services.ReviewProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
     
     @Autowired
     private Cloudinary cloudinary;
@@ -50,6 +54,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void delete(Long id) {
+        long usedInOrders = orderDetailRepository.countByProductId(id);
+        if (usedInOrders > 0) {
+            throw new IllegalStateException("Sản phẩm đã phát sinh đơn hàng, không thể xóa. Vui lòng ngừng bán.");
+        }
         productRepository.delete(id);
     }
 

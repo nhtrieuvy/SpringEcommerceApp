@@ -1,7 +1,8 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
+  address: ${SERVER_ADDRESS:0.0.0.0}
   servlet:
-    context-path: /SpringEcommerceApp-1.0-SNAPSHOT
+    context-path: /SpringEcommerceApp
   undertow:
     use-relative-redirects: true
   ssl:
@@ -18,7 +19,7 @@ spring:
   forward-headers-strategy: none
   servlet:
     multipart:
-      location: /
+      location: ${java.io.tmpdir}
       max-file-size: 5MB
       max-request-size: 25MB
   mail:
@@ -39,9 +40,16 @@ app:
   email:
     from: nhanhgon24@gmail.com
   url: ${APP_URL:https://localhost:8080}
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:3000}
+  backend-url: ${APP_BACKEND_URL:https://localhost:8080/SpringEcommerceApp}
   security:
     seed-admin-enabled: true
     seed-admin-password: password
+
+cloudinary:
+  cloud_name: ${CLOUDINARY_CLOUD_NAME:dd0q3guu9}
+  api_key: ${CLOUDINARY_API_KEY:867579141935144}
+  api_secret: ${CLOUDINARY_API_SECRET:lTIKfHjxzWqaHk9hn8GptW6owIE}
 
 logging:
   level:
@@ -62,8 +70,8 @@ momo:
   accessKey: F8BBA842ECF85
   secretKey: K951B6PE1waDMi640xX08PD3vg6EkVlz
   endpoint: https://test-payment.momo.vn/v2/gateway/api/create
-  returnUrl: ${app.url}/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/return
-  notifyUrl: ${app.url}/SpringEcommerceApp-1.0-SNAPSHOT/api/payments/momo/notify
+  returnUrl: ${app.backend-url}/api/payments/momo/return
+  notifyUrl: ${app.backend-url}/api/payments/momo/notify
   requestType: captureWallet
 
 hibernate:
@@ -71,9 +79,9 @@ hibernate:
   showSql: true
   connection:
     driverClass: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ecommercedb?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: Admin@123
+    url: ${HIBERNATE_URL:jdbc:mysql://localhost:3306/ecommercedb?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${HIBERNATE_USERNAME:root}
+    password: ${HIBERNATE_PASSWORD:Admin@123}
     provider_class: org.hibernate.hikaricp.internal.HikariCPConnectionProvider
   hbm2ddl:
     auto: update

@@ -336,26 +336,50 @@ public class UserServiceImpl implements UserService {    @Autowired
             // Lưu user để có ID
             User savedUser = userRepository.addUser(user);
             
-            // Lấy hoặc tạo role USER
+            // Gán roles: giữ roles đã chọn, nếu không có thì mặc định USER
             Session session = sessionFactory.getCurrentSession();
-            Role userRole = null;
-            
             try {
-                Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
-                query.setParameter("name", "USER");
-                userRole = query.uniqueResult();
-                
-                if (userRole == null) {
-                    userRole = new Role();
-                    userRole.setName("USER");
-                    session.persist(userRole);
-                    session.flush();
+                Set<Role> selectedRoles = user.getRoles();
+                Set<Role> resolvedRoles = new HashSet<>();
+
+                if (selectedRoles != null && !selectedRoles.isEmpty()) {
+                    for (Role role : selectedRoles) {
+                        Role managedRole = null;
+                        if (role.getId() != null) {
+                            managedRole = session.get(Role.class, role.getId());
+                        }
+                        if (managedRole == null && role.getName() != null) {
+                            Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
+                            query.setParameter("name", role.getName());
+                            managedRole = query.uniqueResult();
+                        }
+                        if (managedRole == null && role.getName() != null) {
+                            managedRole = new Role();
+                            managedRole.setName(role.getName());
+                            session.persist(managedRole);
+                            session.flush();
+                        }
+                        if (managedRole != null) {
+                            resolvedRoles.add(managedRole);
+                        }
+                    }
                 }
-                
-                // Gán role cho user qua Hibernate
-                Set<Role> roles = new HashSet<>();
-                roles.add(userRole);
-                savedUser.setRoles(roles);
+
+                if (resolvedRoles.isEmpty()) {
+                    Query<Role> query = session.createQuery("FROM Role WHERE name = :name", Role.class);
+                    query.setParameter("name", "USER");
+                    Role userRole = query.uniqueResult();
+
+                    if (userRole == null) {
+                        userRole = new Role();
+                        userRole.setName("USER");
+                        session.persist(userRole);
+                        session.flush();
+                    }
+                    resolvedRoles.add(userRole);
+                }
+
+                savedUser.setRoles(resolvedRoles);
                 userRepository.update(savedUser); // Hibernate sẽ tự insert vào user_roles
             } catch (Exception e) {
                 System.err.println("Lỗi khi xử lý role: " + e.getMessage());

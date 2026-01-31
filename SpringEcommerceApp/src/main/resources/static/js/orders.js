@@ -44,7 +44,8 @@ function initializeActionButtons() {
  * Khởi tạo xử lý cho form lọc và tìm kiếm
  */
 function initializeFilterForm() {
-    const filterForm = document.querySelector('form[action="/admin/orders"]');
+    const contextPath = window.appContextPath || '';
+    const filterForm = document.querySelector(`form[action="${contextPath}/admin/orders"]`);
     if (filterForm) {
         // Auto-submit form khi thay đổi giá trị của filter
         const filterSelects = filterForm.querySelectorAll('select');
@@ -79,7 +80,8 @@ function initializeFilterForm() {
  * Khởi tạo xử lý cập nhật trạng thái đơn hàng
  */
 function initializeStatusUpdateForms() {
-    const statusForms = document.querySelectorAll('form[action="/admin/orders/update-status"]');
+    const contextPath = window.appContextPath || '';
+    const statusForms = document.querySelectorAll(`form[action="${contextPath}/admin/orders/update-status"]`);
     statusForms.forEach(form => {
         const statusSelect = form.querySelector('select[name="status"]');
         if (statusSelect) {
@@ -102,7 +104,8 @@ function initializeStatusUpdateForms() {
  * In đơn hàng
  */
 function printOrder(orderId) {
-    const printUrl = `/admin/orders/print/${orderId}`;
+    const contextPath = window.appContextPath || '';
+    const printUrl = `${contextPath}/admin/orders/print/${orderId}`;
     // Mở cửa sổ in
     const printWindow = window.open(printUrl, '_blank', 'width=800,height=600');
     
@@ -148,5 +151,6 @@ function confirmCancelOrder(orderId) {
  */
 function showOrderStatusHistory(orderId) {
     // Chuyển hướng đến trang chi tiết lịch sử đơn hàng
-    window.location.href = `/admin/orders/${orderId}/history`;
+    const contextPath = window.appContextPath || '';
+    window.location.href = `${contextPath}/admin/orders/${orderId}/history`;
 }
