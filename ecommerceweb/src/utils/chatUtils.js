@@ -14,7 +14,7 @@ import {
   arrayUnion,
   increment
 } from 'firebase/firestore';
-import { db } from '../configs/firebase';
+import { db, auth, initializeFirebaseAuth } from '../configs/firebase';
 
 // Simple ready check for Firestore
 const ensureFirebaseReady = async () => {
@@ -27,6 +27,14 @@ const ensureFirebaseReady = async () => {
   }
   
   try {
+    // Ensure Firebase Auth is initialized (anonymous sign-in)
+    await initializeFirebaseAuth();
+
+    if (!auth?.currentUser) {
+      console.error('[chatUtils] Firebase auth user not available');
+      throw new Error('Firebase authentication not ready');
+    }
+
     // Ping Firebase to check connection
     const testRef = collection(db, '_connection_test_');
     console.log('[chatUtils] Firebase connection established');

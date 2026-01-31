@@ -6,6 +6,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="context-path" th:content="@{/}" />
+    <link rel="icon" type="image/png" th:href="@{/images/logo_icon_admin.png}" />
     <title>Quản trị - Sàn thương mại điện tử</title>
     <!-- Bootstrap CSS -->
     <link
@@ -71,14 +73,74 @@
       .stats-card:hover {
         transform: translateY(-5px);
       }
+
+      :root {
+        --admin-navbar-bg: #8fd6b3;
+        --admin-navbar-bg-hover: #7ccba5;
+        --admin-navbar-text: #0f3d2e;
+        --admin-navbar-text-muted: #155845;
+      }
+
+      .admin-navbar {
+        background-color: var(--admin-navbar-bg);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
+
+      .admin-navbar .navbar-brand,
+      .admin-navbar .nav-link,
+      .admin-navbar .dropdown-toggle,
+      .admin-navbar .dropdown-item {
+        color: var(--admin-navbar-text) !important;
+      }
+
+      .admin-navbar .nav-link:hover,
+      .admin-navbar .dropdown-toggle:hover,
+      .admin-navbar .navbar-brand:hover {
+        color: var(--admin-navbar-text-muted) !important;
+      }
+
+      .admin-navbar .nav-link:focus,
+      .admin-navbar .dropdown-toggle:focus {
+        color: var(--admin-navbar-text-muted) !important;
+        outline: none;
+      }
+
+      .admin-navbar .dropdown-menu {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .admin-navbar .navbar-toggler {
+        border-color: rgba(15, 61, 46, 0.3);
+      }
+
+      .admin-navbar .navbar-toggler-icon {
+        filter: invert(18%) sepia(12%) saturate(1052%) hue-rotate(98deg)
+          brightness(90%) contrast(92%);
+      }
+
+      .admin-navbar .brand-logo {
+        height: 36px;
+        width: 36px;
+        object-fit: contain;
+        margin-right: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.65);
+        border-radius: 10px;
+        padding: 2px;
+      }
     </style>
   </head>
   <body>
     <!-- Admin Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg admin-navbar">
       <div class="container-fluid">
-        <a class="navbar-brand" th:href="@{/admin}">
-          <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+        <a class="navbar-brand d-flex align-items-center" th:href="@{/admin}">
+          <img
+            class="brand-logo"
+            th:src="@{/images/logo_icon_admin.png}"
+            alt="eShop Admin"
+          />
+          <span>Admin Dashboard</span>
         </a>
         <button
           class="navbar-toggler"

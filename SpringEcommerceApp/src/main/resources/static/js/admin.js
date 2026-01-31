@@ -1,6 +1,17 @@
 // Admin JavaScript file
 console.log('Admin JS file loaded successfully!');
 
+// Context path helper (supports servlet context-path)
+function getContextPath() {
+    const meta = document.querySelector('meta[name="context-path"]');
+    if (!meta) return '';
+    const content = meta.getAttribute('content') || '';
+    return content.endsWith('/') ? content.slice(0, -1) : content;
+}
+
+// Expose for other modules
+window.appContextPath = getContextPath();
+
 // Initialize components if they exist
 document.addEventListener('DOMContentLoaded', function() {
     // Khởi tạo các thành phần UI
@@ -97,6 +108,7 @@ function formatCurrency(amount) {
  */
 function handleLogout() {
     if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-        window.location.href = '/logout';
+        const contextPath = window.appContextPath || '';
+        window.location.href = `${contextPath}/logout`;
     }
 }

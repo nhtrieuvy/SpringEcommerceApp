@@ -5,7 +5,6 @@
 >
   <head>
     <title>Quản lý sản phẩm - Quản trị hệ thống</title>
-    <script th:src="@{/js/products.js}" defer></script>
   </head>
   <body>
     <section th:fragment="content">
@@ -149,7 +148,8 @@
                       </button>
                       <button
                         class="btn btn-danger"
-                        th:onclick="'confirmDeleteProduct(' + ${product.id} + ')'"
+                        th:attr="data-product-id=${product.id}"
+                        onclick="confirmDeleteProduct(this.dataset.productId)"
                       >
                         <i class="fas fa-trash"></i>
                       </button>
@@ -345,7 +345,7 @@
                     type="file"
                     class="form-control"
                     id="productImage"
-                    name="image"
+                    name="imageFile"
                     accept="image/*"
                   />
                 </div>
@@ -404,7 +404,7 @@
             </div>
             <div class="modal-body">
               <form
-                th:action="@{/admin/products/edit}"
+                th:action="@{/admin/products/edit/{id}(id=${product.id})}"
                 method="post"
                 enctype="multipart/form-data"
               >
@@ -499,7 +499,7 @@
                     type="file"
                     class="form-control"
                     id="editProductImage"
-                    name="image"
+                    name="imageFile"
                     accept="image/*"
                   />
                 </div>
@@ -533,33 +533,7 @@
         </div>
       </div>
 
-      <!-- JavaScript for confirmation dialogs -->
-      <script>
-        function confirmDeactivateProduct(productId) {
-          if (confirm("Bạn có chắc chắn muốn ngừng bán sản phẩm này?")) {
-            window.location.href =
-              /*[[@{/admin/products/deactivate/}]]*/ "" + productId;
-          }
-        }
-
-        function confirmActivateProduct(productId) {
-          if (confirm("Bạn có chắc chắn muốn mở bán sản phẩm này?")) {
-            window.location.href =
-              /*[[@{/admin/products/activate/}]]*/ "" + productId;
-          }
-        }
-
-        function confirmDeleteProduct(productId) {
-          if (
-            confirm(
-              "Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác."
-            )
-          ) {
-            window.location.href =
-              /*[[@{/admin/products/delete/}]]*/ "" + productId;
-          }
-        }
-      </script>
+      <script th:src="@{/js/products.js}" defer></script>
     </section>
   </body>
 </html>

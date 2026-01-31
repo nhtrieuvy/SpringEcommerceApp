@@ -349,10 +349,9 @@ public class ReportServiceImpl implements ReportService {
                         ? detail.getProduct().getCategory().getName()
                         : "Không xác định";
 
-                categoryOrderCount.merge(categoryName, 1, (current, add) -> current + add);
-                categoryProductCount.merge(categoryName, detail.getQuantity(), (current, add) -> current + add);
-                categoryRevenue.merge(categoryName, detail.getPrice() * detail.getQuantity(),
-                    (current, add) -> current + add);
+                categoryOrderCount.merge(categoryName, 1, Integer::sum);
+                categoryProductCount.merge(categoryName, detail.getQuantity(), Integer::sum);
+                categoryRevenue.merge(categoryName, detail.getPrice() * detail.getQuantity(), Double::sum);
             }
         }
 
@@ -383,9 +382,8 @@ public class ReportServiceImpl implements ReportService {
         for (Order order : orders) {
             for (OrderDetail detail : order.getOrderDetails()) {
                 Long productId = detail.getProduct().getId();
-                productQuantities.merge(productId, detail.getQuantity(), (current, add) -> current + add);
-                productRevenues.merge(productId, detail.getPrice() * detail.getQuantity(),
-                        (current, add) -> current + add);
+                productQuantities.merge(productId, detail.getQuantity(), Integer::sum);
+                productRevenues.merge(productId, detail.getPrice() * detail.getQuantity(), Double::sum);
                 productMap.put(productId, detail.getProduct());
             }
         }

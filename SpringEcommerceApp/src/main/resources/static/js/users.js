@@ -40,7 +40,8 @@ function initializeActionButtons() {
  * Chỉ xử lý tương tác UI, không xử lý dữ liệu
  */
 function initializeFilterForm() {
-    const filterForm = document.querySelector('form[action="/admin/users"]');
+    const contextPath = window.appContextPath || '';
+    const filterForm = document.querySelector(`form[action="${contextPath}/admin/users"]`);
     if (filterForm) {
         // Auto-submit form khi thay đổi giá trị của filter
         const filterSelects = filterForm.querySelectorAll('select');

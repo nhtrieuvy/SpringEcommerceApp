@@ -10,4 +10,5 @@ public interface OrderDetailRepository {
     OrderDetail findById(Long id);
     List<OrderDetail> findAll();
     List<OrderDetail> findByOrderId(Long orderId);
+    long countByProductId(Long productId);
 }

@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', function() {
  * Khởi tạo form thêm sản phẩm
  */
 function initializeAddProductForm() {
-    const addProductForm = document.querySelector('form[action="/admin/products/add"]');
+    const contextPath = window.appContextPath || '';
+    const addProductForm = document.querySelector(`form[action="${contextPath}/admin/products/add"]`);
     if (addProductForm) {
         addProductForm.addEventListener('submit', function(e) {
             // Validate dữ liệu trước khi submit
@@ -59,7 +60,8 @@ function initializeActionButtons() {
  * Khởi tạo xử lý cho form lọc và tìm kiếm
  */
 function initializeFilterForm() {
-    const filterForm = document.querySelector('form[action="/admin/products"]');
+    const contextPath = window.appContextPath || '';
+    const filterForm = document.querySelector(`form[action="${contextPath}/admin/products"]`);
     if (filterForm) {
         // Auto-submit form khi thay đổi giá trị của filter
         const filterSelects = filterForm.querySelectorAll('select');
@@ -116,7 +118,8 @@ function initializeImageUpload() {
  */
 function confirmDeactivateProduct(productId) {
     if (confirm('Bạn có chắc chắn muốn ngừng bán sản phẩm này?')) {
-        window.location.href = `/admin/products/deactivate/${productId}`;
+        const contextPath = window.appContextPath || '';
+        window.location.href = `${contextPath}/admin/products/deactivate/${productId}`;
     }
 }
 
@@ -125,7 +128,8 @@ function confirmDeactivateProduct(productId) {
  */
 function confirmActivateProduct(productId) {
     if (confirm('Bạn có chắc chắn muốn mở bán sản phẩm này?')) {
-        window.location.href = `/admin/products/activate/${productId}`;
+        const contextPath = window.appContextPath || '';
+        window.location.href = `${contextPath}/admin/products/activate/${productId}`;
     }
 }
 
@@ -133,7 +137,12 @@ function confirmActivateProduct(productId) {
  * Xác nhận xóa sản phẩm
  */
 function confirmDeleteProduct(productId) {
+    if (!productId) {
+        alert('Không tìm thấy ID sản phẩm để xóa. Vui lòng tải lại trang.');
+        return;
+    }
     if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác.')) {
-        window.location.href = `/admin/products/delete/${productId}`;
+        const contextPath = window.appContextPath || '';
+        window.location.href = `${contextPath}/admin/products/delete/${productId}`;
     }
 }

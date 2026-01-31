@@ -84,7 +84,8 @@ public class ApiAdminController {
         }
     }
 
-    // API để lấy thông tin chi tiết của một người dùng @GetMapping("/users/{id}")
+    // API để lấy thông tin chi tiết của một người dùng
+    @GetMapping("/users/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
             User user = userService.findById(id);
