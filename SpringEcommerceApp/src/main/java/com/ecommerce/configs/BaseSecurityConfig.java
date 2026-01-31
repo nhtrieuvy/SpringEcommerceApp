@@ -54,6 +54,8 @@ public class BaseSecurityConfig {
         allowedOriginPatterns.add("http://localhost:3000");
         allowedOriginPatterns.add("https://localhost:3000");
         allowedOriginPatterns.add("https://*.ngrok-free.app");
+        allowedOriginPatterns.add("https://spring-ecommerce-app.vercel.app");
+        allowedOriginPatterns.add("https://*.vercel.app");
         if (appUrl != null && !appUrl.isBlank()) {
             allowedOriginPatterns.add(appUrl);
         }
