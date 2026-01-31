@@ -240,8 +240,11 @@ const ProductDetail = () => {
                     try {
                         // Fetch all related products for the category
                         const relatedResponse = await defaultApi.get(`/api/products?category=${response.data.category.id}`);
+                        const relatedProductsData = Array.isArray(relatedResponse.data)
+                            ? relatedResponse.data
+                            : relatedResponse.data?.products || relatedResponse.data?.content || [];
                         // Filter out the current product
-                        const filteredRelatedProducts = relatedResponse.data.filter(p => p.id !== response.data.id);
+                        const filteredRelatedProducts = relatedProductsData.filter(p => p.id !== response.data.id);
                         setRelatedProducts(filteredRelatedProducts);
                         // Calculate total pages for related products pagination
                         setTotalPages(Math.ceil(filteredRelatedProducts.length / productsPerPage));
