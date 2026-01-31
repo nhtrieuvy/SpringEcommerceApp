@@ -349,9 +349,16 @@ public class ReportServiceImpl implements ReportService {
                         ? detail.getProduct().getCategory().getName()
                         : "Không xác định";
 
-                categoryOrderCount.merge(categoryName, 1, Integer::sum);
-                categoryProductCount.merge(categoryName, detail.getQuantity(), Integer::sum);
-                categoryRevenue.merge(categoryName, detail.getPrice() * detail.getQuantity(), Double::sum);
+                int orderCount = categoryOrderCount.getOrDefault(categoryName, 0) + 1;
+                categoryOrderCount.put(categoryName, orderCount);
+
+                int quantity = detail.getQuantity();
+                int productCount = categoryProductCount.getOrDefault(categoryName, 0) + quantity;
+                categoryProductCount.put(categoryName, productCount);
+
+                double lineRevenue = detail.getPrice() * quantity;
+                double revenue = categoryRevenue.getOrDefault(categoryName, 0.0) + lineRevenue;
+                categoryRevenue.put(categoryName, revenue);
             }
         }
 
@@ -382,8 +389,13 @@ public class ReportServiceImpl implements ReportService {
         for (Order order : orders) {
             for (OrderDetail detail : order.getOrderDetails()) {
                 Long productId = detail.getProduct().getId();
-                productQuantities.merge(productId, detail.getQuantity(), Integer::sum);
-                productRevenues.merge(productId, detail.getPrice() * detail.getQuantity(), Double::sum);
+                int quantity = detail.getQuantity();
+                int totalQuantity = productQuantities.getOrDefault(productId, 0) + quantity;
+                productQuantities.put(productId, totalQuantity);
+
+                double lineRevenue = detail.getPrice() * quantity;
+                double totalProductRevenue = productRevenues.getOrDefault(productId, 0.0) + lineRevenue;
+                productRevenues.put(productId, totalProductRevenue);
                 productMap.put(productId, detail.getProduct());
             }
         }
