@@ -240,21 +240,26 @@ const Home = () => {
         return () => {
             window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
         };
-    }, [auth.isAuthenticated]);useEffect(() => {
+    }, [auth.isAuthenticated]);
+
+    useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
             try {
                 const response = await defaultApi.get('/api/products');
-                setProducts(response.data);
+                const productsData = Array.isArray(response.data)
+                    ? response.data
+                    : response.data?.products || response.data?.content || [];
+                setProducts(productsData);
 
                 // Extract unique categories
-                const uniqueCategories = [...new Set(response.data
+                const uniqueCategories = [...new Set(productsData
                     .filter(product => product.category)
                     .map(product => product.category.name))];
                 setCategories(uniqueCategories);
 
                 // Extract unique stores and their IDs
-                const uniqueStores = [...new Set(response.data
+                const uniqueStores = [...new Set(productsData
                     .filter(product => product.store)
                     .map(product => ({
                         id: product.store.id,
@@ -272,7 +277,7 @@ const Home = () => {
                 setStores(Array.from(storeMap.values()));
 
                 // Find min and max prices for price filter
-                const prices = response.data
+                const prices = productsData
                     .map(product => product.price)
                     .filter(price => price !== undefined && price !== null);
 
