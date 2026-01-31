@@ -1,10 +1,9 @@
 // Firebase configuration and initialization
 import { initializeApp } from 'firebase/app';
-import { getFirestore, connectFirestoreEmulator, enableNetwork } from 'firebase/firestore';
+import { getFirestore, enableNetwork } from 'firebase/firestore';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 // Import the functions you need from the SDKs you need
-import { getAnalytics } from "firebase/analytics";
 
 // Firebase configuration object
 const firebaseConfig = {

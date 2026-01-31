@@ -7,11 +7,8 @@ import {
   CardContent, 
   Box,
   Button,
-  IconButton,
   Paper,
   Divider,
-  Avatar,
-  Tooltip
 } from '@mui/material';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
@@ -20,9 +17,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import MoneyIcon from '@mui/icons-material/Money';
 import InsightsIcon from '@mui/icons-material/Insights';
-import PersonIcon from '@mui/icons-material/Person';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import NorthEastIcon from '@mui/icons-material/NorthEast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../configs/MyContexts';
 

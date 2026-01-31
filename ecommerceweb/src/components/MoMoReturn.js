@@ -22,7 +22,6 @@ import {
     ShoppingBag as ShoppingBagIcon
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { formatCurrency } from '../utils/FormatUtils';
 
 const MoMoReturn = () => {
     const navigate = useNavigate();

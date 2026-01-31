@@ -7,10 +7,8 @@ import {
   Typography, 
   Alert, 
   CircularProgress, 
-  Paper,
   Card,
   InputAdornment,
-  IconButton,
   Grow
 } from '@mui/material';
 import { useNavigate, Link } from 'react-router-dom';

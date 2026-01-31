@@ -1,7 +1,7 @@
 import axios from "axios";
 import cookie from "react-cookies";
 
-const BASE_URL = "/SpringEcommerceApp-1.0-SNAPSHOT";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "/SpringEcommerceApp";
 
 export const endpoint = {
   LOGIN: `/api/login`,
@@ -57,6 +57,7 @@ export const endpoint = {
   GET_PRODUCTS_BY_STORE: (storeId, page = 0, size = 10) =>
     `/api/products?storeId=${storeId}&page=${page}&size=${size}`,
   GET_PRODUCT_BY_ID: (id) => `/api/products/${id}`,
+  GET_PRODUCT_DETAILS: (id) => `/api/products/${id}`,
   CREATE_PRODUCT: `/api/products`,
   UPDATE_PRODUCT: (id) => `/api/products/${id}`,
   DELETE_PRODUCT: (id) => `/api/products/${id}`,

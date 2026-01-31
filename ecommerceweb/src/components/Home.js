@@ -34,7 +34,6 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
 import FilterListIcon from '@mui/icons-material/FilterList';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
@@ -84,7 +83,7 @@ const addToWishlist = async (productId) => {
 
 const removeFromWishlist = async (productId) => {
     try {
-        const res = await authApi().delete(endpoint.REMOVE_FROM_WISHLIST(productId));
+        await authApi().delete(endpoint.REMOVE_FROM_WISHLIST(productId));
         
         // Dispatch custom event
         window.dispatchEvent(new CustomEvent('wishlistUpdated'));
@@ -114,7 +113,6 @@ const Home = () => {
     const [searchQuery, setSearchQuery] = useState(""); const [categories, setCategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [openFilters, setOpenFilters] = useState(false);
-    const [showNewProductsAlert, setShowNewProductsAlert] = useState(true);
     const [expandedFAQ, setExpandedFAQ] = useState(null);
     const [cardHeight, setCardHeight] = useState(null);
     const cardsRef = useRef([]);
@@ -168,11 +166,6 @@ const Home = () => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         return sortedProducts.slice(startIndex, startIndex + itemsPerPage);
     }, [sortedProducts, currentPage, itemsPerPage]);
-
-    // Get top rated products
-    const topRatedProducts = [...products]
-        .sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5))
-        .slice(0, 3);
 
     // Get newest products (using id as a proxy for recency)
     const newestProducts = [...products]

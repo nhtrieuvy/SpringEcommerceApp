@@ -1,32 +1,30 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
+const PROXY_PATH = '/SpringEcommerceApp';
+const DEFAULT_BACKEND_URL = 'https://springecommerceapp.fly.dev';
+const DEFAULT_NGROK_URL = 'https://38ed-2405-4802-813a-3050-18ef-9eaa-a3b9-da03.ngrok-free.app';
+
 module.exports = function (app) {
-  
   const host = process.env.HOST || 'localhost';
   const isNgrok = host.includes('ngrok');
-  
-  // Create appropriate target URL based on environment
-  const targetUrl = isNgrok 
-    ? 'https://38ed-2405-4802-813a-3050-18ef-9eaa-a3b9-da03.ngrok-free.app'
-    : 'https://localhost:8080';
-  
-  console.log(`Setting up proxy with target: ${targetUrl}`);
-  
+  const backendUrl = process.env.BACKEND_URL;
+
+  const targetUrl = backendUrl || (isNgrok ? DEFAULT_NGROK_URL : DEFAULT_BACKEND_URL);
+
+  console.log(`[proxy] ${PROXY_PATH} -> ${targetUrl}`);
+
   app.use(
-    '/SpringEcommerceApp-1.0-SNAPSHOT',
+    PROXY_PATH,
     createProxyMiddleware({
       target: targetUrl,
       changeOrigin: true,
       secure: false,
-     
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
-     
-      onError: (err, req, res) => {
-        console.error('Proxy error:', err);
+      onError: (err) => {
+        console.error('[proxy] Error:', err);
       },
-      
-      onProxyReq: (proxyReq, req, res) => {
-        console.log(`Proxying request to: ${req.method} ${proxyReq.path}`);
+      onProxyReq: (proxyReq, req) => {
+        console.log(`[proxy] ${req.method} ${proxyReq.path}`);
       }
     })
   );

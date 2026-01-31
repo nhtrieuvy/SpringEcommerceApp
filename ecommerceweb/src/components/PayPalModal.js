@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -38,31 +38,7 @@ const PayPalModal = ({
 
   const usdAmount = convertToUSD(amount);
 
-  // Load PayPal SDK
-  useEffect(() => {
-    if (open && !paypalLoaded) {
-      loadPayPalSDK();
-    }
-  }, [open]);
-
-  // Initialize PayPal buttons when modal opens and SDK is loaded
-  useEffect(() => {
-    if (open && paypalLoaded && paypalRef.current && !paypalButtonsRef.current) {
-      initializePayPalButtons();
-    }
-  }, [open, paypalLoaded]);
-
-  // Clean up when modal closes
-  useEffect(() => {
-    if (!open && paypalButtonsRef.current) {
-      paypalButtonsRef.current = null;
-      if (paypalRef.current) {
-        paypalRef.current.innerHTML = '';
-      }
-    }
-  }, [open]);
-
-  const loadPayPalSDK = () => {
+  const loadPayPalSDK = useCallback(() => {
     // Check if PayPal SDK is already loaded
     if (window.paypal) {
       setPaypalLoaded(true);
@@ -83,9 +59,9 @@ const PayPalModal = ({
     };
 
     document.body.appendChild(script);
-  };
+  }, [currency]);
 
-  const initializePayPalButtons = () => {
+  const initializePayPalButtons = useCallback(() => {
     if (!window.paypal || !paypalRef.current) return;
 
     // Clear any existing buttons
@@ -177,7 +153,31 @@ const PayPalModal = ({
       console.error("Error rendering PayPal buttons:", error);
       setPaymentError("Không thể hiển thị nút PayPal");
     });
-  };
+  }, [currency, orderId, onCancel, onClose, onError, onSuccess, usdAmount]);
+
+  // Load PayPal SDK
+  useEffect(() => {
+    if (open && !paypalLoaded) {
+      loadPayPalSDK();
+    }
+  }, [open, paypalLoaded, loadPayPalSDK]);
+
+  // Initialize PayPal buttons when modal opens and SDK is loaded
+  useEffect(() => {
+    if (open && paypalLoaded && paypalRef.current && !paypalButtonsRef.current) {
+      initializePayPalButtons();
+    }
+  }, [open, paypalLoaded, initializePayPalButtons]);
+
+  // Clean up when modal closes
+  useEffect(() => {
+    if (!open && paypalButtonsRef.current) {
+      paypalButtonsRef.current = null;
+      if (paypalRef.current) {
+        paypalRef.current.innerHTML = '';
+      }
+    }
+  }, [open]);
 
   const handleClose = () => {
     if (!loading) {
@@ -230,6 +230,7 @@ const PayPalModal = ({
                 Đang xử lý thanh toán...
               </Typography>
             </Box>
+
           )}
 
           {!paypalLoaded && !paymentError && (

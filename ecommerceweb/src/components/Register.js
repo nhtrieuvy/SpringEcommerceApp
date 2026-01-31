@@ -7,19 +7,14 @@ import {
   Container,
   TextField,
   Typography,
-  Paper,
   Alert,
   CircularProgress,
   Grid,
   Link as MuiLink,
-  InputLabel,
   InputAdornment,
   IconButton,
   Card,
   Grow,
-  Stepper,
-  Step,
-  StepLabel,
   Avatar,
   FormControlLabel,
   Checkbox,
@@ -102,7 +97,6 @@ export default function Register() {
     confirmPassword: "",
     isSeller: false 
   });
-  const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [fileName, setFileName] = useState("");
   const [msg, setMsg] = useState("");
@@ -121,7 +115,6 @@ export default function Register() {
   const handleFile = (e) => {
     if (e.target.files[0]) {
       const file = e.target.files[0];
-      setAvatar(file);
       setFileName(file.name);
       
       // Create preview URL for avatar

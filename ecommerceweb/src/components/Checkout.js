@@ -51,11 +51,9 @@ const Checkout = () => {
 
   // Get coupon information from navigation state
   const couponInfo = location.state || {};
-  const [couponApplied, setCouponApplied] = useState(
-    couponInfo.couponApplied || false
-  );
-  const [discount, setDiscount] = useState(couponInfo.discount || 0);
-  const [couponCode, setCouponCode] = useState(couponInfo.couponCode || "");
+  const couponApplied = couponInfo.couponApplied || false;
+  const discount = couponInfo.discount || 0;
+  const couponCode = couponInfo.couponCode || "";
 
   // API Helper Functions
   const getCartItems = async () => {
@@ -95,8 +93,6 @@ const Checkout = () => {
           PAYPAL: "PAYPAL", // Handle uppercase override from PayPal flow
           momo: "MOMO",
           MOMO: "MOMO", // Handle uppercase override
-          card: "CASH_ON_DELIVERY", // Fallback for unsupported methods
-          banking: "CASH_ON_DELIVERY", // Fallback for unsupported methods
         };
 
         console.log(
@@ -153,11 +149,9 @@ const Checkout = () => {
     severity: "info",
   });
   const [orderComplete, setOrderComplete] = useState(false);
-  const [orderNumber, setOrderNumber] = useState("");
   const [orderData, setOrderData] = useState(null);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [shippingMethods, setShippingMethods] = useState([]);
   const [selectedShipping, setSelectedShipping] = useState(null);
   // PayPal-specific state - consolidated
   const [paypalOrderData, setPaypalOrderData] = useState(null);
@@ -213,7 +207,6 @@ const Checkout = () => {
 
         // Load shipping methods
         const shippingOptions = await getShippingMethods();
-        setShippingMethods(shippingOptions);
 
         // Select default shipping method based on cart total
         // Calculate subtotal directly from the items we just set
@@ -292,7 +285,7 @@ const Checkout = () => {
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate);
     };
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.state]);
 
   // Handle shipping info changes
   const handleShippingInfoChange = (e) => {
@@ -306,10 +299,7 @@ const Checkout = () => {
   const handleShippingMethodChange = (shippingMethod) => {
     setSelectedShipping(shippingMethod);
   };
-  // Handle payment method change
-  const handlePaymentMethodChange = (method) => {
-    setPaymentMethod(method);
-  }; // Calculate subtotal from cart items (returns original subtotal without discount)
+  // Calculate subtotal from cart items (returns original subtotal without discount)
   const calculateSubtotal = () => {
     return getSubtotal();
   };
@@ -548,7 +538,6 @@ const Checkout = () => {
           status: "PENDING",
           ...response,
         });
-        setOrderNumber(response.orderNumber);
         setOrderComplete(true);
         setShowConfirmationDialog(true);
         setActiveStep(3);
@@ -580,6 +569,7 @@ const Checkout = () => {
   }; // PayPal success handler
   const handlePayPalSuccess = (details, data) => {
     console.log("PayPal payment successful:", details, data);
+    setPaypalError(null);
 
     // Get order ID from paypalOrderData that was set during order creation
     const orderId = paypalOrderData?.orderId;
@@ -591,7 +581,6 @@ const Checkout = () => {
         status: "PENDING",
         paymentMethod: "PAYPAL",
       });
-      setOrderNumber(orderId);
     }
 
     setOrderComplete(true);
@@ -614,6 +603,7 @@ const Checkout = () => {
   // PayPal cancel handler
   const handlePayPalCancel = (data) => {
     console.log("PayPal payment cancelled:", data);
+    setPaypalError(null);
     setSnackbar({
       open: true,
       message: "Thanh toán PayPal đã bị hủy",
@@ -624,6 +614,7 @@ const Checkout = () => {
   // PayPal error handler
   const handlePayPalError = (err) => {
     console.error("PayPal payment error:", err);
+    setPaypalError("Lỗi thanh toán PayPal");
     setSnackbar({
       open: true,
       message: "Lỗi thanh toán PayPal",
@@ -645,16 +636,6 @@ const Checkout = () => {
   const handleTrackOrder = () => {
     setOrderComplete(false);
     navigate("/orders");
-  };
-
-  // Order status check handler
-  const checkOrderStatus = () => {
-    navigate("/orders");
-  };
-
-  // Continue shopping handler
-  const continueShopping = () => {
-    navigate("/");
   };
 
   // Render breadcrumbs
@@ -876,15 +857,6 @@ const Checkout = () => {
           onPaymentMethodChange={setPaymentMethod}
         />
       </Grid>{" "}
-      <Grid item xs={12}>
-        <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
-          <Typography variant="body2">
-            {paymentMethod === "paypal"
-              ? "PayPal đã được tích hợp và sẵn sàng để sử dụng. Bạn sẽ được chuyển hướng đến PayPal để hoàn tất thanh toán."
-              : "Chức năng thanh toán hiện tại chỉ là demo. Tất cả các phương thức thanh toán đều sẽ được xử lý dưới dạng COD."}
-          </Typography>
-        </Alert>
-      </Grid>
     </Grid>
   );
 
@@ -949,9 +921,8 @@ const Checkout = () => {
           <Box sx={{ ml: 2, mb: 2 }}>
             <Typography variant="body2">
               {paymentMethod === "cod" && "Thanh toán khi nhận hàng (COD)"}
-              {paymentMethod === "card" && "Thẻ tín dụng/Ghi nợ"}
-              {paymentMethod === "banking" && "Chuyển khoản ngân hàng"}
               {paymentMethod === "paypal" && "PayPal"}
+              {paymentMethod === "momo" && "MoMo"}
             </Typography>
           </Box>
         </Paper>

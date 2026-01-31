@@ -64,7 +64,7 @@ const ShippingMethodSelection = ({ onShippingMethodChange, subtotal }) => {
                 }
             }
         }
-    }, [shippingMethods, subtotal, selectedMethod]); // Remove onShippingMethodChange from dependencies
+    }, [shippingMethods, subtotal, selectedMethod, onShippingMethodChange]);
 
     const handleChange = (event) => {
         const methodId = event.target.value;

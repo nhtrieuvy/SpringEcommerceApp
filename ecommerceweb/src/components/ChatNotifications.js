@@ -4,28 +4,20 @@ import {
     Badge,
     Menu,
     MenuItem,
-    List,
-    ListItem,
     ListItemAvatar,
-    ListItemText,
-    ListItemSecondaryAction,
     Avatar,
     Typography,
     Box,
     Divider,
     Button,
     Chip,
-    Paper,
     MenuList
 } from '@mui/material';
 import {
     Chat as ChatIcon,
-    Person as PersonIcon,
     Storefront as StorefrontIcon,
-    Circle as CircleIcon,
     AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { MyUserContext } from '../configs/MyContexts';
 import { subscribeToConversations, markConversationAsRead } from '../utils/chatUtils';
 import ChatDialog from './ChatDialog';
@@ -37,7 +29,6 @@ const ChatNotifications = () => {
     const [loading, setLoading] = useState(false);
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [chatDialogOpen, setChatDialogOpen] = useState(false);
-    const navigate = useNavigate();
 
     // Subscribe to conversations when user is available
     useEffect(() => {

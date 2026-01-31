@@ -7,7 +7,6 @@ import {
   Container,
   TextField,
   Typography,
-  Paper,
   Alert,
   CircularProgress,
   Grid,
@@ -16,13 +15,11 @@ import {
   InputAdornment,
   IconButton,
   Card,
-  Grow,
-  useTheme
+  Grow
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import FacebookIcon from "@mui/icons-material/Facebook";
-import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -69,13 +66,11 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 export default function Login() {
-  const theme = useTheme();
   const [user, dispatch] = useContext(MyUserContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [fbInitialized, setFbInitialized] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
@@ -289,7 +284,6 @@ export default function Login() {
         });
 
         console.log('Facebook SDK initialized successfully');
-        setFbInitialized(true);
       };
 
       // Tải Facebook SDK bằng cách thêm script

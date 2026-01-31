@@ -54,7 +54,6 @@ export const formatTime = (dateString) => {
  */
 export const formatDateTime = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
     return `${formatDate(dateString)} ${formatTime(dateString)}`;
 };
 

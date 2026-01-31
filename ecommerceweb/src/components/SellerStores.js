@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { authApi, endpoint } from '../configs/Apis';
 import { 
   Container, 
@@ -87,11 +87,7 @@ const SellerStores = () => {
     severity: 'success'
   });
   
-  // Fetch stores on component mount
-  useEffect(() => {
-    fetchStores();
-  }, [user]);
-  const fetchStores = async () => {
+  const fetchStores = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
@@ -108,7 +104,13 @@ const SellerStores = () => {
     } finally {
       setLoading(false);
     }
-  };    const handleOpenCreateDialog = () => {
+  }, [user]);
+
+  // Fetch stores on component mount
+  useEffect(() => {
+    fetchStores();
+  }, [fetchStores]);
+  const handleOpenCreateDialog = () => {
     setCurrentStore({
       name: '',
       description: '',

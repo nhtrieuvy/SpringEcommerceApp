@@ -13,8 +13,6 @@ import {
     useTheme
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 
@@ -56,18 +54,7 @@ const PaymentMethodSelection = ({ onPaymentMethodChange, selectedPaymentMethod }
                             description: 'Thanh toán qua ví điện tử MoMo',
                             icon: <PhoneAndroidIcon />
                         },
-                        {
-                            id: 'card',
-                            name: 'Thẻ tín dụng/Ghi nợ',
-                            description: 'Hỗ trợ Visa, Mastercard, JCB',
-                            icon: <CreditCardIcon />
-                        },
-                        {
-                            id: 'banking',
-                            name: 'Chuyển khoản ngân hàng',
-                            description: 'Chuyển khoản qua ngân hàng hoặc ứng dụng ngân hàng',
-                            icon: <AccountBalanceIcon />
-                        }
+                        
                     ].map((method) => (
                         <Paper
                             key={method.id}
@@ -94,15 +81,14 @@ const PaymentMethodSelection = ({ onPaymentMethodChange, selectedPaymentMethod }
                                     <Box sx={{ display: "flex", alignItems: "center" }}>
                                         <Avatar
                                             sx={{
-                                                mr: 2,                                                bgcolor: method.id === 'cod' 
+                                                mr: 2,
+                                                bgcolor: method.id === 'cod' 
                                                     ? 'primary.light' 
                                                     : method.id === 'paypal' 
                                                         ? 'info.light' 
                                                         : method.id === 'momo'
                                                             ? 'warning.light'
-                                                            : method.id === 'card' 
-                                                                ? 'secondary.light' 
-                                                                : 'success.light',
+                                                            : 'success.light',
                                                 width: 40,
                                                 height: 40,
                                             }}
@@ -124,10 +110,10 @@ const PaymentMethodSelection = ({ onPaymentMethodChange, selectedPaymentMethod }
                         </Paper>
                     ))}
                 </RadioGroup>
-            </FormControl>            <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
+            </FormControl>
+            <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
                 <Typography variant="body2">
-                    PayPal và MoMo đã được tích hợp. Các phương thức thanh toán khác (thẻ tín dụng, ngân hàng) 
-                    hiện tại chỉ là demo và sẽ được xử lý dưới dạng COD.
+                    PayPal và MoMo đã được tích hợp. Bạn có thể chọn COD nếu muốn thanh toán khi nhận hàng.
                 </Typography>
             </Alert>
         </Box>

@@ -6,9 +6,7 @@ import {
   Typography,
   Box,
   Grid,
-  Paper,
   Button,
-  Divider,
   IconButton,
   Card,
   CardMedia,
@@ -17,7 +15,6 @@ import {
   Breadcrumbs,
   Alert,
   Snackbar,
-  Tooltip,
   Chip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,14 +25,12 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import StoreIcon from "@mui/icons-material/Store";
 import { useAuth } from "../configs/MyContexts";
-import { useTheme } from "@mui/material/styles";
 import { authApi, endpoint } from "../configs/Apis"; // Import authApi and endpoint
 import { formatCurrency } from "../utils/FormatUtils";
 
 const Wishlist = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);

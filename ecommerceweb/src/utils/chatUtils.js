@@ -4,15 +4,12 @@ import {
   addDoc, 
   query, 
   where, 
-  orderBy, 
   onSnapshot, 
-  serverTimestamp,
   getDoc,
   getDocs,
   setDoc,
   updateDoc,
-  arrayUnion,
-  increment
+  arrayUnion
 } from 'firebase/firestore';
 import { db, auth, initializeFirebaseAuth } from '../configs/firebase';
 
@@ -36,7 +33,6 @@ const ensureFirebaseReady = async () => {
     }
 
     // Ping Firebase to check connection
-    const testRef = collection(db, '_connection_test_');
     console.log('[chatUtils] Firebase connection established');
     return Promise.resolve();
   } catch (error) {

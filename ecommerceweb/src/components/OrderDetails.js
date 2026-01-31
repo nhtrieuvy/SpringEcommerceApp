@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Container,
     Typography,
@@ -12,11 +12,9 @@ import {
     Skeleton,
     Divider,
     Avatar,
-    Paper,
     Stepper,
     Step,
     StepLabel,
-    StepContent,
     Breadcrumbs,
     Link,
     Dialog,
@@ -37,7 +35,6 @@ import {
 } from '@mui/lab';
 import { 
     ArrowBack as ArrowBackIcon,
-    ShoppingBag as ShoppingBagIcon,
     LocalShipping as LocalShippingIcon,
     CheckCircle as CheckCircleIcon,
     Cancel as CancelIcon,
@@ -59,7 +56,7 @@ import AsyncPageWrapper from './AsyncPageWrapper';
 const OrderDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user, isAuthenticated } = useAuth();
+    const { isAuthenticated } = useAuth();
     const [order, setOrder] = useState(null);
     const [orderHistory, setOrderHistory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -70,7 +67,6 @@ const OrderDetails = () => {
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [cancellationReason, setCancellationReason] = useState('');
     const [cancelling, setCancelling] = useState(false);    const [cancelError, setCancelError] = useState(null);
-    const [reorderLoading, setReorderLoading] = useState(false);
     const [reorderSuccess, setReorderSuccess] = useState(false);
     const [reorderError, setReorderError] = useState(null);
     
@@ -82,15 +78,7 @@ const OrderDetails = () => {
         }
     }, [isAuthenticated, navigate]);
 
-    // Fetch order details and history
-    useEffect(() => {
-        if (id) {
-            fetchOrderDetails();
-            fetchOrderHistory();
-        }
-    }, [id]);
-
-    const fetchOrderDetails = async () => {
+    const fetchOrderDetails = useCallback(async () => {
         try {
             setLoading(true);
             const response = await authApi().get(endpoint.GET_ORDER_BY_ID(id));
@@ -113,9 +101,9 @@ const OrderDetails = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
 
-    const fetchOrderHistory = async () => {
+    const fetchOrderHistory = useCallback(async () => {
         try {
             setHistoryLoading(true);
             const response = await authApi().get(endpoint.GET_ORDER_HISTORY(id));
@@ -129,7 +117,16 @@ const OrderDetails = () => {
         } finally {
             setHistoryLoading(false);
         }
-    };    const getStatusInfo = (status) => {
+    }, [id]);
+
+    // Fetch order details and history
+    useEffect(() => {
+        if (id) {
+            fetchOrderDetails();
+            fetchOrderHistory();
+        }
+    }, [id, fetchOrderDetails, fetchOrderHistory]);
+    const getStatusInfo = (status) => {
         // List of valid MUI colors for TimelineDot
         // Limited to these values to ensure theme.palette[color].contrastText exists
         const validMuiColors = ['primary', 'secondary', 'error', 'info', 'success', 'warning'];
@@ -301,20 +298,11 @@ const OrderDetails = () => {
     // Function to handle reordering items from this order
     const handleReorder = async () => {
         try {
-            setReorderLoading(true);
             setReorderError(null);
             
             if (!order.orderDetails || order.orderDetails.length === 0) {
                 setReorderError('Không thể tải thông tin sản phẩm trong đơn hàng này.');
                 return;
-            }
-            
-            // Get existing cart items if any
-            const existingCartResponse = await authApi().get('/api/cart');
-            let existingCartItems = [];
-            
-            if (existingCartResponse.data && (existingCartResponse.data.success || existingCartResponse.data.cartItems)) {
-                existingCartItems = existingCartResponse.data.cartItems || existingCartResponse.data.content || [];
             }
             
             // Build new cart from order items
@@ -340,7 +328,6 @@ const OrderDetails = () => {
             console.error('Error reordering items:', err);
             setReorderError('Đã xảy ra lỗi khi thêm các sản phẩm vào giỏ hàng.');
         } finally {
-            setReorderLoading(false);
         }
     };// Function to handle order cancellation
     const handleCancelOrder = async () => {

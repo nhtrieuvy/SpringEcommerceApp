@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { MyUserContext } from '../configs/MyContexts';
 import { endpoint } from '../configs/Apis';
@@ -34,7 +34,6 @@ import {
   TableRow,
   TablePagination,
   Collapse,
-  Badge,
   Tooltip,
   FormControlLabel,
   Checkbox
@@ -98,7 +97,7 @@ function TabPanel(props) {
 }
 
 const Admin = () => {
-  const [user, dispatch] = useContext(MyUserContext);
+  const [user] = useContext(MyUserContext);
   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -134,33 +133,11 @@ const Admin = () => {
   const [userForRole, setUserForRole] = useState(null);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState([]);
-  const [availableRoles, setAvailableRoles] = useState([]);
   const [roleReload, setRoleReload] = useState(false);
   const [usersByRole, setUsersByRole] = useState([]);
   const [currentRoleView, setCurrentRoleView] = useState('');
   const [roleUserDialogOpen, setRoleUserDialogOpen] = useState(false);
-    useEffect(() => {
-    // Kiểm tra quyền truy cập
-    if (user && !(user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF'))) {
-      navigate('/', { replace: true });
-      return;
-    }
-    
-    // Lấy danh sách yêu cầu đăng ký seller
-    fetchSellerRequests();
-
-    // Khi chuyển sang tab quản lý người dùng
-    if (tabValue === 1) {
-      fetchUsers();
-    }
-
-    // Khi chuyển sang tab phân quyền
-    if (tabValue === 2) {
-      fetchRoles();
-    }
-  }, [user, navigate, page, rowsPerPage, filter, reload, tabValue, userPage, userRowsPerPage, userFilter, roleReload]);
-  
-  const fetchSellerRequests = async () => {
+  const fetchSellerRequests = useCallback(async () => {
     setLoading(true);
     try {
       const { authApi } = require('../configs/Apis');
@@ -184,7 +161,7 @@ const Admin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, filter]);
   
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -288,7 +265,7 @@ const Admin = () => {
   };
   
   // Lấy danh sách người dùng
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const { authApi } = require('../configs/Apis');
@@ -312,7 +289,7 @@ const Admin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userPage, userRowsPerPage, userFilter]);
   
   // Lấy chi tiết người dùng
   const fetchUserDetail = async (userId) => {
@@ -382,7 +359,7 @@ const Admin = () => {
   };
   
   // Lấy danh sách quyền
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     setLoading(true);
     try {
       const { authApi } = require('../configs/Apis');
@@ -404,7 +381,28 @@ const Admin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Kiểm tra quyền truy cập
+    if (user && !(user.roles.some(role => role.name === 'ADMIN' || role.name === 'STAFF'))) {
+      navigate('/', { replace: true });
+      return;
+    }
+    
+    // Lấy danh sách yêu cầu đăng ký seller
+    fetchSellerRequests();
+
+    // Khi chuyển sang tab quản lý người dùng
+    if (tabValue === 1) {
+      fetchUsers();
+    }
+
+    // Khi chuyển sang tab phân quyền
+    if (tabValue === 2) {
+      fetchRoles();
+    }
+  }, [user, navigate, page, rowsPerPage, filter, reload, tabValue, userPage, userRowsPerPage, userFilter, roleReload, fetchSellerRequests, fetchUsers, fetchRoles]);
   
   // Mở dialog phân quyền
   const openRoleDialog = async (user) => {

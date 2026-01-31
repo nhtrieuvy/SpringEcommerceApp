@@ -1,0 +1,25 @@
+name: Stop SpringEcommerceApp (Night)
+
+on:
+  schedule:
+    # Chạy lúc 14:00 UTC = 21:00 ICT (UTC+7)
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+jobs:
+  stop-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Stop SpringEcommerceApp
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          echo "Stopping springecommerceapp (scaling to 0)..."
+          flyctl scale count 0 -a springecommerceapp --yes
+          echo "✅ App stopped successfully at $(date)"

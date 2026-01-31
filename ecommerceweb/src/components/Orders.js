@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Container,
     Typography,
@@ -40,7 +40,7 @@ import AsyncPageWrapper from './AsyncPageWrapper';
 
 const Orders = () => {
     const navigate = useNavigate();
-    const { user, isAuthenticated } = useAuth();
+    const { isAuthenticated } = useAuth();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -48,7 +48,6 @@ const Orders = () => {
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);    const [totalOrders, setTotalOrders] = useState(0);
-    const [reorderLoading, setReorderLoading] = useState(false);
     const [reorderError, setReorderError] = useState(null);
     const [reorderSuccess, setReorderSuccess] = useState(false);
 
@@ -60,10 +59,7 @@ const Orders = () => {
         }
     }, [isAuthenticated, navigate]);
 
-    // Fetch orders
-    useEffect(() => {
-        fetchOrders();
-    }, [page, rowsPerPage, statusFilter, searchQuery]);    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
               // Since backend doesn't support pagination, status filter, or search,
@@ -144,7 +140,12 @@ const Orders = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, rowsPerPage, statusFilter, searchQuery]);
+
+    // Fetch orders
+    useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
 
     const getStatusInfo = (status) => {
         const statusMap = {
@@ -207,20 +208,11 @@ const Orders = () => {
     // Function to handle reordering previous order items
     const handleReorder = async (order) => {
         try {
-            setReorderLoading(true);
             setReorderError(null);
             
             if (!order.orderDetails || order.orderDetails.length === 0) {
                 setReorderError('Không thể tải thông tin sản phẩm trong đơn hàng này.');
                 return;
-            }
-            
-            // Get existing cart items if any
-            const existingCartResponse = await authApi().get('/api/cart');
-            let existingCartItems = [];
-            
-            if (existingCartResponse.data && (existingCartResponse.data.success || existingCartResponse.data.cartItems)) {
-                existingCartItems = existingCartResponse.data.cartItems || existingCartResponse.data.content || [];
             }
             
             // Build new cart from order items
@@ -246,8 +238,6 @@ const Orders = () => {
             console.error('Error reordering items:', err);
             setReorderError('Đã xảy ra lỗi khi thêm các sản phẩm vào giỏ hàng.');
         } finally {
-            setReorderLoading(false);
-            
             // Reset success message after some time
             if (reorderSuccess) {
                 setTimeout(() => setReorderSuccess(false), 5000);
