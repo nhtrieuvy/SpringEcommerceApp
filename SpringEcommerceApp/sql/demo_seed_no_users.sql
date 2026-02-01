@@ -262,3 +262,129 @@ VALUES
   ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 7), 'SHIPPING', 'Handed to carrier', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
   ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 8), 'PAID', 'Payment received', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
   ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 9), 'PROCESSING', 'Order is being prepared', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1));
+
+-- Additional products (20 more)
+INSERT INTO products (name, description, price, quantity, image, active, store_id, category_id)
+VALUES
+  ('Camera hành trình 4K', 'Ghi hình rõ nét, góc rộng', 129.00, 55, NULL, 1,
+   (SELECT id FROM stores WHERE name='Tech Store' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Điện tử' LIMIT 1)),
+  ('Tai nghe thể thao', 'Chống nước, pin 10h', 29.99, 140, NULL, 1,
+   (SELECT id FROM stores WHERE name='Tech Store' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Điện tử' LIMIT 1)),
+  ('Sạc nhanh 65W', 'Sạc nhanh PD, 2 cổng', 24.99, 160, NULL, 1,
+   (SELECT id FROM stores WHERE name='Tech Store' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Điện tử' LIMIT 1)),
+  ('Chuột không dây', 'Kết nối ổn định, pin lâu', 19.99, 120, NULL, 1,
+   (SELECT id FROM stores WHERE name='Tech Store' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Điện tử' LIMIT 1)),
+  ('Áo polo nam', 'Chất liệu cotton co giãn', 29.99, 150, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thời trang' LIMIT 1)),
+  ('Váy midi', 'Dáng suông, dễ phối', 39.99, 90, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thời trang' LIMIT 1)),
+  ('Áo hoodie', 'Nỉ dày, ấm áp', 44.99, 110, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thời trang' LIMIT 1)),
+  ('Giày chạy bộ', 'Đệm êm, nhẹ', 69.99, 85, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thể thao' LIMIT 1)),
+  ('Túi thể thao', 'Chống nước nhẹ', 24.99, 130, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thể thao' LIMIT 1)),
+  ('Găng tay tập gym', 'Chống trượt, thấm mồ hôi', 14.99, 160, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thể thao' LIMIT 1)),
+  ('Nồi chiên không dầu', 'Dung tích 5L', 129.99, 40, NULL, 1,
+   (SELECT id FROM stores WHERE name='Home Plus' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Nhà cửa' LIMIT 1)),
+  ('Máy lọc không khí', 'Lọc bụi mịn PM2.5', 199.99, 35, NULL, 1,
+   (SELECT id FROM stores WHERE name='Home Plus' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Nhà cửa' LIMIT 1)),
+  ('Bộ khăn tắm', 'Cotton dày, mềm', 19.99, 200, NULL, 1,
+   (SELECT id FROM stores WHERE name='Home Plus' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Nhà cửa' LIMIT 1)),
+  ('Đèn ngủ LED', 'Ánh sáng dịu, 3 mức', 12.99, 180, NULL, 1,
+   (SELECT id FROM stores WHERE name='Home Plus' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Nhà cửa' LIMIT 1)),
+  ('Bàn ủi hơi nước', 'Ủi nhanh, chống nhỏ giọt', 39.99, 70, NULL, 1,
+   (SELECT id FROM stores WHERE name='Home Plus' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Nhà cửa' LIMIT 1)),
+  ('Máy massage cổ', 'Xung điện nhẹ', 49.99, 65, NULL, 1,
+   (SELECT id FROM stores WHERE name='Home Plus' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Sức khỏe' LIMIT 1)),
+  ('Vitamin C 1000mg', 'Tăng sức đề kháng', 14.99, 220, NULL, 1,
+   (SELECT id FROM stores WHERE name='Home Plus' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Sức khỏe' LIMIT 1)),
+  ('Bình nước thể thao', 'Không BPA, 1L', 9.99, 300, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thể thao' LIMIT 1)),
+  ('Dây nhảy tốc độ', 'Tay cầm chống trượt', 11.99, 190, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thể thao' LIMIT 1)),
+  ('Băng quấn cổ tay', 'Hỗ trợ khi tập', 7.99, 260, NULL, 1,
+   (SELECT id FROM stores WHERE name='Fashion Hub' LIMIT 1),
+   (SELECT id FROM categories WHERE name='Thể thao' LIMIT 1));
+
+-- Additional demo orders (10 more)
+INSERT INTO orders (user_id, order_date, status, total_amount, shipping_fee, address, shipping_address, phone_number, notes)
+VALUES
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'PAID', 154.97, 5.00, '707 Hoang Dieu', '707 Hoang Dieu', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'PROCESSING', 89.98, 3.00, '808 Nguyen Trai', '808 Nguyen Trai', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'SHIPPING', 199.99, 5.00, '909 Vo Van Tan', '909 Vo Van Tan', '0900000004', 'Giao buổi tối'),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'COMPLETED', 44.98, 3.00, '1010 Le Hong Phong', '1010 Le Hong Phong', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'PAID', 129.99, 5.00, '1111 Tran Nhan Tong', '1111 Tran Nhan Tong', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'PROCESSING', 64.98, 3.00, '1212 Ly Thuong Kiet', '1212 Ly Thuong Kiet', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'SHIPPING', 239.98, 5.00, '1313 Ba Trieu', '1313 Ba Trieu', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'COMPLETED', 79.98, 3.00, '1414 Tran Phu', '1414 Tran Phu', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'PAID', 29.98, 3.00, '1515 Phan Chu Trinh', '1515 Phan Chu Trinh', '0900000004', NULL),
+  ((SELECT id FROM users WHERE username='user' LIMIT 1), NOW(), 'PROCESSING', 219.98, 5.00, '1616 Phan Dang Luu', '1616 Phan Dang Luu', '0900000004', 'Gọi trước khi giao');
+
+-- Order details for the 10 new orders
+INSERT INTO order_details (order_id, product_id, quantity, price)
+VALUES
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1), (SELECT id FROM products WHERE name='Nồi chiên không dầu' LIMIT 1), 1, 129.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1), (SELECT id FROM products WHERE name='Bình nước thể thao' LIMIT 1), 2, 9.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 1), (SELECT id FROM products WHERE name='Áo hoodie' LIMIT 1), 1, 44.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 1), (SELECT id FROM products WHERE name='Dây nhảy tốc độ' LIMIT 1), 1, 11.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 2), (SELECT id FROM products WHERE name='Máy lọc không khí' LIMIT 1), 1, 199.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 3), (SELECT id FROM products WHERE name='Băng quấn cổ tay' LIMIT 1), 2, 7.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 4), (SELECT id FROM products WHERE name='Camera hành trình 4K' LIMIT 1), 1, 129.00),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 5), (SELECT id FROM products WHERE name='Tai nghe thể thao' LIMIT 1), 1, 29.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 5), (SELECT id FROM products WHERE name='Sạc nhanh 65W' LIMIT 1), 1, 24.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 6), (SELECT id FROM products WHERE name='Máy massage cổ' LIMIT 1), 1, 49.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 6), (SELECT id FROM products WHERE name='Vitamin C 1000mg' LIMIT 1), 1, 14.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 7), (SELECT id FROM products WHERE name='Giày chạy bộ' LIMIT 1), 1, 69.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 7), (SELECT id FROM products WHERE name='Túi thể thao' LIMIT 1), 1, 24.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 8), (SELECT id FROM products WHERE name='Áo polo nam' LIMIT 1), 1, 29.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 9), (SELECT id FROM products WHERE name='Bàn ủi hơi nước' LIMIT 1), 1, 39.99),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 9), (SELECT id FROM products WHERE name='Đèn ngủ LED' LIMIT 1), 2, 12.99);
+
+-- Payments for the 10 new orders
+INSERT INTO payments (order_id, payment_method, amount, status, transaction_id, payment_date)
+VALUES
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1), 'PAYPAL', 154.97, 'COMPLETED', 'TXN-4001', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 1), 'CASH_ON_DELIVERY', 89.98, 'PENDING', 'COD-4002', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 2), 'MOMO', 199.99, 'PENDING', 'MOMO-4003', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 3), 'CASH_ON_DELIVERY', 44.98, 'PENDING', 'COD-4004', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 4), 'PAYPAL', 129.99, 'COMPLETED', 'TXN-4005', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 5), 'CASH_ON_DELIVERY', 64.98, 'PENDING', 'COD-4006', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 6), 'PAYPAL', 239.98, 'COMPLETED', 'TXN-4007', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 7), 'MOMO', 79.98, 'PENDING', 'MOMO-4008', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 8), 'PAYPAL', 29.98, 'COMPLETED', 'TXN-4009', NOW()),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 9), 'CASH_ON_DELIVERY', 219.98, 'PENDING', 'COD-4010', NOW());
+
+-- Order status history for the 10 new orders
+INSERT INTO order_status_history (order_id, status, note, created_at, created_by)
+VALUES
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1), 'PAID', 'Payment received', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 1), 'PROCESSING', 'Order is being prepared', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 2), 'SHIPPING', 'Handed to carrier', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 3), 'COMPLETED', 'Delivered to customer', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 4), 'PAID', 'Payment received', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 5), 'PROCESSING', 'Order is being prepared', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 6), 'SHIPPING', 'Handed to carrier', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 7), 'COMPLETED', 'Delivered to customer', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 8), 'PAID', 'Payment received', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1)),
+  ((SELECT id FROM orders ORDER BY id DESC LIMIT 1 OFFSET 9), 'PROCESSING', 'Order is being prepared', NOW(), (SELECT id FROM users WHERE username='seller' LIMIT 1));

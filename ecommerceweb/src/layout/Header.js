@@ -16,8 +16,6 @@ import {
     Tooltip,
     Badge,
     Slide,
-    InputBase,
-    alpha,
     List,    
     ListItem,
     ListItemText,
@@ -31,7 +29,6 @@ import LoginIcon from '@mui/icons-material/Login';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import SearchIcon from '@mui/icons-material/Search';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -275,33 +272,7 @@ const Header = () => {
                             <span className="fade-in">E-commerce Store</span>
                         </Typography>
 
-                        {/* Search bar - Hiển thị trên desktop */}
-                        {!isMobile && (
-                            <Box
-                                sx={{
-                                    flexGrow: 1,
-                                    mx: 2,
-                                    display: 'flex',
-                                    borderRadius: '20px',
-                                    backgroundColor: alpha(theme.palette.common.black, scrolled ? 0.15 : 0.06),
-                                    '&:hover': {
-                                        backgroundColor: alpha(theme.palette.common.black, scrolled ? 0.25 : 0.1),
-                                    },
-                                    pl: 2
-                                }}
-                            >
-                                <SearchIcon sx={{ alignSelf: 'center', mr: 1, opacity: 0.7 }} />
-                                <InputBase
-                                    placeholder="Tìm kiếm sản phẩm..."
-                                    sx={{
-                                        width: '100%',
-                                        '& .MuiInputBase-input': {
-                                            p: 1,
-                                        }
-                                    }}
-                                />
-                            </Box>
-                        )}                        {isMobile ? (
+                        {isMobile ? (
                             <Fragment>                                {/* Mobile menu */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>                                    {user && (
                                         <Fragment>                                            <Tooltip title="Danh sách yêu thích">
@@ -505,7 +476,7 @@ const Header = () => {
                             </Fragment>
                         ) : (
                             // Desktop menu
-                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 'auto' }}>
                                 <Button
                                     className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
                                     component={RouterLink}
