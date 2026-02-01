@@ -1,6 +1,6 @@
 # Spring E‑Commerce (Spring Boot + React)
 
-A full-stack e-commerce platform — backend powered by Spring Boot and frontend built with React + MUI. This README reflects the current project status (Spring Boot backend) and the deployed URLs.
+A full-stack E-commerce platform — backend powered by Spring Boot and frontend built with React + MUI. This systems allow users to buy goods, compare products, and pay online.
 | Platform | Link |
 |----------|------|
 | 📱 **Homepage (Frontend)** | [Client](https://spring-ecommerce-app.vercel.app/)|
@@ -95,5 +95,6 @@ password: password
 ---
 
 *This project was developed by Nguyen Hoang Trieu Vy & Vo Tran Yen Nhu.*
+
 
 
