@@ -2,8 +2,8 @@ name: Start SpringEcommerceApp (Morning)
 
 on:
   schedule:
-    # Chạy lúc 00:00 UTC = 07:00 ICT (UTC+7)
-    - cron: "0 0 * * *"
+    # Chạy lúc 23:30 UTC = 06:30 ICT (UTC+7)
+    - cron: "30 23 * * *"
   workflow_dispatch:
 
 jobs:
