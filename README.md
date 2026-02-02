@@ -7,7 +7,7 @@ A full-stack E-commerce platform — backend powered by Spring Boot and frontend
 | 🌐 **Backend (Admin)** | [Admin Panel](https://springecommerceapp.fly.dev/SpringEcommerceApp/) |
 
 ---
-## NOTE: The app is NOT available from 09:00 PM to 08:00 AM. ⏲️
+## NOTE: The app is NOT available from 09:00 PM to 07:00 AM. ⏲️
 ---
 
 ## Demo Account:
@@ -97,6 +97,7 @@ password: password
 ---
 
 *This project was developed by Nguyen Hoang Trieu Vy & Vo Tran Yen Nhu.*
+
 
 
 
