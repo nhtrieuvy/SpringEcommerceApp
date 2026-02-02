@@ -7,6 +7,8 @@ A full-stack E-commerce platform — backend powered by Spring Boot and frontend
 | 🌐 **Backend (Admin)** | [Admin Panel](https://springecommerceapp.fly.dev/SpringEcommerceApp/) |
 
 ---
+## NOTE: The app is NOT available from 09:00 PM to 08:00 AM. ⏲️
+---
 
 ## Demo Account:
 **Account 1 (Admin Account):**
