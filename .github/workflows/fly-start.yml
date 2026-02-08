@@ -31,3 +31,39 @@ jobs:
           echo "Waiting for app to become healthy..."
           sleep 30
           flyctl status -a springecommerceapp
+
+      - name: Install mysql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-mysql-client
+
+      - name: DB ping (SELECT 1)
+        env:
+          MYSQL_URL: ${{ secrets.MYSQL_URL }}
+        run: |
+          python3 - <<'PY'
+          import os, sys, urllib.parse, subprocess, shlex
+          url = os.environ.get('MYSQL_URL')
+          if not url:
+              print('ERROR: MYSQL_URL not set', file=sys.stderr)
+              sys.exit(1)
+          u = urllib.parse.urlparse(url)
+          qs = urllib.parse.parse_qs(u.query)
+          ssl_mode = qs.get('ssl-mode', [None])[0]
+          host = u.hostname or 'localhost'
+          port = u.port or 3306
+          user = urllib.parse.unquote(u.username) if u.username else ''
+          password = urllib.parse.unquote(u.password) if u.password else ''
+          db = (u.path or '/').lstrip('/') or ''
+          cmd = ['mysql', f'--host={host}', f'--port={port}', f'--user={user}', '--connect-timeout=10']
+          if password:
+              cmd.append(f'--password={password}')
+          if ssl_mode:
+              cmd.append(f'--ssl-mode={ssl_mode}')
+          if db:
+              cmd.append(db)
+          cmd.extend(['-e','SELECT 1;'])
+          print('Running:', ' '.join(shlex.quote(c) for c in cmd))
+          subprocess.check_call(cmd)
+          print('DB ping OK')
+          PY
