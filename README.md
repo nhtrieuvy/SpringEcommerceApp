@@ -28,7 +28,7 @@ password: password
 username: user |
 password: password
 
-**Alternatively, you can log in using Google or Facebook (secure, verified via token).**
+**Alternatively, you can log in using Google or Facebook (secure, verified via JWT token).**
 
 ---
 
@@ -97,6 +97,7 @@ password: password
 ---
 
 *This project was developed by Nguyen Hoang Trieu Vy & Vo Tran Yen Nhu.*
+
 
 
 
